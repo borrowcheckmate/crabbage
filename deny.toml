@@ -34,6 +34,7 @@ skip = [
     { crate = "thiserror-impl@1.0.69", reason = "gloo-net 0.6 (via server_fn) needs thiserror 1; leptos tooling uses thiserror 2" },
     { crate = "getrandom@0.3.4", reason = "rand_core 0.9 needs getrandom 0.3; uuid in leptos_macro uses 0.4" },
     { crate = "r-efi@5.3.0", reason = "getrandom 0.3 needs r-efi 5 on UEFI targets; getrandom 0.4 uses r-efi 6" },
+    { crate = "hashbrown@0.16.1", reason = "hashlink 0.11 (sqlx-sqlite) needs hashbrown 0.16; indexmap (leptos) uses 0.17" },
 ]
 
 [sources]

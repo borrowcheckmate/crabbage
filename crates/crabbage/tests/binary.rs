@@ -1,6 +1,7 @@
 //! Runs the server binary to check its startup errors: a bad configuration and an address in use.
 
 use std::net::TcpListener;
+use std::path::PathBuf;
 use std::process::{Command, Output, Stdio};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -35,9 +36,28 @@ fn run(command: &mut Command) -> Result<Output, String> {
     child.wait_with_output().map_err(|error| error.to_string())
 }
 
-fn run_with_site_addr(site_addr: &str) -> Result<Output, String> {
+struct TempDir(PathBuf);
+
+impl TempDir {
+    fn new(name: &str) -> Self {
+        let path =
+            std::env::temp_dir().join(format!("crabbage-binary-{}-{name}", std::process::id()));
+        drop(std::fs::remove_dir_all(&path));
+        Self(path)
+    }
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        drop(std::fs::remove_dir_all(&self.0));
+    }
+}
+
+fn run_with_site_addr(name: &str, site_addr: &str) -> Result<Output, String> {
+    let data_dir = TempDir::new(name);
     run(Command::new(env!("CARGO_BIN_EXE_crabbage"))
         .envs(VALID_CONFIG)
+        .env("CRABBAGE_DATA_DIR", &data_dir.0)
         .env("LEPTOS_OUTPUT_NAME", "crabbage")
         .env("LEPTOS_SITE_ADDR", site_addr))
 }
@@ -53,7 +73,8 @@ fn missing_config_names_the_missing_vars() {
 
 #[test]
 fn invalid_site_addr_is_a_configuration_error() {
-    let output = run_with_site_addr("not-an-address").expect("binary runs and exits");
+    let output =
+        run_with_site_addr("invalid-addr", "not-an-address").expect("binary runs and exits");
     assert!(!output.status.success());
     assert_ne!(output.stderr.len(), 0);
 }
@@ -62,7 +83,8 @@ fn invalid_site_addr_is_a_configuration_error() {
 fn site_addr_in_use_is_a_bind_error() {
     let listener = TcpListener::bind("127.0.0.1:0").expect("port is free");
     let address = listener.local_addr().expect("address is known");
-    let output = run_with_site_addr(&address.to_string()).expect("binary runs and exits");
+    let output =
+        run_with_site_addr("addr-in-use", &address.to_string()).expect("binary runs and exits");
     drop(listener);
     assert!(!output.status.success());
     assert_ne!(output.stderr.len(), 0);
