@@ -10,6 +10,11 @@ pub enum StoreError {
     Database(sqlx::Error),
     /// The embedded migrations could not be applied.
     Migrate(sqlx::migrate::MigrateError),
+    /// A name or alias is already taken, or would equal a name or alias of another ingredient. The
+    /// text is the name or alias that clashes.
+    Conflict(String),
+    /// The ingredient is used by recipe lines and cannot be deleted.
+    InUse,
 }
 
 impl Display for StoreError {
@@ -18,6 +23,8 @@ impl Display for StoreError {
             Self::Io(error) => write!(f, "cannot create the data directory: {error}"),
             Self::Database(error) => write!(f, "cannot open the database: {error}"),
             Self::Migrate(error) => write!(f, "cannot run the migrations: {error}"),
+            Self::Conflict(text) => write!(f, "`{text}` is already a name or alias"),
+            Self::InUse => write!(f, "the ingredient is used by recipes"),
         }
     }
 }
@@ -28,6 +35,7 @@ impl Error for StoreError {
             Self::Io(error) => Some(error),
             Self::Database(error) => Some(error),
             Self::Migrate(error) => Some(error),
+            Self::Conflict(_) | Self::InUse => None,
         }
     }
 }

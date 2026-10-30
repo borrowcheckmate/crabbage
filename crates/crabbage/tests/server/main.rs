@@ -4,6 +4,11 @@
     clippy::expect_used,
     reason = "test helpers stop the test on setup failure"
 )]
+mod catalog;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
 mod common;
 #[expect(
     clippy::expect_used,
@@ -16,6 +21,12 @@ mod discovery;
 )]
 mod household;
 mod login;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+mod pages;
+mod screenshots;
 mod session;
 
 use axum::http::StatusCode;

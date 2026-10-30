@@ -120,6 +120,28 @@ impl Harness {
             .await
     }
 
+    /// Sends a form-encoded POST, with the session cookie when `token` is given.
+    pub(crate) async fn post_form(
+        &self,
+        path: &str,
+        token: Option<&str>,
+        body: &str,
+    ) -> Response<Body> {
+        let mut builder = Request::builder()
+            .method("POST")
+            .uri(path)
+            .header("content-type", "application/x-www-form-urlencoded");
+        if let Some(token) = token {
+            builder = builder.header("cookie", format!("{SESSION_COOKIE}={token}"));
+        }
+        self.send(
+            builder
+                .body(Body::from(body.to_owned()))
+                .expect("request builds"),
+        )
+        .await
+    }
+
     /// The id of the user who signs in through the fake provider.
     pub(crate) async fn user_id(&self) -> i64 {
         sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")

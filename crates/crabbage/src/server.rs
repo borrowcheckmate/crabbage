@@ -10,6 +10,7 @@ use leptos_axum::{LeptosRoutes, generate_route_list};
 use sqlx::sqlite::SqlitePool;
 use tokio::sync::OnceCell;
 
+use crate::api;
 use crate::app::{App, shell};
 use crate::auth;
 use crate::config::Config;
@@ -43,14 +44,19 @@ pub fn router(
         language: config.language,
     };
     let language = state.language;
+    let context_pool = state.pool.clone();
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
         .merge(household::routes())
+        .merge(api::routes())
         .leptos_routes_with_context(
             &state,
             routes,
-            move || provide_context(language),
+            move || {
+                provide_context(context_pool.clone());
+                provide_context(language);
+            },
             move || shell(options.clone()),
         )
         .fallback(leptos_axum::file_and_error_handler_with_context::<

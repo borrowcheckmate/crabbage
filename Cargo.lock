@@ -516,6 +516,7 @@ dependencies = [
  "leptos",
  "leptos_axum",
  "leptos_meta",
+ "leptos_router",
  "openidconnect",
  "rsa",
  "serde",

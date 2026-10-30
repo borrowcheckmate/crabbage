@@ -23,3 +23,25 @@ pub async fn upsert_user(pool: &SqlitePool, subject: &str, name: &str) -> Result
     .await?;
     Ok(id)
 }
+
+/// A user's name and whether they are an admin.
+#[derive(Clone, Debug, PartialEq, Eq, sqlx::FromRow)]
+pub struct User {
+    /// The name from the latest login.
+    pub name: String,
+    /// Whether the last login carried the admin group.
+    pub is_admin: bool,
+}
+
+/// The user with `user_id`, or `None` when there is none.
+///
+/// # Errors
+///
+/// Returns an error if the query fails.
+pub async fn find(pool: &SqlitePool, user_id: i64) -> Result<Option<User>, StoreError> {
+    let user = sqlx::query_as("SELECT name, is_admin FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?;
+    Ok(user)
+}
