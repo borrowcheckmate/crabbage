@@ -14,6 +14,7 @@ use crate::recipes::categories::list_recipe_categories;
 use crate::recipes::editors::list_users;
 use crate::recipes::ingredients::ingredient_names;
 use crate::recipes::pages::editor_list::EditorsSection;
+use crate::recipes::pages::photo_card::photo_card;
 use crate::recipes::read::get_recipe;
 use crate::recipes::write::{CreateRecipe, UpdateRecipe};
 use crate::route::route_id;
@@ -109,6 +110,7 @@ async fn load_edit_form(
     let categories = list_recipe_categories().await?;
     let draft = Draft::of(&recipe);
     let can_manage_editors = recipe.can_manage_editors;
+    let photo = photo_card(recipe.id, &recipe.title, recipe.image.as_deref());
     let editors = recipe.editors;
     Ok(view! {
         <ActionForm action=save>
@@ -118,6 +120,7 @@ async fn load_edit_form(
             <input type="hidden" name="draft" value=move || draft.json()/>
             <button>{t("recipe.button.save")}</button>
         </ActionForm>
+        {photo}
         {can_manage_editors.then(|| view! {
             <EditorsSection recipe_id=recipe.id editors users/>
         })}

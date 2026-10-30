@@ -11,6 +11,8 @@ mod ingredients;
 mod line_text;
 mod list;
 mod pages;
+#[cfg(feature = "ssr")]
+mod photo;
 mod read;
 #[cfg(feature = "ssr")]
 mod rights;
@@ -19,3 +21,5 @@ mod units;
 mod write;
 
 pub(crate) use pages::{RecipeEditPage, RecipeNewPage, RecipePage, RecipesPage};
+#[cfg(feature = "ssr")]
+pub(crate) use photo::routes as photo_routes;

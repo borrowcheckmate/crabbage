@@ -37,6 +37,8 @@ pub(crate) struct RecipeDetail {
     pub(crate) editors: Vec<PersonRow>,
     /// The categories the recipe is filed under.
     pub(crate) categories: Vec<CategoryRow>,
+    /// The file name of the recipe's photo, if it has one.
+    pub(crate) image: Option<String>,
     /// Whether the signed-in user may change the recipe.
     pub(crate) can_edit: bool,
     /// Whether the signed-in user may delete the recipe.

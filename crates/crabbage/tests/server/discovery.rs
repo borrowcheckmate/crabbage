@@ -33,7 +33,7 @@ async fn sign_in_is_unavailable_until_the_provider_is_reachable() {
     let pool = crabbage_store::open(dir.path())
         .await
         .expect("database opens");
-    let config = config(&format!("http://{address}/"), None);
+    let config = config(&format!("http://{address}/"), dir.path(), None);
     let options = LeptosOptions::builder().output_name("crabbage").build();
     let router = crabbage::router(options, &config, pool).expect("router builds");
 

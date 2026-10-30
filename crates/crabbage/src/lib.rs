@@ -57,6 +57,9 @@ pub use auth::SessionUser;
 mod household;
 
 #[cfg(feature = "ssr")]
+mod images;
+
+#[cfg(feature = "ssr")]
 mod server;
 
 #[cfg(feature = "ssr")]

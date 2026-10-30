@@ -62,6 +62,7 @@ pub(crate) fn detail(recipe: Recipe, rights: Rights) -> RecipeDetail {
             .into_iter()
             .map(CategoryRow::from)
             .collect(),
+        image: recipe.image,
         can_edit: rights.edit,
         can_delete: rights.delete,
         can_manage_editors: rights.manage_editors,

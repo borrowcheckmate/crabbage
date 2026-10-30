@@ -1,11 +1,12 @@
 //! Writes the rendered pages to `CRABBAGE_SCREENSHOT_DIR` so they can be photographed for review.
-//! The stylesheet is copied next to the pages and linked relatively, so a `file://` view loads it.
+//! The stylesheet and the sample photo are copied next to the pages and linked relatively, so a
+//! `file://` view loads them.
 //! Ignored by default: run with `cargo test --features crabbage/ssr --test server -- --ignored`.
 
 use std::path::PathBuf;
 
 use crabbage_store::catalog::{categories, ingredients, sections};
-use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create};
+use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create, set_image};
 
 use crate::common::{Harness, body_text, session_token};
 
@@ -58,6 +59,17 @@ async fn write_pages() {
     let recipe = create(&harness.pool, owner, &sample_recipe(breakfast), 0)
         .await
         .expect("recipe");
+    std::fs::create_dir_all(harness.images_dir()).expect("images directory is created");
+    std::fs::write(harness.images_dir().join(PHOTO_NAME), PHOTO).expect("photo is written");
+    set_image(&harness.pool, recipe, Some(PHOTO_NAME))
+        .await
+        .expect("photo is set");
+    std::fs::create_dir_all(dir.join("images")).expect("images directory is created");
+    std::fs::copy(
+        harness.images_dir().join(PHOTO_NAME),
+        dir.join("images").join(PHOTO_NAME),
+    )
+    .expect("photo is copied");
     let recipe_path = format!("/recipes/{recipe}");
     let breakfast_path = format!("/recipes?category={breakfast}");
     let recipe_edit_path = format!("/recipes/{recipe}/edit");
@@ -128,10 +140,22 @@ async fn write_pages() {
         let token = session_token(&harness.sign_in().await).expect("sign-in sets a session");
         let body = body_text(harness.get(path, Some(&token)).await)
             .await
-            .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+            .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"")
+            .replace("src=\"/images/", "src=\"images/");
         std::fs::write(dir.join(format!("{who}-{name}.html")), body).expect("page is written");
     }
 }
+
+const PHOTO_NAME: &str = "5a0c1e2f3b4d5e6f7a8b9c0d1e2f3a4b.png";
+
+/// A 4 by 4 pixel PNG of one colour.
+const PHOTO: &[u8] = &[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x08, 0x02, 0x00, 0x00, 0x00, 0x26, 0x93, 0x09,
+    0x29, 0x00, 0x00, 0x00, 0x10, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x38, 0x11, 0x6A, 0x0B,
+    0x47, 0x0C, 0xC4, 0x71, 0x00, 0x3B, 0x42, 0x15, 0xA1, 0x4E, 0x94, 0x8D, 0x55, 0x00, 0x00, 0x00,
+    0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+];
 
 /// A recipe with four lines and three steps, owned by the member who signs in first and filed under
 /// `category`.

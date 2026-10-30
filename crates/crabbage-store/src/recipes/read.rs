@@ -14,6 +14,7 @@ struct Header {
     servings: i64,
     owner_id: i64,
     owner_name: String,
+    image: Option<String>,
 }
 
 #[derive(FromRow)]
@@ -30,7 +31,7 @@ struct StepRow {
 /// Returns an error if a query fails.
 pub async fn get(pool: &SqlitePool, id: i64) -> Result<Option<Recipe>, StoreError> {
     let header: Option<Header> = sqlx::query_as(
-        "SELECT r.id, r.title, r.servings, r.owner_id, u.name AS owner_name \
+        "SELECT r.id, r.title, r.servings, r.owner_id, u.name AS owner_name, r.image \
          FROM recipes r JOIN users u ON u.id = r.owner_id WHERE r.id = ?",
     )
     .bind(id)
@@ -72,6 +73,7 @@ pub async fn get(pool: &SqlitePool, id: i64) -> Result<Option<Recipe>, StoreErro
         lines,
         steps,
         categories,
+        image: header.image,
     }))
 }
 
@@ -114,7 +116,7 @@ pub async fn list(
     category: Option<i64>,
 ) -> Result<Vec<RecipeSummary>, StoreError> {
     let recipes = sqlx::query_as(
-        "SELECT r.id, r.title, r.servings, u.name AS owner_name FROM recipes r \
+        "SELECT r.id, r.title, r.servings, u.name AS owner_name, r.image FROM recipes r \
          JOIN users u ON u.id = r.owner_id \
          WHERE ?1 IS NULL OR EXISTS (SELECT 1 FROM recipe_categories rc \
              WHERE rc.recipe_id = r.id AND rc.category_id = ?1) \

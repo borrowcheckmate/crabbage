@@ -15,6 +15,8 @@ use crate::app::{App, shell};
 use crate::auth;
 use crate::config::Config;
 use crate::household;
+use crate::images;
+use crate::recipes::photo_routes;
 use crate::state::AppState;
 
 /// Builds the router for the app.
@@ -45,17 +47,21 @@ pub fn router(
     };
     let language = state.language;
     let context_pool = state.pool.clone();
+    let context_data_dir = config.data_dir.clone();
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
         .merge(household::routes())
         .merge(api::routes())
+        .merge(images::routes())
+        .merge(photo_routes())
         .leptos_routes_with_context(
             &state,
             routes,
             move || {
                 provide_context(context_pool.clone());
                 provide_context(language);
+                provide_context(context_data_dir.clone());
             },
             move || shell(options.clone()),
         )

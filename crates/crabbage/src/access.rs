@@ -1,5 +1,7 @@
 //! Who may use the app: the signed-in user, their role, and the refusals for what they may not do.
 
+use std::path::PathBuf;
+
 use axum::Extension;
 use axum::http::StatusCode;
 use crabbage_domain::membership::Role;
@@ -86,4 +88,14 @@ pub(crate) fn ensure_found(found: bool) -> Result<(), ServerFnError> {
         return Ok(());
     }
     Err(ServerFnError::new(t("catalog.error.missing")))
+}
+
+/// The data directory, which the server functions get from the context the API route provides.
+pub(crate) fn data_dir() -> Result<PathBuf, ServerFnError> {
+    use_context::<PathBuf>().ok_or_else(|| ServerFnError::new(t("catalog.error.database")))
+}
+
+/// The status for a failure the user cannot act on: 500.
+pub(crate) fn internal_error<E>(_error: E) -> StatusCode {
+    StatusCode::INTERNAL_SERVER_ERROR
 }
