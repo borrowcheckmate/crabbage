@@ -30,6 +30,7 @@ jobs:
       - run: cargo xtask policy
       - run: cargo xtask lint
       - run: cargo xtask docs
+      - run: cargo xtask wasm
 
   test:
     strategy:

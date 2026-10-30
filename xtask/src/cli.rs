@@ -38,8 +38,10 @@ pub(crate) enum Command {
     CommitMsg { file: PathBuf },
     /// Validate a pull request from the `PR_TITLE` and `PR_BODY` environment variables.
     PrCheck,
-    /// Build the container image and smoke test it with least privileges.
+    /// Build the container image.
     Docker,
+    /// Lint the WASM build of the app with warnings denied.
+    Wasm,
     /// Run the checks of the pre-commit hook.
     PreCommit,
     /// Run every check CI runs, except coverage and docker.

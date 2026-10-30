@@ -16,12 +16,19 @@ cargo xtask docker
 
 ## Usage
 
+Development server with live reload (needs [cargo-leptos](https://github.com/leptos-rs/cargo-leptos)):
+
 ```sh
-crabbage            # Hello, world!
-crabbage Ada        # Hello, Ada!
+cargo leptos watch
 ```
 
-Invalid names exit with code 2 and a message on stderr.
+Release build of the server and the WASM bundle:
+
+```sh
+cargo leptos build --release
+```
+
+The server listens on `site-addr` from `[package.metadata.leptos]` in `crates/crabbage/Cargo.toml`. `GET /healthz` returns `ok`.
 
 ## Development
 

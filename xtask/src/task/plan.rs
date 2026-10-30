@@ -5,6 +5,7 @@ use super::step::Step;
 
 const IMAGE: &str = "crabbage:local";
 const COVERAGE_THRESHOLD: &str = "90";
+const SSR_FEATURE: &str = "crabbage/ssr";
 
 pub(crate) fn plan(command: &Command) -> Vec<Action> {
     match command {
@@ -18,7 +19,8 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
         Command::Identity { range } => vec![Action::Identity(range.clone())],
         Command::CommitMsg { file } => vec![Action::CommitMsg(file.clone())],
         Command::PrCheck => vec![Action::PrCheck],
-        Command::Docker => docker(),
+        Command::Docker => vec![docker()],
+        Command::Wasm => vec![wasm()],
         Command::PreCommit => vec![
             Action::Identity(None),
             Action::Policy,
@@ -26,7 +28,15 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
             lint(),
             test(),
         ],
-        Command::Ci => vec![fmt(true), Action::Policy, lint(), docs(), test(), deny()],
+        Command::Ci => vec![
+            fmt(true),
+            Action::Policy,
+            lint(),
+            docs(),
+            test(),
+            deny(),
+            wasm(),
+        ],
         Command::Hooks => vec![Action::Run(Step::new(
             "git",
             &["config", "core.hooksPath", ".githooks"],
@@ -48,7 +58,8 @@ fn lint() -> Action {
         "clippy",
         "--workspace",
         "--all-targets",
-        "--all-features",
+        "--features",
+        SSR_FEATURE,
         "--locked",
         "--",
         "-D",
@@ -60,7 +71,8 @@ fn test() -> Action {
     Action::Run(Step::cargo(&[
         "test",
         "--workspace",
-        "--all-features",
+        "--features",
+        SSR_FEATURE,
         "--locked",
     ]))
 }
@@ -84,7 +96,8 @@ fn coverage() -> Action {
         "--workspace",
         "--exclude",
         "xtask",
-        "--all-features",
+        "--features",
+        SSR_FEATURE,
         "--locked",
         "--fail-under-lines",
         COVERAGE_THRESHOLD,
@@ -95,30 +108,26 @@ fn deny() -> Action {
     Action::Run(Step::cargo(&["deny", "--locked", "check"]))
 }
 
-fn docker() -> Vec<Action> {
-    vec![
-        Action::Run(Step::new("docker", &["build", "--tag", IMAGE, "."])),
-        Action::Run(
-            Step::new(
-                "docker",
-                &[
-                    "run",
-                    "--rm",
-                    "--read-only",
-                    "--cap-drop=ALL",
-                    "--security-opt=no-new-privileges",
-                    "--network=none",
-                    "--user=65532:65532",
-                    "--pids-limit=16",
-                    "--memory=64m",
-                    "--cpus=1",
-                    IMAGE,
-                    "Docker",
-                ],
-            )
-            .expecting_stdout("Hello, Docker!"),
-        ),
-    ]
+fn wasm() -> Action {
+    Action::Run(Step::cargo(&[
+        "clippy",
+        "--package",
+        "crabbage",
+        "--lib",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--no-default-features",
+        "--features",
+        "hydrate",
+        "--locked",
+        "--",
+        "-D",
+        "warnings",
+    ]))
+}
+
+fn docker() -> Action {
+    Action::Run(Step::new("docker", &["build", "--tag", IMAGE, "."]))
 }
 
 #[cfg(test)]
@@ -166,23 +175,17 @@ mod tests {
     #[test]
     fn ci_covers_format_policy_lint_docs_tests_and_dependencies() {
         let lines = shell_lines(&Command::Ci);
-        assert_eq!(lines.len(), 6);
+        assert_eq!(lines.len(), 7);
         assert!(lines.contains(&"Policy".to_owned()));
-        for needle in ["fmt", "clippy", "cargo doc", "cargo test", "cargo deny"] {
-            assert!(lines.iter().any(|line| line.contains(needle)), "{needle}");
-        }
-    }
-
-    #[test]
-    fn docker_runs_without_privileges() {
-        let lines = shell_lines(&Command::Docker);
-        for flag in [
-            "--read-only",
-            "--cap-drop=ALL",
-            "--security-opt=no-new-privileges",
-            "--network=none",
+        for needle in [
+            "fmt",
+            "clippy",
+            "cargo doc",
+            "cargo test",
+            "cargo deny",
+            "wasm32",
         ] {
-            assert!(lines[1].contains(flag), "{flag}");
+            assert!(lines.iter().any(|line| line.contains(needle)), "{needle}");
         }
     }
 

@@ -5,7 +5,6 @@ pub(crate) struct Step {
     pub(crate) program: String,
     pub(crate) args: Vec<String>,
     pub(crate) env: Vec<(String, String)>,
-    pub(crate) expected_stdout: Option<String>,
 }
 
 impl Step {
@@ -14,7 +13,6 @@ impl Step {
             program: program.to_owned(),
             args: args.iter().map(|&arg| arg.to_owned()).collect(),
             env: Vec::new(),
-            expected_stdout: None,
         }
     }
 
@@ -24,11 +22,6 @@ impl Step {
 
     pub(crate) fn with_env(mut self, key: &str, value: &str) -> Self {
         self.env.push((key.to_owned(), value.to_owned()));
-        self
-    }
-
-    pub(crate) fn expecting_stdout(mut self, expected: &str) -> Self {
-        self.expected_stdout = Some(expected.to_owned());
         self
     }
 }
@@ -57,11 +50,5 @@ mod tests {
             step.to_string(),
             "RUSTDOCFLAGS=-D warnings cargo doc --no-deps"
         );
-    }
-
-    #[test]
-    fn records_expected_output() {
-        let step = Step::new("echo", &["hi"]).expecting_stdout("hi");
-        assert_eq!(step.expected_stdout.as_deref(), Some("hi"));
     }
 }

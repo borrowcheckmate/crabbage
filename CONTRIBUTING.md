@@ -33,7 +33,8 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 | `cargo xtask deny` | RustSec advisories, licenses, duplicate and wildcard deps, sources |
 | `cargo xtask policy` | Repository rules, see ARCHITECTURE.md |
 | `cargo xtask identity` | Anonymous git identity |
-| `cargo xtask docker` | Build image and smoke test it with least privileges |
+| `cargo xtask wasm` | Clippy on the WASM (hydrate) build, warnings denied |
+| `cargo xtask docker` | Build the container image |
 | `cargo xtask ci` | Everything CI runs except coverage and docker |
 
 ## Commits

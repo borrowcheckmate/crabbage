@@ -5,3 +5,4 @@ allow-unwrap-in-tests = true
 avoid-breaking-exported-api = false
 cognitive-complexity-threshold = 15
 too-many-lines-threshold = 60
+allowed-duplicate-crates = ["convert_case", "syn", "thiserror", "thiserror-impl"]
