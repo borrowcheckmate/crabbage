@@ -42,6 +42,8 @@ pub(crate) struct Draft {
     pub(crate) lines: RwSignal<Vec<LineSignals>>,
     /// The step rows, in order.
     pub(crate) steps: RwSignal<Vec<StepSignals>>,
+    /// The ids of the categories the recipe is filed under.
+    pub(crate) categories: RwSignal<Vec<i64>>,
     next_key: RwSignal<usize>,
 }
 
@@ -71,6 +73,11 @@ impl Draft {
                         .unwrap_or_default(),
                 })
                 .collect(),
+            categories: recipe
+                .categories
+                .iter()
+                .map(|category| category.id)
+                .collect(),
         })
     }
 
@@ -80,6 +87,7 @@ impl Draft {
             servings: RwSignal::new(draft.servings.clone()),
             lines: RwSignal::new(Vec::new()),
             steps: RwSignal::new(Vec::new()),
+            categories: RwSignal::new(draft.categories.clone()),
             next_key: RwSignal::new(0),
         };
         for line in &draft.lines {
@@ -123,6 +131,16 @@ impl Draft {
         self.steps.update(|rows| rows.retain(|row| row.key != key));
     }
 
+    /// Files the recipe under category `id`, or takes it out when `on` is false.
+    pub(crate) fn set_category(&self, id: i64, on: bool) {
+        self.categories.update(|ids| {
+            ids.retain(|&other| other != id);
+            if on {
+                ids.push(id);
+            }
+        });
+    }
+
     /// The draft as the form currently shows it.
     pub(crate) fn current(&self) -> RecipeDraft {
         RecipeDraft {
@@ -148,6 +166,7 @@ impl Draft {
                     minutes: row.minutes.get(),
                 })
                 .collect(),
+            categories: self.categories.get(),
         }
     }
 

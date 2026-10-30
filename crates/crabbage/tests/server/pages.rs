@@ -3,7 +3,7 @@
 
 use axum::http::StatusCode;
 
-use crabbage_store::catalog::{ingredients, sections};
+use crabbage_store::catalog::{categories, ingredients, sections};
 
 use crate::common::{Harness, body_text, session_token};
 
@@ -27,7 +27,12 @@ async fn admin_sees_the_ingredients_page() {
 async fn member_sees_the_not_allowed_message_on_admin_pages() {
     let harness = Harness::start("pages-member").await;
     let token = token_for(&harness, &[]).await;
-    for path in ["/admin/ingredients", "/admin/sections", "/admin/review"] {
+    for path in [
+        "/admin/ingredients",
+        "/admin/sections",
+        "/admin/categories",
+        "/admin/review",
+    ] {
         let response = harness.get(path, Some(&token)).await;
         assert_eq!(response.status(), StatusCode::OK, "{path}");
         let body = body_text(response).await;
@@ -45,6 +50,7 @@ async fn home_links_to_the_admin_pages_only_for_admins() {
     let admin = token_for(&harness, &["crabbage-admin"]).await;
     let body = body_text(harness.get("/", Some(&admin)).await).await;
     assert!(body.contains("href=\"/admin/ingredients\""), "{body}");
+    assert!(body.contains("href=\"/admin/categories\""), "{body}");
 
     let member = token_for(&harness, &[]).await;
     let body = body_text(harness.get("/", Some(&member)).await).await;
@@ -114,4 +120,17 @@ async fn sections_and_review_pages_list_their_rows() {
 
     let body = body_text(harness.get("/admin/review", Some(&token)).await).await;
     assert!(body.contains("Okra") && body.contains("Approve"), "{body}");
+}
+
+#[tokio::test]
+async fn categories_page_lists_the_categories_for_admins() {
+    let harness = Harness::start("pages-categories").await;
+    let token = token_for(&harness, &["crabbage-admin"]).await;
+    categories::create(&harness.pool, "Breakfast")
+        .await
+        .unwrap();
+    let body = body_text(harness.get("/admin/categories", Some(&token)).await).await;
+    assert!(body.contains("Categories</h1>"), "{body}");
+    assert!(body.contains("Breakfast"), "{body}");
+    assert!(!body.contains("not allowed"), "{body}");
 }

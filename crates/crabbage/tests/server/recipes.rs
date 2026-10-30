@@ -373,3 +373,84 @@ async fn every_member_sees_the_list_and_the_names_of_users_and_ingredients() {
     let (_, body) = call(&harness, &other, "ingredient_names", &[]).await;
     assert!(body.contains("Flour"), "{body}");
 }
+
+/// The draft of `title` filed under `categories`, as the form sends it.
+fn filed(title: &str, categories: &[i64]) -> String {
+    let mut value: Value = serde_json::from_str(&draft(title)).expect("draft is JSON");
+    value
+        .as_object_mut()
+        .expect("draft is an object")
+        .insert("categories".to_owned(), json!(categories));
+    value.to_string()
+}
+
+/// The names of the categories of a recipe record, in order.
+fn category_names(recipe: &Value) -> Vec<String> {
+    recipe["categories"]
+        .as_array()
+        .expect("categories are a list")
+        .iter()
+        .map(|category| category["name"].as_str().expect("a name").to_owned())
+        .collect()
+}
+
+#[tokio::test]
+async fn editors_file_a_recipe_under_any_number_of_categories() {
+    let harness = Harness::start("recipes-categories").await;
+    let breakfast = crabbage_store::catalog::categories::create(&harness.pool, "Breakfast")
+        .await
+        .unwrap();
+    let dinner = crabbage_store::catalog::categories::create(&harness.pool, "Dinner")
+        .await
+        .unwrap();
+    let owner = sign_in_as(&harness, OWNER, &[]).await;
+    let editor = sign_in_as(&harness, EDITOR, &[]).await;
+    let editor_id = user_id(&harness.pool, EDITOR).await;
+    let id = {
+        let (status, body) = call(
+            &harness,
+            &owner,
+            "create_recipe",
+            &[("draft", &filed("Pancakes", &[breakfast, dinner, 999]))],
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        body.trim().parse::<i64>().expect("the id is a number")
+    };
+    assert_eq!(
+        category_names(&view(&harness, &owner, id).await),
+        ["Breakfast", "Dinner"]
+    );
+
+    crabbage_store::recipes::add_editor(&harness.pool, id, editor_id)
+        .await
+        .unwrap();
+    let (status, body) = call(
+        &harness,
+        &editor,
+        "update_recipe",
+        &[
+            ("id", &id.to_string()),
+            ("draft", &filed("Pancakes", &[dinner])),
+        ],
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(
+        category_names(&view(&harness, &owner, id).await),
+        ["Dinner"]
+    );
+
+    let (status, body) = call(
+        &harness,
+        &editor,
+        "update_recipe",
+        &[("id", &id.to_string()), ("draft", &filed("Pancakes", &[]))],
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(
+        category_names(&view(&harness, &owner, id).await),
+        Vec::<String>::new()
+    );
+}

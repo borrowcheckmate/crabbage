@@ -2,6 +2,8 @@
 
 use sqlx::FromRow;
 
+use crate::catalog::categories::Category;
+
 /// A recipe to create or replace: its title, servings, ingredient lines and steps.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RecipeInput {
@@ -13,6 +15,8 @@ pub struct RecipeInput {
     pub lines: Vec<LineInput>,
     /// The steps, in order.
     pub steps: Vec<StepInput>,
+    /// The categories the recipe is filed under. Unknown ids are ignored.
+    pub category_ids: Vec<i64>,
 }
 
 /// An ingredient line to write.
@@ -59,6 +63,8 @@ pub struct Recipe {
     pub lines: Vec<RecipeLine>,
     /// The steps, in order.
     pub steps: Vec<RecipeStep>,
+    /// The categories the recipe is filed under, ordered by name.
+    pub categories: Vec<Category>,
 }
 
 /// An ingredient line as the store returns it.

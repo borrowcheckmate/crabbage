@@ -27,3 +27,12 @@ pub(crate) struct SectionRow {
     /// The place in the shopping order, from 0.
     pub(crate) position: i64,
 }
+
+/// A recipe category.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct CategoryRow {
+    /// The category's id.
+    pub(crate) id: i64,
+    /// The name.
+    pub(crate) name: String,
+}

@@ -1,6 +1,7 @@
 //! Recipes: the list, the recipe page, the form for new and changed recipes, and the server
 //! functions behind them.
 
+mod categories;
 #[cfg(feature = "ssr")]
 mod convert;
 #[cfg(feature = "ssr")]

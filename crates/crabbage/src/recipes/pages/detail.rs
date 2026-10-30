@@ -64,6 +64,7 @@ fn recipe_view(
         title,
         servings,
         owner_name,
+        categories,
         lines,
         steps,
         can_edit,
@@ -80,6 +81,9 @@ fn recipe_view(
         <h1>{title.clone()}</h1>
         <p>{servings}</p>
         <p>{owner}</p>
+        <div class="row">
+            {categories.into_iter().map(|category| view! { <span class="badge">{category.name}</span> }).collect_view()}
+        </div>
         <h2>{t("recipe.lines.heading")}</h2>
         <ul>{lines.iter().map(|line| view! { <li>{line_text(line, messages())}</li> }).collect_view()}</ul>
         <h2>{t("recipe.steps.heading")}</h2>

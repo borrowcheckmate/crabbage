@@ -3,6 +3,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::catalog::CategoryRow;
+
 /// A recipe as the list shows it.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct RecipeSummaryRow {
@@ -33,6 +35,8 @@ pub(crate) struct RecipeDetail {
     pub(crate) steps: Vec<StepRow>,
     /// The users who may edit the recipe.
     pub(crate) editors: Vec<PersonRow>,
+    /// The categories the recipe is filed under.
+    pub(crate) categories: Vec<CategoryRow>,
     /// Whether the signed-in user may change the recipe.
     pub(crate) can_edit: bool,
     /// Whether the signed-in user may delete the recipe.
@@ -85,6 +89,8 @@ pub(crate) struct RecipeDraft {
     pub(crate) lines: Vec<LineDraft>,
     /// The steps, in order.
     pub(crate) steps: Vec<StepDraft>,
+    /// The ids of the categories the recipe is filed under.
+    pub(crate) categories: Vec<i64>,
 }
 
 /// An ingredient line of a recipe form.

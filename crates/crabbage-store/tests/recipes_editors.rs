@@ -17,6 +17,7 @@ fn soup() -> RecipeInput {
         servings: 2,
         lines: vec![],
         steps: vec![],
+        category_ids: vec![],
     }
 }
 

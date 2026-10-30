@@ -55,19 +55,22 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `src/sessions.rs` | `create`, `find_user`, `delete`. Takes the raw token and stores only its SHA-256 hash |
 | `src/login_attempts.rs` | `create` and `take` for pending logins. `take` deletes the row; attempts expire after 10 minutes |
 | `src/households.rs` | `sync_membership` (one transaction per login: admin flag, households upserted by group name, memberships replaced, active household kept, cleared or defaulted to the first by group name), `households_of`, `active_household`, `set_active_household` (only for members) |
-| `src/catalog/mod.rs` | Declares `ingredients` and `sections` (both public) and the shared rules in `names.rs` |
+| `src/catalog/mod.rs` | Declares `categories`, `ingredients` and `sections` (all public) and the shared rules in `names.rs` |
 | `src/catalog/names.rs` | Maps unique violations to `Conflict`. A name is never an alias and an alias never a name, both case-insensitively; the checks run inside the store functions |
 | `src/catalog/ingredients.rs` | `Ingredient` with its aliases. `list`, `list_pending`, `create`, `rename`, `delete` (`InUse` while recipe lines use it), `add_alias`, `remove_alias`, `set_section`, `approve`, `merge` (one transaction: recipe lines and aliases move to the target, the source name becomes an alias of it, the source is deleted). Missing rows return `false` |
 | `src/catalog/sections.rs` | `Section`. `list` in position order, `create` at the end, `rename`, `delete` (ingredients keep their row and lose the section), `move_section` renumbers 0 to n-1 with the moved section at the new position |
+| `src/catalog/categories.rs` | `Category`. `list` by name, `create`, `rename`, `delete` (the category leaves every recipe it was filed under) |
 | `src/recipes/mod.rs` | Declares `model`, `write`, `read` and `editors`, and re-exports the public functions and records |
-| `src/recipes/model.rs` | `RecipeInput` (title, servings, `LineInput`s, `StepInput`s with `line_positions`) and what the store returns: `Recipe` (lines and steps in order, owner, editors), `RecipeLine`, `RecipeStep` (`line_ids`), `RecipeSummary`, `Person` |
-| `src/recipes/write.rs` | `create(pool, owner, input, now)`, `update(pool, id, input)` and `delete`. Create and update run in one transaction and replace lines and steps wholesale. An ingredient name matches a name or alias case-insensitively, and an unknown name creates an ingredient with `pending_review`. Blank names become no ingredient |
-| `src/recipes/read.rs` | `get` (`Option<Recipe>`), `list` (ordered by title) and `list_users` |
+| `src/recipes/model.rs` | `RecipeInput` (title, servings, `LineInput`s, `StepInput`s with `line_positions`, `category_ids`) and what the store returns: `Recipe` (lines and steps in order, owner, editors, `categories`), `RecipeLine`, `RecipeStep` (`line_ids`), `RecipeSummary`, `Person` |
+| `src/recipes/write.rs` | `create(pool, owner, input, now)`, `update(pool, id, input)` and `delete`. Create and update run in one transaction and replace categories, lines and steps wholesale. Unknown category ids are ignored. An ingredient name matches a name or alias case-insensitively, and an unknown name creates an ingredient with `pending_review`. Blank names become no ingredient |
+| `src/recipes/read.rs` | `get` (`Option<Recipe>`), `list(pool, category)` (ordered by title, only the recipes in `category` when it is `Some`) and `list_users` |
 | `src/recipes/editors.rs` | `add_editor` (false for a missing recipe or user; adding twice changes nothing) and `remove_editor` |
 | `migrations/` | SQL migrations, applied in file-name order |
 | `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
 | `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs`, `tests/households.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
 | `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines inserted with SQL), section ordering and renumbering |
+| `tests/catalog_categories.rs` | Category order by name, unique names regardless of case, rename, and delete taking the category off its recipes |
+| `tests/recipes_categories.rs` | Categories stored by name with unknown ids ignored, replaced on update, the list filtered by category |
 | `tests/recipes_round_trip.rs` | Lines and steps round-trip in order with step-line links, unknown ingredients created pending, alias and case-insensitive resolution, list order, `UnknownLine` |
 | `tests/recipes_update.rs` | Update replaces lines and steps, a missing recipe is unchanged, a bad link changes nothing |
 | `tests/recipes_editors.rs` | Editors added, listed and removed; missing recipe or user refused; user list by name |
@@ -82,6 +85,7 @@ Migrations:
 | `0003_active_household.sql` | `users.active_household_id` (set null when the household is deleted) |
 | `0004_catalog_and_recipes.sql` | `store_sections`, `ingredients` (`pending_review`), `ingredient_aliases` (cascade with the ingredient), `recipes`, `recipe_lines` (`ingredient_id` restricts deletes of used ingredients) |
 | `0005_recipe_details.sql` | `recipe_editors`, `steps` (position, text, optional duration), `step_lines` (step to line), `ratings` and `favourites` (schema for #16; they cascade with the recipe) |
+| `0006_categories.sql` | `categories` (unique name regardless of case), `recipe_categories` (cascade with the recipe and the category) |
 
 Migrations are embedded at compile time by `sqlx::migrate!()`. To add one, create `migrations/NNNN_description.sql` with the next number. Never edit an applied migration; add a new one. Tables are `STRICT`.
 
@@ -103,11 +107,11 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/access.rs` (`ssr`) | `signed_in` (the pool and the session user id), `role` (the `Role` of a user), `require_admin` (the pool, or a 403), `refuse` (sets 403 and returns the error with its message, shared by every refusal), `store_failure`, `clean` (trimmed, non-empty), `ensure_found` |
 | `src/notice.rs` | How pages show a failed action or load: `failure`, `error_notice` (`.notice.error`), `message` |
 | `src/route.rs` | `route_id`: the `:id` of the current route as a number, or `None`. Used by the recipe and ingredient pages |
-| `src/app.rs` | `App`: the `Router` with `/` (home: the recipes link for everyone, admin links for admins), `/admin/ingredients`, `/admin/ingredients/:id`, `/admin/sections`, `/admin/review`, `/recipes`, `/recipes/new`, `/recipes/:id` and `/recipes/:id/edit`, and the sign-out button (`.secondary`). `shell` is the HTML document |
+| `src/app.rs` | `App`: the `Router` with `/` (home: the recipes link for everyone, admin links for admins), `/admin/ingredients`, `/admin/ingredients/:id`, `/admin/sections`, `/admin/categories`, `/admin/review`, `/recipes`, `/recipes/new`, `/recipes/:id` and `/recipes/:id/edit`, and the sign-out button (`.secondary`). `shell` is the HTML document |
 | `src/user.rs` | `current_user` server function: `SignedInUser` (name and `is_admin`) |
-| `src/catalog/` | Catalog server functions and their records, see below. `types.rs` holds `IngredientRow` and `SectionRow` (both builds), `convert.rs` the store conversions (`ssr`) |
+| `src/catalog/` | Catalog server functions and their records, see below. `categories.rs` holds the admin endpoints for recipe categories. `types.rs` holds `IngredientRow` and `SectionRow` (both builds), `convert.rs` the store conversions (`ssr`) |
 | `src/recipes/` | Recipes: server functions, records and pages, see below |
-| `src/admin/` | The admin pages: `ingredients/` (`list.rs`: the add form, the search on `q` and one row link per ingredient; `detail.rs`: one ingredient's rename, alternative names, store section, merge and delete, with merge and delete asking first through `?confirm=`), `sections.rs`, `review.rs`, each showing a not-allowed message to non-admins. `mod.rs` declares them and re-exports the pages |
+| `src/admin/` | The admin pages: `ingredients/` (`list.rs`: the add form, the search on `q` and one row link per ingredient; `detail.rs`: one ingredient's rename, alternative names, store section, merge and delete, with merge and delete asking first through `?confirm=`), `sections.rs`, `categories.rs` (add, and a card per category with rename and delete), `review.rs`, each showing a not-allowed message to non-admins. `mod.rs` declares them and re-exports the pages |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
 | `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
 
@@ -133,9 +137,10 @@ Pages get their look from `style/main.css` and never from inline styles. Use the
 
 | Class | Use |
 | --- | --- |
-| `.card` | A bordered section: a store section or review row, or a question with its buttons |
+| `.card` | A bordered section: a store section, category or review row, or a question with its buttons |
 | `.ingredient-list` | The ingredient list: one bordered box with a divider between rows, each row a `.ingredient-row` link of at least 44px |
-| `.badge` | A small rounded tag, such as Waiting for review |
+| `.badge` | A small rounded tag, such as Waiting for review or a recipe's category |
+| `.filters` | The category filter links above the recipe list, each at least 44px tall |
 | `.row` | A horizontal group that wraps, such as the up and down buttons of a section |
 | `.notice`, `.notice.error` | A status message; `.error` for failed actions, failed loads and the not-allowed message |
 | `.nav` | The home page admin links as large tappable blocks |
@@ -181,15 +186,15 @@ Form encoding: the recipe form sends one hidden field, `draft`, holding the whol
 
 | Module | Responsibility |
 | --- | --- |
-| `types.rs` | `RecipeSummaryRow`, `RecipeDetail` (with the three rights), `LineRow`, `StepRow`, `PersonRow` and the draft records `RecipeDraft`, `LineDraft`, `StepDraft` (text as typed) |
+| `types.rs` | `RecipeSummaryRow`, `RecipeDetail` (with its categories and the three rights), `LineRow`, `StepRow`, `PersonRow` and the draft records `RecipeDraft` (with the category ids), `LineDraft`, `StepDraft` (text as typed) |
 | `units.rs` | `unit_text(messages, symbol)`: the word of a unit from its `unit.*` locale key (`g`, `tl`, `a pinch`, ...). Unknown symbols show as typed |
 | `line_text.rs` | `line_text(line, messages)`: a line's readable text. A count shows no unit word (`2 Egg`), a unitless unit follows the ingredient (`Salt, to taste`), the note follows after a comma. Numbers keep at most two decimals without trailing zeros, with the `number.decimal` locale separator |
-| `list.rs`, `read.rs`, `write.rs`, `editors.rs`, `ingredients.rs` | Server functions: `list_recipes`, `get_recipe`, `create_recipe`, `update_recipe`, `delete_recipe`, `add_recipe_editor`, `remove_recipe_editor`, `list_users` (any signed-in user, for the editor choice) and `ingredient_names` (any signed-in user, for the ingredient suggestions) |
+| `list.rs`, `read.rs`, `write.rs`, `editors.rs`, `ingredients.rs`, `categories.rs` | Server functions: `list_recipes(category)`, `get_recipe`, `create_recipe`, `update_recipe`, `delete_recipe`, `add_recipe_editor`, `remove_recipe_editor`, `list_users` (any signed-in user, for the editor choice), `ingredient_names` (any signed-in user, for the ingredient suggestions) and `list_recipe_categories` (any signed-in user, for the filter and the form) |
 | `rights.rs` (`ssr`) | `Rights::of` and `permit` (the rule per change), `load` (the recipe or the missing-item error) |
 | `convert.rs` (`ssr`) | Store records to the page records |
 | `draft.rs` (`ssr`) | `parse`: JSON to `RecipeInput`, with the validation: a non-empty title, servings of at least 1, amounts finite and not negative, a unit that is a `Unit` symbol, step text and whole minutes of at least 1 |
-| `pages/` | `RecipesPage` (the list, a card per recipe, New recipe), `RecipePage` (the view, Edit when allowed, Delete when allowed and only after `?confirm=delete` asks the question), `RecipeNewPage` and `RecipeEditPage` (the form; the edit page also shows `EditorsSection` to owners and admins). The id comes from `src/route.rs` |
-| `pages/form/` | `draft.rs` (the signals and the JSON), `fields.rs` (`DraftFields`: title, servings, ingredient rows with a unit select and a datalist of the known names, step rows with a text area and minutes; "Add" buttons append rows and "Remove" buttons drop them), `page.rs` (the two pages) |
+| `pages/` | `RecipesPage` (the category filter links with the active one marked `aria-current`, a card per recipe in the `category` query value, New recipe), `RecipePage` (the view with its categories as badges, Edit when allowed, Delete when allowed and only after `?confirm=delete` asks the question), `RecipeNewPage` and `RecipeEditPage` (the form; the edit page also shows `EditorsSection` to owners and admins). The id comes from `src/route.rs` |
+| `pages/form/` | `draft.rs` (the signals and the JSON), `fields.rs` (`DraftFields`: title, servings, ingredient rows with a unit select and a datalist of the known names, step rows with a text area and minutes; "Add" buttons append rows and "Remove" buttons drop them; `CategoryBoxes`: a checkbox per category), `page.rs` (the two pages) |
 | `pages/editor_list.rs` | The editors of a recipe. Add and remove return the new list, which the section shows in place, so the form on the page keeps what was typed |
 
 Each page loads its data in one `<Suspense>` returning `Suspend`. The step-to-line links (`step_lines`) are read and written by the store but the form does not edit them yet (#20); saving a recipe from the form therefore replaces its steps without links.
@@ -206,12 +211,12 @@ Pages load data in one `<Suspense>` whose closure returns a `Suspend` future tha
 | `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce), the stored name (`name`, `preferred_username`, subject, changes on the next login) |
 | `tests/server/session.rs` | Logout deletes the row and clears the cookie; expired and unknown sessions require a new login |
 | `tests/server/household.rs` | Group claims on login (admin, households, changes on the next login), switching the active household, 403 for non-members, a user without households |
-| `tests/server/catalog.rs` | Admin create, rename and delete; members refused on every endpoint with 403; alias uniqueness through the API; sections created and reordered; the review queue; merge through the API |
-| `tests/server/recipes.rs` | Recipe endpoints: a member creates and gets a recipe back, another member views but gets 403 on change, a listed editor changes but not deletes or manages editors, a removed editor is refused, an admin changes and deletes anyone's, invalid input is refused in words (English and Dutch), the list and the user and ingredient names |
-| `tests/server/recipe_pages.rs` | The list, a recipe page with lines and numbered steps (`2 Egg`, `Salt, to taste`), a Dutch recipe page with decimal commas and Dutch unit words, Edit and Delete links for the users who may use them, the delete question with `?confirm=delete` and no delete form without it, the new and edit forms, the editors section for owners and admins, the missing recipe |
+| `tests/server/catalog.rs` | Admin create, rename and delete; members refused on every endpoint with 403; alias uniqueness through the API; sections created and reordered; categories created, renamed and deleted, a taken name refused; the review queue; merge through the API |
+| `tests/server/recipes.rs` | Recipe endpoints: a member creates and gets a recipe back, another member views but gets 403 on change, a listed editor changes but not deletes or manages editors, a removed editor is refused, an admin changes and deletes anyone's, invalid input is refused in words (English and Dutch), the list and the user and ingredient names, editors filing a recipe under zero or more categories |
+| `tests/server/recipe_pages.rs` | The list and its category filter (only the chosen category, the active link marked, the empty text for an unknown category), a recipe page with lines, numbered steps (`2 Egg`, `Salt, to taste`) and category badges, the new and edit forms with a checkbox per category (checked for the recipe's own), a Dutch recipe page with decimal commas and Dutch unit words, Edit and Delete links for the users who may use them, the delete question with `?confirm=delete` and no delete form without it, the editors section for owners and admins, the missing recipe |
 | `tests/server/ingredient_pages.rs` | The ingredient list rows (one link each, no actions), the search by name and alias (case-insensitive, no-match text), the detail actions, the not-found text, the not-allowed message for members, and the delete and merge questions shown only with `?confirm=delete` and `?confirm=merge` |
-| `tests/server/screenshots.rs` | Ignored. Writes the rendered pages, including a sample recipe, its delete question and the ingredient pages, to `CRABBAGE_SCREENSHOT_DIR` for review screenshots, with `style/main.css` copied beside them and the link made relative so a `file://` view is styled |
-| `tests/server/pages.rs` | Admin pages render for admins, show the not-allowed message to members, the ingredient list's sections, alternative-name counts and pending badge, and the home page links to them for admins only |
+| `tests/server/screenshots.rs` | Ignored. Writes the rendered pages, including a sample recipe filed under Breakfast, its delete question, the categories and the filtered list, and the ingredient pages, to `CRABBAGE_SCREENSHOT_DIR` for review screenshots, with `style/main.css` copied beside them and the link made relative so a `file://` view is styled |
+| `tests/server/pages.rs` | Admin pages render for admins (the categories page lists them), show the not-allowed message to members, the ingredient list's sections, alternative-name counts and pending badge, and the home page links to them for admins only |
 | `tests/server/common/` | `Harness`: the router on a temp database, and `issuer.rs`, a fake provider on 127.0.0.1 with a runtime-generated RSA key (discovery, JWKS, token endpoint). Its ID token carries the nonce and the `groups` claim the test sets |
 | `tests/server/discovery.rs` | Lazy discovery: with an unreachable provider sign-in is 503, and once the provider listens on the same address it is 303 |
 | `tests/binary.rs` | Runs the server binary: missing config vars and invalid `LEPTOS_SITE_ADDR` or an address already in use exit with an error. With an unreachable issuer the server runs: `/healthz` is 200 and `/auth/login` is 503. Each run uses its own temp `CRABBAGE_DATA_DIR`, and the server process is killed when the test ends |

@@ -27,6 +27,7 @@ async fn delete_removes_everything_that_belongs_to_the_recipe() {
     let input = RecipeInput {
         title: "Soup".to_owned(),
         servings: 2,
+        category_ids: vec![],
         lines: vec![LineInput {
             amount: Some(1.0),
             unit: Some("piece".to_owned()),

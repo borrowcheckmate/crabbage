@@ -5,6 +5,7 @@ use axum::http::StatusCode;
 
 use crate::common::{Harness, body_text, sign_in_as};
 use crate::recipes::create;
+use crabbage_store::catalog::categories;
 use crabbage_store::recipes::{LineInput, RecipeInput};
 
 const OWNER: &str = "owner";
@@ -92,6 +93,7 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
             },
         ],
         steps: Vec::new(),
+        category_ids: Vec::new(),
     };
     let id = crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
         .await
@@ -219,4 +221,113 @@ async fn an_unknown_recipe_says_it_does_not_exist() {
     let member = sign_in_as(&harness, OWNER, &[]).await;
     let body = page(&harness, &member, "/recipes/999").await;
     assert!(body.contains("does not exist"), "{body}");
+}
+
+/// Stores a recipe owned by the owner, filed under `category_ids`, and returns its id.
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+async fn filed_recipe(harness: &Harness, title: &str, category_ids: Vec<i64>) -> i64 {
+    let owner_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")
+        .bind(OWNER)
+        .fetch_one(&harness.pool)
+        .await
+        .expect("the user exists");
+    let input = RecipeInput {
+        title: title.to_owned(),
+        servings: 2,
+        lines: Vec::new(),
+        steps: Vec::new(),
+        category_ids,
+    };
+    crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
+        .await
+        .expect("recipe is stored")
+}
+
+#[tokio::test]
+async fn the_list_shows_only_the_chosen_category_and_marks_it() {
+    let harness = Harness::start("recipe-pages-filter").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    let breakfast = categories::create(&harness.pool, "Breakfast")
+        .await
+        .unwrap();
+    let dinner = categories::create(&harness.pool, "Dinner").await.unwrap();
+    filed_recipe(&harness, "Pancakes", vec![breakfast]).await;
+    filed_recipe(&harness, "Roast", vec![dinner]).await;
+
+    let body = page(&harness, &member, &format!("/recipes?category={breakfast}")).await;
+    assert!(body.contains("Pancakes</a>"), "{body}");
+    assert!(!body.contains("Roast</a>"), "{body}");
+    assert_eq!(body.matches("aria-current=\"page\"").count(), 1, "{body}");
+    assert!(
+        body.contains(&format!(
+            "<a href=\"/recipes?category={breakfast}\" aria-current=\"page\""
+        )),
+        "{body}"
+    );
+    assert!(
+        body.contains(&format!("href=\"/recipes?category={dinner}\"")),
+        "{body}"
+    );
+
+    let body = page(&harness, &member, "/recipes").await;
+    assert!(body.contains("Pancakes</a>"), "{body}");
+    assert!(body.contains("Roast</a>"), "{body}");
+    assert!(
+        body.contains("<a href=\"/recipes\" aria-current=\"page\""),
+        "{body}"
+    );
+}
+
+#[tokio::test]
+async fn an_unknown_category_shows_the_empty_text() {
+    let harness = Harness::start("recipe-pages-unknown-category").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    filed_recipe(&harness, "Pancakes", vec![]).await;
+    let body = page(&harness, &member, "/recipes?category=999").await;
+    assert!(body.contains("No recipes in this category."), "{body}");
+    assert!(!body.contains("Pancakes</a>"), "{body}");
+}
+
+#[tokio::test]
+async fn a_recipe_page_shows_its_categories_as_badges() {
+    let harness = Harness::start("recipe-pages-badges").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    let breakfast = categories::create(&harness.pool, "Breakfast")
+        .await
+        .unwrap();
+    categories::create(&harness.pool, "Dinner").await.unwrap();
+    let id = filed_recipe(&harness, "Pancakes", vec![breakfast]).await;
+
+    let body = page(&harness, &member, &format!("/recipes/{id}")).await;
+    assert!(
+        body.contains("<span class=\"badge\">Breakfast</span>"),
+        "{body}"
+    );
+    assert!(!body.contains("Dinner"), "{body}");
+}
+
+#[tokio::test]
+async fn the_forms_offer_a_checkbox_per_category_checked_for_the_recipe() {
+    let harness = Harness::start("recipe-pages-category-boxes").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    let breakfast = categories::create(&harness.pool, "Breakfast")
+        .await
+        .unwrap();
+    categories::create(&harness.pool, "Dinner").await.unwrap();
+    let id = filed_recipe(&harness, "Pancakes", vec![breakfast]).await;
+
+    let body = page(&harness, &member, "/recipes/new").await;
+    assert!(body.contains("Categories</legend>"), "{body}");
+    assert!(body.contains("type=\"checkbox\""), "{body}");
+    assert!(body.contains("Dinner"), "{body}");
+
+    let body = page(&harness, &member, &format!("/recipes/{id}/edit")).await;
+    assert!(
+        body.contains(&format!("value=\"{breakfast}\" checked")),
+        "{body}"
+    );
+    assert!(body.contains("Dinner"), "{body}");
 }
