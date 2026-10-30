@@ -2,3 +2,4 @@
 
 pub mod membership;
 pub mod quantity;
+pub mod scaling;
