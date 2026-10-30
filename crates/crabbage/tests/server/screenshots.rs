@@ -46,6 +46,7 @@ async fn write_pages() {
         .expect("pending ingredient");
 
     harness.issuer.set_groups(&[]);
+    harness.issuer.set_name(Some("Sam Baker"));
     session_token(&harness.sign_in().await).expect("sign-in sets a session");
     let owner = harness.user_id().await;
     let recipe = create(&harness.pool, owner, &sample_recipe(), 0)
@@ -106,7 +107,7 @@ async fn write_pages() {
     }
 }
 
-/// A recipe with three lines and three steps, owned by the member who signs in first.
+/// A recipe with four lines and three steps, owned by the member who signs in first.
 fn sample_recipe() -> RecipeInput {
     let line =
         |amount: Option<f64>, unit: Option<&str>, ingredient: &str, note: Option<&str>| LineInput {
@@ -122,6 +123,7 @@ fn sample_recipe() -> RecipeInput {
             line(Some(250.0), Some("g"), "Flour", Some("sifted")),
             line(Some(2.0), Some("piece"), "Egg", None),
             line(None, Some("to taste"), "Salt", None),
+            line(Some(0.5), Some("tsp"), "Vanilla extract", None),
         ],
         steps: vec![
             StepInput {

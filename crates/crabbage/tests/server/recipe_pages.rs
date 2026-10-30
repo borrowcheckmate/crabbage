@@ -5,6 +5,7 @@ use axum::http::StatusCode;
 
 use crate::common::{Harness, body_text, sign_in_as};
 use crate::recipes::create;
+use crabbage_store::recipes::{LineInput, RecipeInput};
 
 const OWNER: &str = "owner";
 const OTHER: &str = "other";
@@ -48,13 +49,60 @@ async fn a_recipe_page_shows_its_lines_and_numbered_steps() {
     let body = page(&harness, &owner, &format!("/recipes/{id}")).await;
     assert!(body.contains("Pancakes</h1>"), "{body}");
     for expected in [
-        "250 g Flour (sifted)",
-        "2 piece Egg",
-        "to taste Salt",
+        "250 g Flour, sifted",
+        "<li>2 Egg</li>",
+        "<li>Salt, to taste</li>",
         "<ol>",
         "Whisk the eggs",
         "2 min",
         "Fry until golden",
+    ] {
+        assert!(body.contains(expected), "{expected}: {body}");
+    }
+    assert!(!body.contains("piece"), "{body}");
+}
+
+#[tokio::test]
+async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
+    let harness = Harness::start_with_language("recipe-pages-nl", Some("nl")).await;
+    let owner = sign_in_as(&harness, OWNER, &[]).await;
+    let owner_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")
+        .bind(OWNER)
+        .fetch_one(&harness.pool)
+        .await
+        .expect("the user exists");
+    let line = |amount: f64, unit: &str, ingredient: &str| LineInput {
+        amount: Some(amount),
+        unit: Some(unit.to_owned()),
+        ingredient: Some(ingredient.to_owned()),
+        note: None,
+    };
+    let input = RecipeInput {
+        title: "Pannenkoeken".to_owned(),
+        servings: 4,
+        lines: vec![
+            line(1.25, "tbsp", "Suiker"),
+            line(0.5, "tsp", "Vanille"),
+            line(2.0, "piece", "Ei"),
+            LineInput {
+                amount: None,
+                unit: Some("to taste".to_owned()),
+                ingredient: Some("Zout".to_owned()),
+                note: None,
+            },
+        ],
+        steps: Vec::new(),
+    };
+    let id = crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
+        .await
+        .expect("recipe is stored");
+
+    let body = page(&harness, &owner, &format!("/recipes/{id}")).await;
+    for expected in [
+        "1,25 el Suiker",
+        "0,5 tl Vanille",
+        "2 Ei",
+        "Zout, naar smaak",
     ] {
         assert!(body.contains(expected), "{expected}: {body}");
     }

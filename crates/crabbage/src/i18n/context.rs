@@ -8,15 +8,20 @@ pub(crate) fn current_language() -> Language {
     use_context::<Language>().unwrap_or(Language::En)
 }
 
+/// The messages of the current language.
+pub(crate) fn messages() -> &'static Messages {
+    Messages::for_language(current_language())
+}
+
 /// The text of the message `key` in the current language.
 pub(crate) fn t(key: &'static str) -> &'static str {
-    Messages::for_language(current_language()).get(key)
+    messages().get(key)
 }
 
 /// The text of the message `key` in the current language, with each `{name}` replaced by the value
 /// paired with `name` in `args`.
 pub(crate) fn t_with(key: &str, args: &[(&str, &str)]) -> String {
-    Messages::for_language(current_language()).format(key, args)
+    messages().format(key, args)
 }
 
 /// The language the server rendered the page in, from the `lang` attribute of the document

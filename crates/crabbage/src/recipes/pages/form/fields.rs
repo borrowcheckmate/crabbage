@@ -6,7 +6,7 @@ use leptos::prelude::event_target_value;
 use leptos::prelude::*;
 
 use super::draft::{Draft, LineSignals, StepSignals};
-use crate::i18n::t;
+use crate::i18n::{messages, t};
 use crate::recipes::types::{LineDraft, StepDraft};
 use crate::recipes::units::unit_text;
 
@@ -46,7 +46,7 @@ fn line_row(draft: Draft, line: LineSignals) -> impl IntoView {
                 <select on:change=move |ev| line.unit.set(event_target_value(&ev))>
                     <option value="" selected=move || line.unit.get().is_empty()>{t("recipe.unit.none")}</option>
                     {Unit::ALL.into_iter().map(|unit| view! {
-                        <option value=unit.symbol() selected=move || line.unit.get() == unit.symbol()>{unit_text(unit.symbol())}</option>
+                        <option value=unit.symbol() selected=move || line.unit.get() == unit.symbol()>{unit_text(messages(), unit.symbol())}</option>
                     }).collect_view()}
                 </select>
             </label>

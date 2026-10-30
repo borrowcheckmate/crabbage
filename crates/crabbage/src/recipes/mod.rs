@@ -7,6 +7,7 @@ mod convert;
 mod draft;
 mod editors;
 mod ingredients;
+mod line_text;
 mod list;
 mod pages;
 mod read;
