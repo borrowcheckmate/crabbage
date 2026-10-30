@@ -204,6 +204,13 @@ pub(crate) fn cookie_value(response: &Response<Body>, name: &str) -> Option<Stri
         .map(str::to_owned)
 }
 
+/// Signs in as the user with `subject` and `groups`, and returns their session token.
+pub(crate) async fn sign_in_as(harness: &Harness, subject: &str, groups: &[&str]) -> String {
+    harness.issuer.set_subject(subject);
+    harness.issuer.set_groups(groups);
+    session_token(&harness.sign_in().await).expect("sign-in sets a session")
+}
+
 /// The session token the response sets, if any.
 pub(crate) fn session_token(response: &Response<Body>) -> Option<String> {
     cookie_value(response, SESSION_COOKIE)

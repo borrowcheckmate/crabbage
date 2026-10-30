@@ -5,6 +5,7 @@ use leptos_router::path;
 
 use crate::admin::{IngredientsPage, ReviewPage, SectionsPage};
 use crate::i18n::{current_language, t};
+use crate::recipes::{RecipeEditPage, RecipeNewPage, RecipePage, RecipesPage};
 use crate::user::current_user;
 
 /// The root component of the app: the routes and the sign-out button.
@@ -20,6 +21,10 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/admin/ingredients") view=IngredientsPage/>
                     <Route path=path!("/admin/sections") view=SectionsPage/>
                     <Route path=path!("/admin/review") view=ReviewPage/>
+                    <Route path=path!("/recipes") view=RecipesPage/>
+                    <Route path=path!("/recipes/new") view=RecipeNewPage/>
+                    <Route path=path!("/recipes/:id") view=RecipePage/>
+                    <Route path=path!("/recipes/:id/edit") view=RecipeEditPage/>
                 </Routes>
                 <form method="post" action="/auth/logout">
                     <button class="secondary">{t("app.sign_out")}</button>
@@ -29,23 +34,23 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// The home page. Admins also get links to the admin pages.
+/// The home page: the recipes for everyone, and the admin pages for admins.
 #[component]
 fn Home() -> impl IntoView {
     view! {
         <h1>{t("app.title")}</h1>
         <Suspense fallback=|| ()>
             {move || Suspend::new(async move {
-                match current_user().await {
-                    Ok(user) if user.is_admin => view! {
-                        <nav class="nav">
+                let is_admin = matches!(current_user().await, Ok(user) if user.is_admin);
+                view! {
+                    <nav class="nav">
+                        <a href="/recipes">{t("recipes.nav")}</a>
+                        {is_admin.then(|| view! {
                             <a href="/admin/ingredients">{t("admin.nav.ingredients")}</a>
                             <a href="/admin/sections">{t("admin.nav.sections")}</a>
                             <a href="/admin/review">{t("admin.nav.review")}</a>
-                        </nav>
-                    }
-                    .into_any(),
-                    Ok(_) | Err(_) => ().into_any(),
+                        })}
+                    </nav>
                 }
             })}
         </Suspense>

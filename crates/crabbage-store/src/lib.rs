@@ -5,6 +5,7 @@ mod error;
 pub mod households;
 pub mod login_attempts;
 mod pool;
+pub mod recipes;
 pub mod sessions;
 pub mod users;
 

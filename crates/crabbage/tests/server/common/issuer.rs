@@ -35,10 +35,13 @@ fn signing_key() -> &'static CoreRsaPrivateSigningKey {
     })
 }
 
-#[derive(Default)]
+/// The subject of the user who signs in unless a test chooses another with `set_subject`.
+const DEFAULT_SUBJECT: &str = "subject-1";
+
 struct Expectations {
     nonce: Option<String>,
     groups: Vec<String>,
+    subject: String,
 }
 
 /// A running fake provider. Its ID tokens carry the nonce set with [`FakeIssuer::expect_nonce`].
@@ -64,7 +67,11 @@ impl FakeIssuer {
         let address = listener.local_addr().expect("address is known");
         let issuer = Self {
             url: format!("http://{address}/"),
-            expectations: Arc::new(Mutex::new(Expectations::default())),
+            expectations: Arc::new(Mutex::new(Expectations {
+                nonce: None,
+                groups: Vec::new(),
+                subject: DEFAULT_SUBJECT.to_owned(),
+            })),
         };
         let router = Router::new()
             .route("/.well-known/openid-configuration", get(discovery))
@@ -93,16 +100,25 @@ impl FakeIssuer {
             groups.iter().map(|group| (*group).to_owned()).collect();
     }
 
+    /// Makes the next ID tokens belong to the user with `subject`, a user of their own.
+    pub(crate) fn set_subject(&self, subject: &str) {
+        subject.clone_into(&mut self.expectations.lock().expect("not poisoned").subject);
+    }
+
     fn id_token(&self) -> String {
-        let (nonce, groups) = {
+        let (nonce, groups, subject) = {
             let expectations = self.expectations.lock().expect("not poisoned");
-            (expectations.nonce.clone(), expectations.groups.clone())
+            (
+                expectations.nonce.clone(),
+                expectations.groups.clone(),
+                expectations.subject.clone(),
+            )
         };
         let now = 1_900_000_000_u64;
         let header = json!({ "alg": "RS256", "kid": KEY_ID, "typ": "JWT" });
         let payload = json!({
             "iss": self.url,
-            "sub": "subject-1",
+            "sub": subject,
             "aud": CLIENT_ID,
             "exp": now + 3600,
             "iat": now,

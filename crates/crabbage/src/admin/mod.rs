@@ -1,7 +1,6 @@
 //! The admin pages: ingredients, store sections and the review queue.
 
 mod ingredients;
-mod notice;
 mod review;
 mod sections;
 

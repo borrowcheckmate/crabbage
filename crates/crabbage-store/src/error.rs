@@ -15,6 +15,8 @@ pub enum StoreError {
     Conflict(String),
     /// The ingredient is used by recipe lines and cannot be deleted.
     InUse,
+    /// A step links to a line position that the recipe does not have.
+    UnknownLine,
 }
 
 impl Display for StoreError {
@@ -25,6 +27,7 @@ impl Display for StoreError {
             Self::Migrate(error) => write!(f, "cannot run the migrations: {error}"),
             Self::Conflict(text) => write!(f, "`{text}` is already a name or alias"),
             Self::InUse => write!(f, "the ingredient is used by recipes"),
+            Self::UnknownLine => write!(f, "a step links to a line the recipe does not have"),
         }
     }
 }
@@ -35,7 +38,7 @@ impl Error for StoreError {
             Self::Io(error) => Some(error),
             Self::Database(error) => Some(error),
             Self::Migrate(error) => Some(error),
-            Self::Conflict(_) | Self::InUse => None,
+            Self::Conflict(_) | Self::InUse | Self::UnknownLine => None,
         }
     }
 }
