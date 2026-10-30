@@ -12,8 +12,12 @@ pub use app::{App, shell};
 #[cfg(feature = "ssr")]
 mod config;
 
+mod i18n;
+
 #[cfg(feature = "ssr")]
-pub use config::{AiConfig, Config, ConfigError, Language};
+pub use config::{AiConfig, Config, ConfigError};
+
+pub use i18n::Language;
 
 #[cfg(feature = "ssr")]
 mod auth;
@@ -34,11 +38,19 @@ pub use server::router;
 mod state;
 
 #[cfg(feature = "hydrate")]
+use i18n::document_language;
+#[cfg(feature = "hydrate")]
+use leptos::prelude::provide_context;
+#[cfg(feature = "hydrate")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-/// Hydrates the server-rendered page in the browser.
+/// Hydrates the server-rendered page in the browser, in the language the server rendered it in.
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen]
 pub fn hydrate() {
-    leptos::mount::hydrate_body(App);
+    let language = document_language();
+    leptos::mount::hydrate_body(move || {
+        provide_context(language);
+        App()
+    });
 }

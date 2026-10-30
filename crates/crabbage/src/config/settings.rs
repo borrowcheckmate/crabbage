@@ -5,17 +5,9 @@ use url::Url;
 
 use super::ConfigError;
 use super::vars::Vars;
+use crate::i18n::Language;
 
 const REDACTED: &str = "<redacted>";
-
-/// The language of the app's text.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Language {
-    /// English.
-    En,
-    /// Dutch.
-    Nl,
-}
 
 /// The AI service settings. Present only when AI features are enabled.
 pub struct AiConfig {

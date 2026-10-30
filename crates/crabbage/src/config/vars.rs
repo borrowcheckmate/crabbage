@@ -1,7 +1,8 @@
 use url::Url;
 
 use super::error::Problem;
-use super::settings::{AiConfig, Language};
+use super::settings::AiConfig;
+use crate::i18n::Language;
 
 pub(super) struct Vars<F> {
     lookup: F,
@@ -44,17 +45,17 @@ impl<F: Fn(&str) -> Option<String>> Vars<F> {
     }
 
     pub(super) fn language(&mut self) -> Option<Language> {
-        match self.get("CRABBAGE_LANGUAGE").as_deref() {
-            None | Some("en") => Some(Language::En),
-            Some("nl") => Some(Language::Nl),
-            Some(other) => {
-                self.problems.push(Problem::Invalid {
-                    name: "CRABBAGE_LANGUAGE",
-                    reason: format!("expected en or nl, not {other}"),
-                });
-                None
-            }
+        let Some(code) = self.get("CRABBAGE_LANGUAGE") else {
+            return Some(Language::En);
+        };
+        let language = Language::from_code(&code);
+        if language.is_none() {
+            self.problems.push(Problem::Invalid {
+                name: "CRABBAGE_LANGUAGE",
+                reason: format!("expected en or nl, not {code}"),
+            });
         }
+        language
     }
 
     /// Returns `None` when AI is disabled and when its settings are invalid; the problems say which.

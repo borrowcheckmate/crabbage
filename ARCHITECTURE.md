@@ -66,13 +66,30 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | Module | Responsibility |
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports, and the `hydrate` entry point for the browser |
-| `src/app.rs` | `App` component (title and heading) and `shell`, the HTML document around it |
-| `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
-| `src/state.rs` (`ssr`) | `AppState`: leptos options, pool, HTTP client, the OIDC client, and the admin group and household prefix used on login. `FromRef` gives leptos_axum its `LeptosOptions` |
+| `src/app.rs` | `App` component (title, heading and sign-out button, all from `t`) and `shell`, the HTML document around it. `shell` sets `<html lang>` from the render's language |
+| `src/i18n/` | Translated text, see below. Compiled for both `ssr` and `hydrate` |
+| `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `CRABBAGE_LANGUAGE` is parsed into `i18n::Language`. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
+| `src/state.rs` (`ssr`) | `AppState`: leptos options, pool, HTTP client, the OIDC client, the admin group and household prefix used on login, and the language. `FromRef` gives leptos_axum its `LeptosOptions` |
 | `src/household.rs` (`ssr`) | `POST /household` (form field `household_id`): sets the signed-in user's active household. 303 to `/` on success, 403 when the user is not a member |
-| `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: discovers the provider, then builds `/healthz`, the `auth` routes, the `household` route, the Leptos routes and the site files as fallback. The session middleware wraps all of them |
+| `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: discovers the provider, then builds `/healthz`, the `auth` routes, the `household` route, the Leptos routes and the site files as fallback. The Leptos routes and the error fallback provide the configured language as context. The session middleware wraps all of them |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
 | `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, then builds `router` (which does OIDC discovery) and serves it. Without `ssr` it is an empty stub |
+
+### Translations (`src/i18n/`, `locales/`)
+
+`locales/en.json` and `locales/nl.json` are flat JSON objects of dotted keys to text (`"app.title": "crabbage"`), with `{name}` placeholders. Both are embedded with `include_str!`. They must have the same key set.
+
+| Module | Responsibility |
+| --- | --- |
+| `src/i18n/mod.rs` | Module declarations and re-exports |
+| `src/i18n/language.rs` | `Language` (`En`, `Nl`), re-exported from the crate root. `code` and `from_code` map to and from `en` and `nl` |
+| `src/i18n/messages.rs` | `Messages`: one language's keys, parsed once per language from its embedded file. `get` returns the key when missing, `format` fills `{name}` placeholders and keeps unknown ones |
+| `src/i18n/context.rs` | `t(key)` and `current_language()` read the language from leptos context, English when none is provided. `document_language()` (`hydrate`) reads the `lang` attribute of the page |
+| `src/i18n/tests.rs` | Every file in `locales/` parses, has the English keys and a language code as its name; every key is translated; formatting; language codes |
+
+The language flows from `Config` to `AppState`, then to the Leptos routes and the error fallback, which provide it as context for each render. `shell` sets `<html lang>` from it and `App` reads the text with `t`. The browser takes the language from the `lang` attribute of the page before it hydrates.
+
+To add a language: add `locales/<code>.json` with the same keys, add a `Language` variant with its code in `from_code` and `code`, and add its arm in `Messages::for_language`, which embeds the file. Visible text in `view!` blocks must come from `t`; `tests/strings.rs` fails on string literals used as text children.
 
 ### Sign-in (`src/auth/`)
 
@@ -95,7 +112,8 @@ Roles and households follow the `groups` claim on every login: the callback repl
 
 | Path | Responsibility |
 | --- | --- |
-| `tests/server/main.rs` | `healthz`, the rendered shell for a signed-in user, and the shared harness module declarations |
+| `tests/server/main.rs` | `healthz`, the rendered shell for a signed-in user in English and in Dutch (`lang`, title, sign-out text), and the shared harness module declarations |
+| `tests/strings.rs` | No string literal is used as text in a `view!` block under `src/`. Tests the heuristic on inline samples |
 | `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce) |
 | `tests/server/session.rs` | Logout deletes the row and clears the cookie; expired and unknown sessions require a new login |
 | `tests/server/household.rs` | Group claims on login (admin, households, changes on the next login), switching the active household, 403 for non-members, a user without households |

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use super::{Config, Language};
+use super::Config;
+use crate::i18n::Language;
 
 fn lookup(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
     let map: HashMap<String, String> = pairs

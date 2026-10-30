@@ -5,6 +5,7 @@ use axum::Router;
 use axum::middleware::from_fn_with_state;
 use axum::routing::get;
 use leptos::config::LeptosOptions;
+use leptos::prelude::provide_context;
 use leptos_axum::{LeptosRoutes, generate_route_list};
 use sqlx::sqlite::SqlitePool;
 
@@ -36,16 +37,21 @@ pub async fn router(
         oidc: Arc::new(oidc),
         admin_group: config.admin_group.clone(),
         household_group_prefix: config.household_group_prefix.clone(),
+        language: config.language,
     };
+    let language = state.language;
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
         .merge(household::routes())
-        .leptos_routes(&state, routes, {
+        .leptos_routes_with_context(&state, routes, move || provide_context(language), {
             let options = options.clone();
             move || shell(options.clone())
         })
-        .fallback(leptos_axum::file_and_error_handler::<AppState, _>(shell))
+        .fallback(leptos_axum::file_and_error_handler_with_context::<
+            AppState,
+            _,
+        >(move || provide_context(language), shell))
         .layer(from_fn_with_state(state.clone(), auth::require_session))
         .with_state(state))
 }
