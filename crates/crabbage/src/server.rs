@@ -11,6 +11,7 @@ use sqlx::sqlite::SqlitePool;
 use crate::app::{App, shell};
 use crate::auth::{self, Oidc};
 use crate::config::Config;
+use crate::household;
 use crate::state::AppState;
 
 /// Builds the router for the app: the health check, sign-in, the rendered pages and the site
@@ -33,10 +34,13 @@ pub async fn router(
         pool,
         http,
         oidc: Arc::new(oidc),
+        admin_group: config.admin_group.clone(),
+        household_group_prefix: config.household_group_prefix.clone(),
     };
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
+        .merge(household::routes())
         .leptos_routes(&state, routes, {
             let options = options.clone();
             move || shell(options.clone())

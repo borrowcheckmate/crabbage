@@ -26,6 +26,7 @@ pub(crate) type HttpClient = reqwest::Client;
 pub(crate) struct Profile {
     name: Option<String>,
     preferred_username: Option<String>,
+    groups: Option<Vec<String>>,
 }
 
 impl AdditionalClaims for Profile {}
@@ -64,6 +65,7 @@ type ProfileClient = Client<
 pub(crate) struct Identity {
     pub(crate) subject: String,
     pub(crate) name: String,
+    pub(crate) groups: Vec<String>,
 }
 
 pub(crate) struct Oidc {
@@ -139,7 +141,12 @@ impl Oidc {
             .or(profile.preferred_username.as_deref())
             .unwrap_or(&subject)
             .to_owned();
-        Some(Identity { subject, name })
+        let groups = profile.groups.clone().unwrap_or_default();
+        Some(Identity {
+            subject,
+            name,
+            groups,
+        })
     }
 }
 

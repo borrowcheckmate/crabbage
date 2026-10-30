@@ -110,6 +110,15 @@ impl Harness {
             .await
     }
 
+    /// The id of the user who signs in through the fake provider.
+    pub(crate) async fn user_id(&self) -> i64 {
+        sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")
+            .bind("subject-1")
+            .fetch_one(&self.pool)
+            .await
+            .expect("the user exists")
+    }
+
     /// Runs the whole sign-in flow, as the browser that started it, and returns the callback
     /// response, which sets the session.
     pub(crate) async fn sign_in(&self) -> Response<Body> {

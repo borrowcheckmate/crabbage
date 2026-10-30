@@ -1,6 +1,7 @@
 //! SQLite persistence for recipes and their related data.
 
 mod error;
+pub mod households;
 pub mod login_attempts;
 mod pool;
 pub mod sessions;

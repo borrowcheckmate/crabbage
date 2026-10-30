@@ -5,6 +5,11 @@
     reason = "test helpers stop the test on setup failure"
 )]
 mod common;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+mod household;
 mod login;
 mod session;
 
