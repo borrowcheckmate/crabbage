@@ -22,6 +22,9 @@ mod auth;
 pub use auth::SessionUser;
 
 #[cfg(feature = "ssr")]
+mod household;
+
+#[cfg(feature = "ssr")]
 mod server;
 
 #[cfg(feature = "ssr")]

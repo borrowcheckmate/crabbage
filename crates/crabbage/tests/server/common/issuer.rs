@@ -38,6 +38,7 @@ fn signing_key() -> &'static CoreRsaPrivateSigningKey {
 #[derive(Default)]
 struct Expectations {
     nonce: Option<String>,
+    groups: Vec<String>,
 }
 
 /// A running fake provider. Its ID tokens carry the nonce set with [`FakeIssuer::expect_nonce`].
@@ -79,13 +80,17 @@ impl FakeIssuer {
         self.expectations.lock().expect("not poisoned").nonce = Some(nonce.to_owned());
     }
 
+    /// Makes the next ID tokens carry the `groups` claim `groups`.
+    pub(crate) fn set_groups(&self, groups: &[&str]) {
+        self.expectations.lock().expect("not poisoned").groups =
+            groups.iter().map(|group| (*group).to_owned()).collect();
+    }
+
     fn id_token(&self) -> String {
-        let nonce = self
-            .expectations
-            .lock()
-            .expect("not poisoned")
-            .nonce
-            .clone();
+        let (nonce, groups) = {
+            let expectations = self.expectations.lock().expect("not poisoned");
+            (expectations.nonce.clone(), expectations.groups.clone())
+        };
         let now = 1_900_000_000_u64;
         let header = json!({ "alg": "RS256", "kid": KEY_ID, "typ": "JWT" });
         let payload = json!({
@@ -97,6 +102,7 @@ impl FakeIssuer {
             "nonce": nonce,
             "name": "Ada Lovelace",
             "preferred_username": "ada",
+            "groups": groups,
         });
         let signing_input = format!(
             "{}.{}",

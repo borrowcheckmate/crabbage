@@ -1,7 +1,8 @@
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, header::SET_COOKIE};
 use axum::response::{AppendHeaders, IntoResponse, Redirect};
-use crabbage_store::{login_attempts, sessions, users};
+use crabbage_domain::membership::{Membership, Role};
+use crabbage_store::{households, login_attempts, sessions, users};
 use serde::Deserialize;
 
 use super::cookie::{LOGIN, SESSION};
@@ -32,6 +33,18 @@ pub(super) async fn callback(
         .await
         .ok_or(AuthError::Rejected("login failed"))?;
     let user_id = users::upsert_user(&state.pool, &identity.subject, &identity.name).await?;
+    let membership = Membership::from_groups(
+        &identity.groups,
+        &state.admin_group,
+        &state.household_group_prefix,
+    );
+    households::sync_membership(
+        &state.pool,
+        user_id,
+        membership.role == Role::Admin,
+        &membership.households,
+    )
+    .await?;
     let token = session::new_token()?;
     sessions::create(&state.pool, &token, user_id, now + session::LIFETIME_SECS).await?;
     Ok((
