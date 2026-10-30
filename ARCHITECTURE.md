@@ -16,15 +16,28 @@ xtask/                    repository automation, invoked as `cargo xtask`
 Dockerfile                minimal runtime image
 ```
 
-## crates/crabbage-domain, crates/crabbage-store, crates/crabbage-import
+## crates/crabbage-domain, crates/crabbage-import
 
 Each crate is a library with only a crate doc (`src/lib.rs`) so far. Their responsibilities:
 
 | Crate | Responsibility |
 | --- | --- |
 | `crabbage-domain` | Pure recipe rules. No IO |
-| `crabbage-store` | SQLite persistence |
 | `crabbage-import` | Recipe import from web pages, photos and Mealie |
+
+## crates/crabbage-store
+
+SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` creates the directory and `crabbage.db` if missing, sets WAL journaling and foreign keys on every connection, and applies the embedded migrations. `StoreError` wraps the io, sqlx and migration errors.
+
+| Module | Responsibility |
+| --- | --- |
+| `src/lib.rs` | Crate doc, module declarations, re-exports |
+| `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR` |
+| `src/error.rs` | `StoreError` |
+| `migrations/` | SQL migrations, applied in file-name order |
+| `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
+
+Migrations are embedded at compile time by `sqlx::migrate!()`. To add one, create `migrations/NNNN_description.sql` with the next number. Never edit an applied migration; add a new one. Tables are `STRICT`.
 
 ## crates/crabbage
 
@@ -36,9 +49,9 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/app.rs` | `App` component (title and heading) and `shell`, the HTML document around it |
 | `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
 | `src/server.rs` (`ssr`) | `router`: `/healthz`, the Leptos routes rendered with `shell`, and the site files as fallback |
-| `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment first, then the Leptos configuration, and serves `router` on `site_addr`. Without `ssr` it is an empty stub |
+| `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), then the Leptos configuration, and serves `router` on `site_addr`. Without `ssr` it is an empty stub |
 | `tests/server.rs` | Requests against `router`: health check and the rendered title |
-| `tests/binary.rs` | Runs the server binary: missing config vars, invalid `LEPTOS_SITE_ADDR` and an address already in use all exit with an error |
+| `tests/binary.rs` | Runs the server binary: missing config vars, invalid `LEPTOS_SITE_ADDR` and an address already in use all exit with an error. Each run that gets past config uses its own temp `CRABBAGE_DATA_DIR` |
 
 ## xtask
 
@@ -74,4 +87,4 @@ To add a task, add a variant to `cli.rs` and map it in `task/plan.rs`. Prefer co
 
 ## Lints
 
-All lints are configured once in the workspace `Cargo.toml` and inherited with `[lints] workspace = true`. Clippy `pedantic`, `nursery` and `cargo` are denied, plus selected `restriction` lints (no `unwrap`, `expect`, `panic`, printing macros, indexing). Tests may `unwrap` (see `clippy.toml`). Use `#[expect(lint, reason = "...")]` for justified exceptions; `#[allow]` is denied. Duplicate crate versions that Leptos pulls in are allowed by name in `clippy.toml` (`allowed-duplicate-crates`) and by version in `deny.toml` (`bans.skip`), each with a reason.
+All lints are configured once in the workspace `Cargo.toml` and inherited with `[lints] workspace = true`. Clippy `pedantic`, `nursery` and `cargo` are denied, plus selected `restriction` lints (no `unwrap`, `expect`, `panic`, printing macros, indexing). Tests may `unwrap` (see `clippy.toml`). Use `#[expect(lint, reason = "...")]` for justified exceptions; `#[allow]` is denied. Duplicate crate versions that Leptos and sqlx pull in are allowed by name in `clippy.toml` (`allowed-duplicate-crates`) and by version in `deny.toml` (`bans.skip`), each with a reason.

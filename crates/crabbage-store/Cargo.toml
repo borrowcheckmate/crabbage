@@ -10,5 +10,11 @@ readme = "../../README.md"
 keywords = ["recipe", "recipes", "cooking", "recipe-book"]
 categories = ["database"]
 
+[dependencies]
+sqlx.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+
 [lints]
 workspace = true

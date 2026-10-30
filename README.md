@@ -35,7 +35,7 @@ The server reads its settings from environment variables at startup and refuses 
 | Variable | Required | Default | Meaning |
 | --- | --- | --- | --- |
 | `CRABBAGE_LANGUAGE` | no | `en` | App language: `en` or `nl` |
-| `CRABBAGE_DATA_DIR` | no | `/data` | Directory for persistent data |
+| `CRABBAGE_DATA_DIR` | no | `/data` | Directory for persistent data: `crabbage.db`, created and migrated at startup |
 | `CRABBAGE_PUBLIC_URL` | yes | | Public `http(s)` URL the app is served at |
 | `OIDC_ISSUER_URL` | yes | | `http(s)` issuer URL of the OpenID Connect provider |
 | `OIDC_CLIENT_ID` | yes | | Client ID registered with the provider |
