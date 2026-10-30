@@ -54,6 +54,14 @@ async fn home_renders_the_shell_with_the_title_for_a_signed_in_user() {
 }
 
 #[tokio::test]
+async fn home_links_the_base_stylesheet_for_a_signed_in_user() {
+    let harness = Harness::start("server-stylesheet").await;
+    let token = session_token(&harness.sign_in().await).expect("sign-in sets a session");
+    let body = body_text(harness.get("/", Some(&token)).await).await;
+    assert!(body.contains("href=\"/pkg/crabbage.css\""), "{body}");
+}
+
+#[tokio::test]
 async fn home_renders_in_the_configured_language() {
     let harness = Harness::start_with_language("server-nl", Some("nl")).await;
     let token = session_token(&harness.sign_in().await).expect("sign-in sets a session");

@@ -3,7 +3,7 @@
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
-use super::notice::{failure, message};
+use super::notice::{error_notice, failure, message};
 use leptos::prelude::ServerFnError;
 
 use crate::catalog::SectionRow;
@@ -59,7 +59,7 @@ async fn section_page(
             }
             .into_any()
         }
-        Ok(_) | Err(_) => view! { <p>{t("admin.not_allowed")}</p> }.into_any(),
+        Ok(_) | Err(_) => error_notice(t("admin.not_allowed")),
     }
 }
 
@@ -79,7 +79,7 @@ fn section_rows(
             .map(|row| view! { <SectionRow_ row=row rename=rename delete=delete move_section=move_section/> })
             .collect_view()
             .into_any(),
-        Some(Err(error)) => view! { <p>{message(&error)}</p> }.into_any(),
+        Some(Err(error)) => error_notice(&message(&error)),
         None => ().into_any(),
     }
 }
@@ -95,25 +95,27 @@ fn SectionRow_(
     let up = (row.position - 1).to_string();
     let down = (row.position + 1).to_string();
     view! {
-        <section>
+        <section class="card">
             <ActionForm action=rename>
                 <input type="hidden" name="id" value=id/>
                 <label>{t("admin.label.name")} <input name="name" value=row.name.clone() required/></label>
                 <button>{t("admin.button.rename")}</button>
             </ActionForm>
-            <ActionForm action=move_section>
-                <input type="hidden" name="id" value=id/>
-                <input type="hidden" name="position" value=up/>
-                <button>{t("admin.button.up")}</button>
-            </ActionForm>
-            <ActionForm action=move_section>
-                <input type="hidden" name="id" value=id/>
-                <input type="hidden" name="position" value=down/>
-                <button>{t("admin.button.down")}</button>
-            </ActionForm>
+            <div class="row">
+                <ActionForm action=move_section>
+                    <input type="hidden" name="id" value=id/>
+                    <input type="hidden" name="position" value=up/>
+                    <button class="secondary">{t("admin.button.up")}</button>
+                </ActionForm>
+                <ActionForm action=move_section>
+                    <input type="hidden" name="id" value=id/>
+                    <input type="hidden" name="position" value=down/>
+                    <button class="secondary">{t("admin.button.down")}</button>
+                </ActionForm>
+            </div>
             <ActionForm action=delete>
                 <input type="hidden" name="id" value=id/>
-                <button>{t("admin.button.delete")}</button>
+                <button class="danger">{t("admin.button.delete")}</button>
             </ActionForm>
         </section>
     }

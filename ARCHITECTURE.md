@@ -81,7 +81,8 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | Module | Responsibility |
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports, and the `hydrate` entry point for the browser |
-| `src/app.rs` | `App` component (title, heading and sign-out button, all from `t`) and `shell`, the HTML document around it. `shell` sets `<html lang>` from the render's language |
+| `src/app.rs` | `App` component (title, heading and sign-out button, all from `t`) and `shell`, the HTML document around it. `shell` sets `<html lang>` from the render's language and links `/pkg/crabbage.css` |
+| `style/main.css` | The one base stylesheet, hand-written, no framework. cargo-leptos builds it from `style-file` in `[package.metadata.leptos]` into `/pkg/crabbage.css`. Mobile first: system fonts, 18px base, a 40rem body, colours as custom properties on `:root` with a dark override under `prefers-color-scheme: dark`, 44px controls that go full width on phones and sit side by side from 40rem |
 | `src/i18n/` | Translated text, see below. Compiled for both `ssr` and `hydrate` |
 | `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `CRABBAGE_LANGUAGE` is parsed into `i18n::Language`. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
 | `src/state.rs` (`ssr`) | `AppState`: leptos options, pool, HTTP client, the configuration, the lazily discovered OIDC client (`oidc()`), the admin group and household prefix used on login, and the language. `FromRef` gives leptos_axum its `LeptosOptions` |
@@ -89,10 +90,10 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: builds `/healthz`, the `auth` routes, the `household` route, the `api` route, the Leptos routes and the site files as fallback. The Leptos routes provide the pool and the configured language as context, the error fallback the language. The session middleware wraps all of them |
 | `src/api.rs` (`ssr`) | `POST /api/{*fn_name}`: serves every `#[server]` function, providing the pool and the language as context. Behind the session check |
 | `src/access.rs` (`ssr`) | `signed_in` (the pool and the session user id), `require_admin` (the pool, or a 403 with the not-allowed message), `store_failure`, `clean` (trimmed, non-empty), `ensure_found` |
-| `src/app.rs` | `App`: the `Router` with `/` (home, with admin links for admins), `/admin/ingredients`, `/admin/sections` and `/admin/review`, and the sign-out button. `shell` is the HTML document |
+| `src/app.rs` | `App`: the `Router` with `/` (home, with admin links for admins), `/admin/ingredients`, `/admin/sections` and `/admin/review`, and the sign-out button (`.secondary`). `shell` is the HTML document |
 | `src/user.rs` | `current_user` server function: `SignedInUser` (name and `is_admin`) |
 | `src/catalog/` | Catalog server functions and their records, see below. `types.rs` holds `IngredientRow` and `SectionRow` (both builds), `convert.rs` the store conversions (`ssr`) |
-| `src/admin/` | The admin pages: `ingredients.rs`, `sections.rs`, `review.rs`, each showing a not-allowed message to non-admins, and `notice.rs` (failed actions) |
+| `src/admin/` | The admin pages: `ingredients.rs`, `sections.rs`, `review.rs`, each showing a not-allowed message to non-admins, and `notice.rs` (failed actions and loads, as `.notice.error`) |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
 | `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
 
@@ -111,6 +112,21 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 The language flows from `Config` to `AppState`, then to the Leptos routes and the error fallback, which provide it as context for each render. `shell` sets `<html lang>` from it and `App` reads the text with `t`. The browser takes the language from the `lang` attribute of the page before it hydrates.
 
 To add a language: add `locales/<code>.json` with the same keys, add a `Language` variant with its code in `from_code` and `code`, and add its arm in `Messages::for_language`, which embeds the file. Visible text in `view!` blocks must come from `t`; `tests/strings.rs` fails on string literals used as text children.
+
+### Styling
+
+Pages get their look from `style/main.css` and never from inline styles. Use the plain elements (`button`, `input`, `select`, `label`, `form`) and these shared classes:
+
+| Class | Use |
+| --- | --- |
+| `.card` | A bordered section: one ingredient, store section or review row |
+| `.row` | A horizontal group that wraps, such as the up and down buttons of a section |
+| `.notice`, `.notice.error` | A status message; `.error` for failed actions, failed loads and the not-allowed message |
+| `.nav` | The home page admin links as large tappable blocks |
+| `.danger` | A button that deletes |
+| `.secondary` | A button that is not the main action, such as sign-out and remove |
+
+Forms stack their fields on phones and sit side by side from 40rem. Message texts come from `t` as everywhere else.
 
 ### Sign-in (`src/auth/`)
 
@@ -147,13 +163,14 @@ Pages load data in one `<Suspense>` whose closure returns a `Suspend` future tha
 
 | Path | Responsibility |
 | --- | --- |
-| `tests/server/main.rs` | `healthz`, the rendered shell for a signed-in user in English and in Dutch (`lang`, title, sign-out text), and the shared harness module declarations |
+| `tests/server/main.rs` | `healthz`, the rendered shell for a signed-in user in English and in Dutch (`lang`, title, sign-out text), the stylesheet link, and the shared harness module declarations |
+| `tests/stylesheet.rs` | String checks on `style/main.css`: the dark colour scheme, a 44px minimum height for inputs and buttons, and a `max-width` on `body` |
 | `tests/strings.rs` | No string literal is used as text in a `view!` block under `src/`. Tests the heuristic on inline samples |
 | `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce) |
 | `tests/server/session.rs` | Logout deletes the row and clears the cookie; expired and unknown sessions require a new login |
 | `tests/server/household.rs` | Group claims on login (admin, households, changes on the next login), switching the active household, 403 for non-members, a user without households |
 | `tests/server/catalog.rs` | Admin create, rename and delete; members refused on every endpoint with 403; alias uniqueness through the API; sections created and reordered; the review queue; merge through the API |
-| `tests/server/screenshots.rs` | Ignored. Writes the rendered pages to `CRABBAGE_SCREENSHOT_DIR` for review screenshots |
+| `tests/server/screenshots.rs` | Ignored. Writes the rendered pages to `CRABBAGE_SCREENSHOT_DIR` for review screenshots, with `style/main.css` copied beside them and the link made relative so a `file://` view is styled |
 | `tests/server/pages.rs` | Admin pages render for admins, show the not-allowed message to members, and the home page links to them for admins only |
 | `tests/server/common/` | `Harness`: the router on a temp database, and `issuer.rs`, a fake provider on 127.0.0.1 with a runtime-generated RSA key (discovery, JWKS, token endpoint). Its ID token carries the nonce and the `groups` claim the test sets |
 | `tests/server/discovery.rs` | Lazy discovery: with an unreachable provider sign-in is 503, and once the provider listens on the same address it is 303 |
@@ -189,7 +206,7 @@ To add a task, add a variant to `cli.rs` and map it in `task/plan.rs`. Prefer co
 | Stage | Contents |
 | --- | --- |
 | `tools` | Rust on Debian trixie, pinned by digest. `musl-tools` from apt, and cargo-leptos from its release archive, checked by SHA-256 |
-| `site` | `cargo leptos build --release --frontend-only`: the WASM bundle, JS and CSS in `target/site`, copied to `/out/site` |
+| `site` | `cargo leptos build --release --frontend-only`: the WASM bundle, JS and CSS (`pkg/crabbage.css`) in `target/site`, copied to `/out/site` |
 | `server` | `cargo build` of `crabbage` with `ssr` for the native musl target `$(uname -m)-unknown-linux-musl`. Bundled SQLite is C code compiled with `musl-gcc`; rustls needs no system libraries, so the binary is static |
 | `data` | `/data` owned by 65532:65532 |
 | final | `FROM scratch`. Copies `/data`, `/site` and `/crabbage`. Sets `CRABBAGE_DATA_DIR`, `LEPTOS_SITE_ROOT`, `LEPTOS_OUTPUT_NAME` and `LEPTOS_SITE_ADDR`. Runs as `65532:65532`, exposes 3000, declares `/data` as a volume |

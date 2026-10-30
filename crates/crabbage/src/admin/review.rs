@@ -3,7 +3,7 @@
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
-use super::notice::{failure, message};
+use super::notice::{error_notice, failure, message};
 use crate::catalog::ingredients::{ApproveIngredient, list_pending_ingredients};
 use crate::i18n::t;
 use crate::user::current_user;
@@ -39,20 +39,22 @@ async fn review_page(approve: ServerAction<ApproveIngredient>) -> AnyView {
                         .map(|row| {
                             let id = row.id;
                             view! {
-                                <ActionForm action=approve>
-                                    <p>{row.name}</p>
-                                    <input type="hidden" name="id" value=id/>
-                                    <button>{t("admin.button.approve")}</button>
-                                </ActionForm>
+                                <div class="card">
+                                    <ActionForm action=approve>
+                                        <p>{row.name}</p>
+                                        <input type="hidden" name="id" value=id/>
+                                        <button>{t("admin.button.approve")}</button>
+                                    </ActionForm>
+                                </div>
                             }
                         })
                         .collect_view()
                         .into_any(),
-                    Err(error) => view! { <p>{message(&error)}</p> }.into_any(),
+                    Err(error) => error_notice(&message(&error)),
                 }}
             }
             .into_any()
         }
-        Ok(_) | Err(_) => view! { <p>{t("admin.not_allowed")}</p> }.into_any(),
+        Ok(_) | Err(_) => error_notice(t("admin.not_allowed")),
     }
 }

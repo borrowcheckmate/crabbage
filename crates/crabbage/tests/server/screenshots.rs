@@ -1,4 +1,5 @@
 //! Writes the rendered pages to `CRABBAGE_SCREENSHOT_DIR` so they can be photographed for review.
+//! The stylesheet is copied next to the pages and linked relatively, so a `file://` view loads it.
 //! Ignored by default: run with `cargo test --features crabbage/ssr --test server -- --ignored`.
 
 use std::path::PathBuf;
@@ -12,6 +13,9 @@ use crate::common::{Harness, body_text, session_token};
 async fn write_pages() {
     let dir = PathBuf::from(std::env::var("CRABBAGE_SCREENSHOT_DIR").expect("dir is set"));
     std::fs::create_dir_all(&dir).expect("dir is created");
+    let css = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/style/main.css"))
+        .expect("stylesheet is read");
+    std::fs::write(dir.join("crabbage.css"), css).expect("stylesheet is written");
     let harness = Harness::start("screenshots").await;
     let produce = sections::create(&harness.pool, "Produce")
         .await
@@ -57,7 +61,9 @@ async fn write_pages() {
     for (who, groups, name, path) in pages {
         harness.issuer.set_groups(groups);
         let token = session_token(&harness.sign_in().await).expect("sign-in sets a session");
-        let body = body_text(harness.get(path, Some(&token)).await).await;
+        let body = body_text(harness.get(path, Some(&token)).await)
+            .await
+            .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
         std::fs::write(dir.join(format!("{who}-{name}.html")), body).expect("page is written");
     }
 }

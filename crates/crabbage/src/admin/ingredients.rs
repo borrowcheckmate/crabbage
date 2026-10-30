@@ -3,7 +3,7 @@
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
-use super::notice::{failure, message};
+use super::notice::{error_notice, failure, message};
 use crate::catalog::ingredients::{
     AddAlias, CreateIngredient, DeleteIngredient, MergeIngredients, RemoveAlias, RenameIngredient,
     SetIngredientSection, list_ingredients,
@@ -77,7 +77,7 @@ async fn ingredient_page(create: ServerAction<CreateIngredient>, actions: CardAc
             }
             .into_any()
         }
-        Ok(_) | Err(_) => view! { <p>{t("admin.not_allowed")}</p> }.into_any(),
+        Ok(_) | Err(_) => error_notice(t("admin.not_allowed")),
     }
 }
 
@@ -119,9 +119,7 @@ fn ingredient_rows(
             })
             .collect_view()
             .into_any(),
-        (Some(Err(error)), _) | (_, Some(Err(error))) => {
-            view! { <p>{message(&error)}</p> }.into_any()
-        }
+        (Some(Err(error)), _) | (_, Some(Err(error))) => error_notice(&message(&error)),
         _ => ().into_any(),
     }
 }
@@ -138,9 +136,9 @@ fn IngredientCard(
     let section_id = row.section_id;
     let aliases = row.aliases.clone();
     view! {
-        <section>
+        <section class="card">
             <h2>{row.name.clone()}</h2>
-            {row.pending_review.then(|| view! { <p>{t("admin.ingredients.pending")}</p> })}
+            {row.pending_review.then(|| view! { <p class="notice">{t("admin.ingredients.pending")}</p> })}
             <ActionForm action=actions.rename>
                 <input type="hidden" name="id" value=id/>
                 <label>{t("admin.label.name")} <input name="name" value=row.name.clone() required/></label>
@@ -156,7 +154,7 @@ fn IngredientCard(
                                 <input type="hidden" name="ingredient_id" value=id/>
                                 <input type="hidden" name="alias" value=alias.clone()/>
                                 <span>{alias.clone()}</span>
-                                <button>{t("admin.button.remove")}</button>
+                                <button class="secondary">{t("admin.button.remove")}</button>
                             </ActionForm>
                         </li>
                     })
@@ -205,7 +203,7 @@ fn IngredientCard(
             })}
             <ActionForm action=actions.delete>
                 <input type="hidden" name="id" value=id/>
-                <button>{t("admin.button.delete")}</button>
+                <button class="danger">{t("admin.button.delete")}</button>
             </ActionForm>
         </section>
     }
