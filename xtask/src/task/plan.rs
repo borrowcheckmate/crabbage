@@ -1,9 +1,9 @@
 use crate::cli::Command;
 
 use super::action::Action;
+use super::smoke::IMAGE;
 use super::step::Step;
 
-const IMAGE: &str = "crabbage:local";
 const COVERAGE_THRESHOLD: &str = "90";
 const SSR_FEATURE: &str = "crabbage/ssr";
 
@@ -19,7 +19,7 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
         Command::Identity { range } => vec![Action::Identity(range.clone())],
         Command::CommitMsg { file } => vec![Action::CommitMsg(file.clone())],
         Command::PrCheck => vec![Action::PrCheck],
-        Command::Docker => vec![docker()],
+        Command::Docker => vec![docker(), Action::Smoke],
         Command::Wasm => vec![wasm()],
         Command::PreCommit => vec![
             Action::Identity(None),
@@ -139,9 +139,11 @@ mod tests {
             .into_iter()
             .map(|action| match action {
                 Action::Run(step) => step.to_string(),
-                Action::Policy | Action::Identity(_) | Action::CommitMsg(_) | Action::PrCheck => {
-                    format!("{action:?}")
-                }
+                Action::Policy
+                | Action::Identity(_)
+                | Action::CommitMsg(_)
+                | Action::PrCheck
+                | Action::Smoke => format!("{action:?}"),
             })
             .collect()
     }
@@ -187,6 +189,13 @@ mod tests {
         ] {
             assert!(lines.iter().any(|line| line.contains(needle)), "{needle}");
         }
+    }
+
+    #[test]
+    fn docker_builds_the_image_then_smoke_tests_it() {
+        let lines = shell_lines(&Command::Docker);
+        assert_eq!(lines[0], "docker build --tag crabbage:local .");
+        assert_eq!(lines[1], "Smoke");
     }
 
     #[test]

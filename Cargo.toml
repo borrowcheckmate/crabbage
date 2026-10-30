@@ -23,7 +23,7 @@ serde = { version = "1.0.228", default-features = false, features = ["derive", "
 serde_json = { version = "1.0.154", default-features = false, features = ["std"] }
 sha2 = { version = "0.10.9", default-features = false }
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite-bundled", "migrate", "macros"] }
-tokio = { version = "1.54.1", default-features = false, features = ["macros", "net", "rt-multi-thread"] }
+tokio = { version = "1.54.1", default-features = false, features = ["macros", "net", "rt-multi-thread", "sync"] }
 tower = { version = "0.5.3", default-features = false, features = ["util"] }
 url = { version = "2.5.8", default-features = false, features = ["std"] }
 wasm-bindgen = { version = "0.2.130", default-features = false }

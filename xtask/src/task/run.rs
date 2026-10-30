@@ -10,6 +10,7 @@ use crate::repo;
 
 use super::action::Action;
 use super::plan::plan;
+use super::smoke;
 use super::step::Step;
 
 pub(crate) fn run(command: &Command) -> Result<(), String> {
@@ -22,6 +23,7 @@ pub(crate) fn run(command: &Command) -> Result<(), String> {
 fn execute(action: &Action, root: &Path) -> Result<(), String> {
     match action {
         Action::Run(step) => run_step(step, root),
+        Action::Smoke => smoke(root),
         Action::Policy => report(&policy::check_repository(root, &repo::tracked_files(root)?)),
         Action::Identity(None) => report(&policy::check_identities(
             &repo::current_identity_emails(root)?,
@@ -52,6 +54,14 @@ fn report(violations: &[Violation]) -> Result<(), String> {
     } else {
         Err(format!("{} policy violation(s)", violations.len()))
     }
+}
+
+fn smoke(root: &Path) -> Result<(), String> {
+    let port = smoke::free_port()?;
+    let started = run_step(&smoke::start_step(port), root);
+    let checked = started.and_then(|()| smoke::wait_for_healthz(port));
+    let removed = run_step(&smoke::remove_step(), root);
+    checked.and(removed)
 }
 
 fn run_step(step: &Step, root: &Path) -> Result<(), String> {

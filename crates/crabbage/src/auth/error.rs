@@ -5,6 +5,7 @@ use crabbage_store::StoreError;
 pub(crate) enum AuthError {
     Rejected(&'static str),
     Internal,
+    Unavailable,
 }
 
 impl IntoResponse for AuthError {
@@ -12,7 +13,14 @@ impl IntoResponse for AuthError {
         match self {
             Self::Rejected(message) => (StatusCode::BAD_REQUEST, message).into_response(),
             Self::Internal => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE.into_response(),
         }
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for AuthError {
+    fn from(_: Box<dyn std::error::Error>) -> Self {
+        Self::Unavailable
     }
 }
 

@@ -51,9 +51,12 @@ pub(crate) struct FakeIssuer {
 impl FakeIssuer {
     /// Starts the provider on a free loopback port.
     pub(crate) async fn start() -> Self {
-        let listener = TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("port is free");
+        Self::start_on("127.0.0.1:0").await
+    }
+
+    /// Starts the provider on `address`, a loopback socket address.
+    pub(crate) async fn start_on(address: &str) -> Self {
+        let listener = TcpListener::bind(address).await.expect("address is free");
         let address = listener.local_addr().expect("address is known");
         let issuer = Self {
             url: format!("http://{address}/"),
