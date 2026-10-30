@@ -6,18 +6,18 @@ use leptos::prelude::*;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
-use super::route::recipe_id;
 use crate::i18n::t;
 use crate::notice::{error_notice, failure, message};
 use crate::recipes::read::get_recipe;
 use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
 use crate::recipes::units::unit_text;
 use crate::recipes::write::DeleteRecipe;
+use crate::route::route_id;
 
 /// One recipe, loaded inside one suspense. Deleting it returns to the list.
 #[component]
 pub(crate) fn RecipePage() -> impl IntoView {
-    let id = recipe_id();
+    let id = route_id();
     let delete = ServerAction::<DeleteRecipe>::new();
     let navigate = use_navigate();
     Effect::new(move |_| {

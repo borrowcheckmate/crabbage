@@ -4,6 +4,6 @@ mod ingredients;
 mod review;
 mod sections;
 
-pub(crate) use ingredients::IngredientsPage;
+pub(crate) use ingredients::{IngredientPage, IngredientsPage};
 pub(crate) use review::ReviewPage;
 pub(crate) use sections::SectionsPage;

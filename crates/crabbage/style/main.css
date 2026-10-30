@@ -271,3 +271,52 @@ ul + h2,
 ol + h2 {
   margin-top: 1.25rem;
 }
+
+.ingredient-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.ingredient-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.ingredient-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.125rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.ingredient-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  vertical-align: middle;
+}
+
+.actions {
+  margin-top: 1.5rem;
+  gap: 1.5rem;
+}

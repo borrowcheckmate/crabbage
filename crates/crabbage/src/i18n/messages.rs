@@ -35,13 +35,6 @@ impl Messages {
 
     /// The text of `key` with each `{name}` replaced by the value paired with `name` in `args`.
     /// Placeholders without a matching argument are kept as they are.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "no visible text takes arguments yet; the first one that does uses it"
-        )
-    )]
     pub(crate) fn format(&self, key: &str, args: &[(&str, &str)]) -> String {
         let mut out = String::new();
         let mut rest = self.get(key);

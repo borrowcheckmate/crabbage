@@ -52,7 +52,7 @@ async fn home_links_to_the_admin_pages_only_for_admins() {
 }
 
 #[tokio::test]
-async fn ingredients_page_lists_aliases_sections_and_pending_ingredients() {
+async fn ingredients_page_lists_sections_alias_counts_and_pending_ingredients() {
     let harness = Harness::start("pages-ingredients").await;
     let token = token_for(&harness, &["crabbage-admin"]).await;
     let produce = sections::create(&harness.pool, "Produce").await.unwrap();
@@ -72,14 +72,16 @@ async fn ingredients_page_lists_aliases_sections_and_pending_ingredients() {
     let body = body_text(harness.get("/admin/ingredients", Some(&token)).await).await;
     for expected in [
         "Tomato",
-        "Pomodoro",
         "Produce",
+        "Alternative names: 1",
         "Okra",
         "Waiting for review",
-        "Merge into",
+        "class=\"badge\"",
     ] {
         assert!(body.contains(expected), "{expected}: {body}");
     }
+    assert!(!body.contains("Pomodoro"), "{body}");
+    assert!(!body.contains("Merge into"), "{body}");
 }
 
 #[tokio::test]
