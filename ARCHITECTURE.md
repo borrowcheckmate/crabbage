@@ -31,6 +31,11 @@ Each crate is a library with only a crate doc (`src/lib.rs`) so far. Their respo
 | --- | --- |
 | `src/membership.rs` | `Role` (`Admin`, `Member`) and `Membership`, derived from a login's groups by `Membership::from_groups`: admin if the admin group is present, households are the groups with the household prefix and a name after it. `has_household_features` is true only with an active household |
 | `tests/membership.rs` | Role, household matching, deduplication and the feature check |
+| `src/quantity/mod.rs` | Declares the quantity submodules and re-exports `Dimension`, `Unit`, `Quantity` and `ImperialUnit` |
+| `src/quantity/unit.rs` | `Dimension` (`Mass`, `Volume`, `Count`, `Unitless`) and `Unit`: `dimension`, `factor` to the base unit (g, ml or piece; `None` for unitless), `symbol` |
+| `src/quantity/amount.rs` | `Quantity` (finite, non-negative amount and unit, `new` returns `None` otherwise): `convert_to` within a dimension, `checked_add` (same unit adds as it is, mixed units add in the base unit), `display` (g below 1000 g else kg; ml below 1000 ml else l; tsp and tbsp kept; count and unitless unchanged) |
+| `src/quantity/imperial.rs` | `ImperialUnit` (oz, lb, cup, fl oz): `to_metric` gives the displayed metric quantity |
+| `tests/quantity.rs` | Conversion within and across dimensions, spoons, display, addition, imperial input, unitless amounts and rejection of negative or non-finite amounts |
 
 ## crates/crabbage-store
 
