@@ -7,6 +7,8 @@ unmaintained = "all"
 unsound = "all"
 ignore = [
     { id = "RUSTSEC-2024-0436", reason = "paste is a build-time macro dependency of leptos (via either_of, reactive_graph and tachys); no safe upgrade exists" },
+    { id = "RUSTSEC-2023-0071", reason = "rsa, pulled in by openidconnect, is only used to verify RS256 signatures with the provider's public key; the Marvin attack needs private-key operations, and no fixed release exists" },
+    { id = "RUSTSEC-2026-0387", reason = "crypto-bigint 0.5, pulled in by openidconnect through p256 and p384 for signature verification; the flaw affects secret-scalar arithmetic and openidconnect 4 pins this line" },
 ]
 
 [licenses]
@@ -20,6 +22,8 @@ allow = [
     "BSL-1.0",      # xxhash-rust, pulled in by server_fn
     "CC0-1.0",      # base16, pulled in by leptos through wasm_split_macros
     "Zlib",         # const_format and konst (server_fn), slotmap (leptos)
+    "ISC",          # ring and rustls-webpki, the TLS stack of the OpenID Connect client
+    "CDLA-Permissive-2.0", # webpki-roots, the CA roots bundled into the binary for the provider
 ]
 
 [bans]
@@ -35,6 +39,14 @@ skip = [
     { crate = "getrandom@0.3.4", reason = "rand_core 0.9 needs getrandom 0.3; uuid in leptos_macro uses 0.4" },
     { crate = "r-efi@5.3.0", reason = "getrandom 0.3 needs r-efi 5 on UEFI targets; getrandom 0.4 uses r-efi 6" },
     { crate = "hashbrown@0.16.1", reason = "hashlink 0.11 (sqlx-sqlite) needs hashbrown 0.16; indexmap (leptos) uses 0.17" },
+    { crate = "base64@0.22.1", reason = "axum, leptos and sqlx need base64 0.22; reqwest (via hyper-util) and crabbage use 0.23" },
+    { crate = "base64@0.21.7", reason = "openidconnect 4 needs base64 0.21" },
+    { crate = "rand@0.8.8", reason = "openidconnect 4 and rsa need rand 0.8; the rest of the tree uses rand 0.9 and 0.10" },
+    { crate = "rand_core@0.6.4", reason = "rand 0.8 (openidconnect, rsa) needs rand_core 0.6" },
+    { crate = "rand_chacha@0.3.1", reason = "rand 0.8 (openidconnect, rsa) needs rand_chacha 0.3" },
+    { crate = "getrandom@0.2.17", reason = "rand_core 0.6 (openidconnect, rsa) needs getrandom 0.2" },
+    { crate = "itertools@0.10.5", reason = "openidconnect 4 needs itertools 0.10; the rest of the tree uses 0.14" },
+    { crate = "windows-sys@0.52.0", reason = "ring (rustls) needs windows-sys 0.52 on Windows targets; the rest of the tree uses 0.61" },
 ]
 
 [sources]

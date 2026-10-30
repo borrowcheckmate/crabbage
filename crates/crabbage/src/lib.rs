@@ -16,10 +16,19 @@ mod config;
 pub use config::{AiConfig, Config, ConfigError, Language};
 
 #[cfg(feature = "ssr")]
+mod auth;
+
+#[cfg(feature = "ssr")]
+pub use auth::SessionUser;
+
+#[cfg(feature = "ssr")]
 mod server;
 
 #[cfg(feature = "ssr")]
 pub use server::router;
+
+#[cfg(feature = "ssr")]
+mod state;
 
 #[cfg(feature = "hydrate")]
 use wasm_bindgen::prelude::wasm_bindgen;

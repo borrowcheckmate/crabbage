@@ -48,6 +48,8 @@ The server reads its settings from environment variables at startup and refuses 
 
 AI is enabled only when both `AI_BASE_URL` and `AI_MODEL` are set. Setting one without the other is an error. Empty values count as unset.
 
+Sign-in uses the OpenID Connect provider (Pocket ID). Register `{CRABBAGE_PUBLIC_URL}/auth/callback` as the redirect URI of the client. Every page except `/healthz` needs a session and redirects to `/auth/login` without one.
+
 ## Development
 
 Open the repository in the devcontainer, or install the toolchain from `rust-toolchain.toml`.
