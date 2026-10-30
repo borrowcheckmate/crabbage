@@ -30,6 +30,24 @@ cargo leptos build --release
 
 The server listens on `site-addr` from `[package.metadata.leptos]` in `crates/crabbage/Cargo.toml`. `GET /healthz` returns `ok`.
 
+The server reads its settings from environment variables at startup and refuses to start if a required one is missing or invalid. The error names every problem.
+
+| Variable | Required | Default | Meaning |
+| --- | --- | --- | --- |
+| `CRABBAGE_LANGUAGE` | no | `en` | App language: `en` or `nl` |
+| `CRABBAGE_DATA_DIR` | no | `/data` | Directory for persistent data |
+| `CRABBAGE_PUBLIC_URL` | yes | | Public `http(s)` URL the app is served at |
+| `OIDC_ISSUER_URL` | yes | | `http(s)` issuer URL of the OpenID Connect provider |
+| `OIDC_CLIENT_ID` | yes | | Client ID registered with the provider |
+| `OIDC_CLIENT_SECRET` | yes | | Client secret for the provider (never printed) |
+| `CRABBAGE_ADMIN_GROUP` | no | `crabbage-admin` | Group whose members administer the app |
+| `CRABBAGE_HOUSEHOLD_GROUP_PREFIX` | no | `crabbage-household-` | Prefix of the groups that name households |
+| `AI_BASE_URL` | with `AI_MODEL` | | `http(s)` base URL of an OpenAI-compatible API. Setting it turns AI on |
+| `AI_MODEL` | with `AI_BASE_URL` | | Model to request. Setting it turns AI on |
+| `AI_API_KEY` | no | | API key for the AI service, if it needs one (never printed) |
+
+AI is enabled only when both `AI_BASE_URL` and `AI_MODEL` are set. Setting one without the other is an error. Empty values count as unset.
+
 ## Development
 
 Open the repository in the devcontainer, or install the toolchain from `rust-toolchain.toml`.

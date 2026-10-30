@@ -7,10 +7,15 @@ use std::time::{Duration, Instant};
 
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(20);
 
-fn run_with_site_addr(site_addr: &str) -> Result<Output, String> {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_crabbage"))
-        .env("LEPTOS_OUTPUT_NAME", "crabbage")
-        .env("LEPTOS_SITE_ADDR", site_addr)
+const VALID_CONFIG: [(&str, &str); 4] = [
+    ("CRABBAGE_PUBLIC_URL", "https://recipes.example.com"),
+    ("OIDC_ISSUER_URL", "https://id.example.com"),
+    ("OIDC_CLIENT_ID", "crabbage"),
+    ("OIDC_CLIENT_SECRET", "secret"),
+];
+
+fn run(command: &mut Command) -> Result<Output, String> {
+    let mut child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -28,6 +33,22 @@ fn run_with_site_addr(site_addr: &str) -> Result<Output, String> {
         sleep(Duration::from_millis(50));
     }
     child.wait_with_output().map_err(|error| error.to_string())
+}
+
+fn run_with_site_addr(site_addr: &str) -> Result<Output, String> {
+    run(Command::new(env!("CARGO_BIN_EXE_crabbage"))
+        .envs(VALID_CONFIG)
+        .env("LEPTOS_OUTPUT_NAME", "crabbage")
+        .env("LEPTOS_SITE_ADDR", site_addr))
+}
+
+#[test]
+fn missing_config_names_the_missing_vars() {
+    let output = run(Command::new(env!("CARGO_BIN_EXE_crabbage")).env_clear())
+        .expect("binary runs and exits");
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("OIDC_CLIENT_ID"), "{stderr}");
 }
 
 #[test]

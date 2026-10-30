@@ -34,10 +34,11 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports, and the `hydrate` entry point for the browser |
 | `src/app.rs` | `App` component (title and heading) and `shell`, the HTML document around it |
+| `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
 | `src/server.rs` (`ssr`) | `router`: `/healthz`, the Leptos routes rendered with `shell`, and the site files as fallback |
-| `src/main.rs` (`ssr`) | Server binary: reads the Leptos configuration and serves `router` on `site_addr`. Without `ssr` it is an empty stub |
+| `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment first, then the Leptos configuration, and serves `router` on `site_addr`. Without `ssr` it is an empty stub |
 | `tests/server.rs` | Requests against `router`: health check and the rendered title |
-| `tests/binary.rs` | Runs the server binary: invalid `LEPTOS_SITE_ADDR` and an address already in use both exit with an error |
+| `tests/binary.rs` | Runs the server binary: missing config vars, invalid `LEPTOS_SITE_ADDR` and an address already in use all exit with an error |
 
 ## xtask
 
