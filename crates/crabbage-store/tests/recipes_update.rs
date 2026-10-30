@@ -27,6 +27,7 @@ fn input(title: &str, lines: Vec<LineInput>, steps: Vec<StepInput>) -> RecipeInp
         servings: 2,
         lines,
         steps,
+        category_ids: vec![],
     }
 }
 

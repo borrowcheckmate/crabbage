@@ -2,10 +2,11 @@
 //! each row with a button to remove it.
 
 use crabbage_domain::quantity::Unit;
-use leptos::prelude::event_target_value;
 use leptos::prelude::*;
+use leptos::prelude::{event_target_checked, event_target_value};
 
 use super::draft::{Draft, LineSignals, StepSignals};
+use crate::catalog::CategoryRow;
 use crate::i18n::{messages, t};
 use crate::recipes::types::{LineDraft, StepDraft};
 use crate::recipes::units::unit_text;
@@ -35,6 +36,27 @@ pub(crate) fn DraftFields(draft: Draft, names: Vec<String>) -> impl IntoView {
             {t("recipe.button.add_step")}
         </button>
         <datalist id="ingredient-names">{suggestions}</datalist>
+    }
+}
+
+/// The categories of the recipe form, one checkbox each, checked for the categories of the recipe.
+#[component]
+pub(crate) fn CategoryBoxes(draft: Draft, categories: Vec<CategoryRow>) -> impl IntoView {
+    view! {
+        <fieldset>
+            <legend>{t("recipe.categories.heading")}</legend>
+            {categories.into_iter().map(|category| category_box(draft, category)).collect_view()}
+        </fieldset>
+    }
+}
+
+fn category_box(draft: Draft, category: CategoryRow) -> impl IntoView {
+    let id = category.id;
+    view! {
+        <label>
+            <input type="checkbox" value=id checked=move || draft.categories.get().contains(&id) on:change=move |ev| draft.set_category(id, event_target_checked(&ev))/>
+            {category.name}
+        </label>
     }
 }
 

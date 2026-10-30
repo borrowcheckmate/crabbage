@@ -6,9 +6,11 @@ use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
 use super::draft::Draft;
-use super::fields::DraftFields;
+use super::fields::{CategoryBoxes, DraftFields};
+use crate::catalog::CategoryRow;
 use crate::i18n::t;
 use crate::notice::{error_notice, failure, message};
+use crate::recipes::categories::list_recipe_categories;
 use crate::recipes::editors::list_users;
 use crate::recipes::ingredients::ingredient_names;
 use crate::recipes::pages::editor_list::EditorsSection;
@@ -38,12 +40,13 @@ pub(crate) fn RecipeNewPage() -> impl IntoView {
 }
 
 async fn new_form(create: ServerAction<CreateRecipe>) -> AnyView {
-    match ingredient_names().await {
-        Ok(names) => {
+    match load_new_form().await {
+        Ok((names, categories)) => {
             let draft = Draft::blank();
             view! {
                 <ActionForm action=create>
                     <DraftFields draft names/>
+                    <CategoryBoxes draft categories/>
                     <input type="hidden" name="draft" value=move || draft.json()/>
                     <button>{t("recipe.button.save")}</button>
                 </ActionForm>
@@ -52,6 +55,10 @@ async fn new_form(create: ServerAction<CreateRecipe>) -> AnyView {
         }
         Err(error) => error_notice(&message(&error)),
     }
+}
+
+async fn load_new_form() -> Result<(Vec<String>, Vec<CategoryRow>), ServerFnError> {
+    Ok((ingredient_names().await?, list_recipe_categories().await?))
 }
 
 /// The page for changing a recipe. Saving opens the recipe. Owners and admins also see the editors.
@@ -99,6 +106,7 @@ async fn load_edit_form(
     }
     let names = ingredient_names().await?;
     let users = list_users().await?;
+    let categories = list_recipe_categories().await?;
     let draft = Draft::of(&recipe);
     let can_manage_editors = recipe.can_manage_editors;
     let editors = recipe.editors;
@@ -106,6 +114,7 @@ async fn load_edit_form(
         <ActionForm action=save>
             <input type="hidden" name="id" value=recipe.id/>
             <DraftFields draft names/>
+            <CategoryBoxes draft categories/>
             <input type="hidden" name="draft" value=move || draft.json()/>
             <button>{t("recipe.button.save")}</button>
         </ActionForm>

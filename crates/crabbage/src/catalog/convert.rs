@@ -3,7 +3,7 @@
 use crabbage_store::catalog::ingredients::Ingredient;
 use crabbage_store::catalog::sections::Section;
 
-use super::{IngredientRow, SectionRow};
+use super::{CategoryRow, IngredientRow, SectionRow};
 
 impl From<Ingredient> for IngredientRow {
     fn from(ingredient: Ingredient) -> Self {
@@ -23,6 +23,15 @@ impl From<Section> for SectionRow {
             id: section.id,
             name: section.name,
             position: section.position,
+        }
+    }
+}
+
+impl From<crabbage_store::catalog::categories::Category> for CategoryRow {
+    fn from(category: crabbage_store::catalog::categories::Category) -> Self {
+        Self {
+            id: category.id,
+            name: category.name,
         }
     }
 }

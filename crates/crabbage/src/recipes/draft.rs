@@ -42,6 +42,7 @@ fn input(draft: &RecipeDraft) -> Result<RecipeInput, ServerFnError> {
         servings,
         lines,
         steps,
+        category_ids: draft.categories.clone(),
     })
 }
 

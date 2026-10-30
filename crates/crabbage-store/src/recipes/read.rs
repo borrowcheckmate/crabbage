@@ -5,6 +5,7 @@ use sqlx::sqlite::SqlitePool;
 
 use super::model::{Person, Recipe, RecipeStep, RecipeSummary};
 use crate::StoreError;
+use crate::catalog::categories::Category;
 
 #[derive(FromRow)]
 struct Header {
@@ -54,6 +55,13 @@ pub async fn get(pool: &SqlitePool, id: i64) -> Result<Option<Recipe>, StoreErro
     .fetch_all(pool)
     .await?;
     let steps = steps_of(pool, id).await?;
+    let categories: Vec<Category> = sqlx::query_as(
+        "SELECT c.id, c.name FROM recipe_categories rc JOIN categories c ON c.id = rc.category_id \
+         WHERE rc.recipe_id = ? ORDER BY c.name COLLATE NOCASE, c.id",
+    )
+    .bind(id)
+    .fetch_all(pool)
+    .await?;
     Ok(Some(Recipe {
         id: header.id,
         title: header.title,
@@ -63,6 +71,7 @@ pub async fn get(pool: &SqlitePool, id: i64) -> Result<Option<Recipe>, StoreErro
         editors,
         lines,
         steps,
+        categories,
     }))
 }
 
@@ -95,16 +104,23 @@ async fn steps_of(pool: &SqlitePool, recipe_id: i64) -> Result<Vec<RecipeStep>, 
         .collect())
 }
 
-/// Every recipe, ordered by title.
+/// Every recipe ordered by title, or only those filed under `category` when it is given.
 ///
 /// # Errors
 ///
 /// Returns an error if the query fails.
-pub async fn list(pool: &SqlitePool) -> Result<Vec<RecipeSummary>, StoreError> {
+pub async fn list(
+    pool: &SqlitePool,
+    category: Option<i64>,
+) -> Result<Vec<RecipeSummary>, StoreError> {
     let recipes = sqlx::query_as(
         "SELECT r.id, r.title, r.servings, u.name AS owner_name FROM recipes r \
-         JOIN users u ON u.id = r.owner_id ORDER BY r.title COLLATE NOCASE, r.id",
+         JOIN users u ON u.id = r.owner_id \
+         WHERE ?1 IS NULL OR EXISTS (SELECT 1 FROM recipe_categories rc \
+             WHERE rc.recipe_id = r.id AND rc.category_id = ?1) \
+         ORDER BY r.title COLLATE NOCASE, r.id",
     )
+    .bind(category)
     .fetch_all(pool)
     .await?;
     Ok(recipes)

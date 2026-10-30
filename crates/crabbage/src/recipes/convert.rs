@@ -2,6 +2,8 @@
 
 use crabbage_store::recipes::{Person, Recipe, RecipeLine, RecipeStep, RecipeSummary};
 
+use crate::catalog::CategoryRow;
+
 use super::rights::Rights;
 use super::types::{LineRow, PersonRow, RecipeDetail, RecipeSummaryRow, StepRow};
 
@@ -55,6 +57,11 @@ pub(crate) fn detail(recipe: Recipe, rights: Rights) -> RecipeDetail {
         lines: recipe.lines.into_iter().map(LineRow::from).collect(),
         steps: recipe.steps.into_iter().map(StepRow::from).collect(),
         editors: recipe.editors.into_iter().map(PersonRow::from).collect(),
+        categories: recipe
+            .categories
+            .into_iter()
+            .map(CategoryRow::from)
+            .collect(),
         can_edit: rights.edit,
         can_delete: rights.delete,
         can_manage_editors: rights.manage_editors,

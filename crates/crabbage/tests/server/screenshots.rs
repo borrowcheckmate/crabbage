@@ -4,7 +4,7 @@
 
 use std::path::PathBuf;
 
-use crabbage_store::catalog::{ingredients, sections};
+use crabbage_store::catalog::{categories, ingredients, sections};
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create};
 
 use crate::common::{Harness, body_text, session_token};
@@ -49,10 +49,17 @@ async fn write_pages() {
     harness.issuer.set_name(Some("Sam Baker"));
     session_token(&harness.sign_in().await).expect("sign-in sets a session");
     let owner = harness.user_id().await;
-    let recipe = create(&harness.pool, owner, &sample_recipe(), 0)
+    let breakfast = categories::create(&harness.pool, "Breakfast")
+        .await
+        .expect("category");
+    categories::create(&harness.pool, "Dinner")
+        .await
+        .expect("category");
+    let recipe = create(&harness.pool, owner, &sample_recipe(breakfast), 0)
         .await
         .expect("recipe");
     let recipe_path = format!("/recipes/{recipe}");
+    let breakfast_path = format!("/recipes?category={breakfast}");
     let recipe_edit_path = format!("/recipes/{recipe}/edit");
     let ingredient_path = format!("/admin/ingredients/{tomato}");
     let ingredient_delete_path = format!("{ingredient_path}?confirm=delete");
@@ -76,6 +83,12 @@ async fn write_pages() {
         (
             "admin",
             &["crabbage-admin"][..],
+            "categories",
+            "/admin/categories",
+        ),
+        (
+            "admin",
+            &["crabbage-admin"][..],
             "ingredient",
             ingredient_path.as_str(),
         ),
@@ -94,6 +107,12 @@ async fn write_pages() {
         ("member", &[][..], "home", "/"),
         ("member", &[][..], "ingredients", "/admin/ingredients"),
         ("member", &[][..], "recipes", "/recipes"),
+        (
+            "member",
+            &[][..],
+            "recipes-breakfast",
+            breakfast_path.as_str(),
+        ),
         ("member", &[][..], "recipe", recipe_path.as_str()),
         ("member", &[][..], "recipe-edit", recipe_edit_path.as_str()),
         (
@@ -114,8 +133,9 @@ async fn write_pages() {
     }
 }
 
-/// A recipe with four lines and three steps, owned by the member who signs in first.
-fn sample_recipe() -> RecipeInput {
+/// A recipe with four lines and three steps, owned by the member who signs in first and filed under
+/// `category`.
+fn sample_recipe(category: i64) -> RecipeInput {
     let line =
         |amount: Option<f64>, unit: Option<&str>, ingredient: &str, note: Option<&str>| LineInput {
             amount,
@@ -149,5 +169,6 @@ fn sample_recipe() -> RecipeInput {
                 line_positions: vec![],
             },
         ],
+        category_ids: vec![category],
     }
 }

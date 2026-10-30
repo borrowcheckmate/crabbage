@@ -2,6 +2,7 @@
 //! and every other signed-in user is refused.
 
 use axum::http::StatusCode;
+use crabbage_store::catalog::categories;
 use crabbage_store::catalog::ingredients::{self, list};
 use crabbage_store::catalog::sections;
 use sqlx::sqlite::SqlitePool;
@@ -384,4 +385,72 @@ async fn section_id(pool: &SqlitePool, name: &str) -> i64 {
         .fetch_one(pool)
         .await
         .expect("the section exists")
+}
+
+async fn category_names(pool: &SqlitePool) -> Vec<String> {
+    categories::list(pool)
+        .await
+        .expect("categories read")
+        .into_iter()
+        .map(|category| category.name)
+        .collect()
+}
+
+async fn category_id(pool: &SqlitePool, name: &str) -> i64 {
+    sqlx::query_scalar("SELECT id FROM categories WHERE name = ?")
+        .bind(name)
+        .fetch_one(pool)
+        .await
+        .expect("the category exists")
+}
+
+#[tokio::test]
+async fn admin_creates_renames_and_deletes_a_category() {
+    let harness = Harness::start("catalog-categories").await;
+    let token = token_for(&harness, &[ADMIN]).await;
+
+    ok(&harness, &token, "create_category", "name=Breakfast").await;
+    let (status, body) = call(&harness, &token, "create_category", "name=breakfast").await;
+    assert_ne!(status, StatusCode::OK, "{body}");
+    assert!(body.contains("already in use"), "{body}");
+
+    let id = category_id(&harness.pool, "Breakfast").await;
+    ok(
+        &harness,
+        &token,
+        "rename_category",
+        &format!("id={id}&name=Brunch"),
+    )
+    .await;
+    assert_eq!(category_names(&harness.pool).await, ["Brunch"]);
+    let listed = ok(&harness, &token, "list_categories", "").await;
+    assert!(listed.contains("Brunch"), "{listed}");
+
+    ok(&harness, &token, "delete_category", &format!("id={id}")).await;
+    assert_eq!(category_names(&harness.pool).await, Vec::<String>::new());
+    let (status, _) = call(&harness, &token, "delete_category", &format!("id={id}")).await;
+    assert_ne!(
+        status,
+        StatusCode::OK,
+        "a missing category is not deleted twice"
+    );
+}
+
+#[tokio::test]
+async fn members_are_refused_for_every_category_endpoint() {
+    let harness = Harness::start("catalog-categories-member").await;
+    let dinner = categories::create(&harness.pool, "Dinner").await.unwrap();
+    let token = token_for(&harness, &[]).await;
+
+    for (endpoint, form) in [
+        ("list_categories", String::new()),
+        ("create_category", "name=Lunch".to_owned()),
+        ("rename_category", format!("id={dinner}&name=Supper")),
+        ("delete_category", format!("id={dinner}")),
+    ] {
+        let (status, body) = call(&harness, &token, endpoint, &form).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{endpoint}: {body}");
+        assert!(body.contains("not allowed"), "{endpoint}: {body}");
+    }
+    assert_eq!(category_names(&harness.pool).await, ["Dinner"]);
 }
