@@ -32,5 +32,20 @@ async fn home_renders_the_shell_with_the_title_for_a_signed_in_user() {
     let response = harness.get("/", Some(&token)).await;
     assert_eq!(response.status(), StatusCode::OK);
     let body = body_text(response).await;
+    assert!(body.contains("<html lang=\"en\""), "{body}");
     assert!(body.contains("<title>crabbage</title>"), "{body}");
+    assert!(body.contains("Sign out"), "{body}");
+}
+
+#[tokio::test]
+async fn home_renders_in_the_configured_language() {
+    let harness = Harness::start_with_language("server-nl", Some("nl")).await;
+    let token = session_token(&harness.sign_in().await).expect("sign-in sets a session");
+    let response = harness.get("/", Some(&token)).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = body_text(response).await;
+    assert!(body.contains("<html lang=\"nl\""), "{body}");
+    assert!(body.contains("<title>crabbage</title>"), "{body}");
+    assert!(body.contains("Uitloggen"), "{body}");
+    assert!(!body.contains("Sign out"), "{body}");
 }

@@ -50,6 +50,11 @@ pub(crate) struct Harness {
 
 impl Harness {
     pub(crate) async fn start(name: &str) -> Self {
+        Self::start_with_language(name, None).await
+    }
+
+    /// Starts the app with `CRABBAGE_LANGUAGE` set to `language`, or unset when it is `None`.
+    pub(crate) async fn start_with_language(name: &str, language: Option<&str>) -> Self {
         let dir = TempDir::new(name);
         let pool = crabbage_store::open(dir.path())
             .await
@@ -60,6 +65,7 @@ impl Harness {
             "OIDC_ISSUER_URL" => Some(issuer.url().to_owned()),
             "OIDC_CLIENT_ID" => Some("crabbage".to_owned()),
             "OIDC_CLIENT_SECRET" => Some("secret".to_owned()),
+            "CRABBAGE_LANGUAGE" => language.map(str::to_owned),
             _ => None,
         })
         .expect("config is valid");
