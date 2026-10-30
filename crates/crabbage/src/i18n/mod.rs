@@ -8,6 +8,6 @@ mod tests;
 
 #[cfg(feature = "hydrate")]
 pub(crate) use context::document_language;
-pub(crate) use context::{current_language, t, t_with};
+pub(crate) use context::{current_language, messages, t, t_with};
 pub use language::Language;
 pub(crate) use messages::Messages;

@@ -79,8 +79,15 @@
   "recipe.error.step": "Enter the text of the step.",
   "recipe.error.minutes": "Minutes must be a whole number of at least 1.",
   "recipe.error.line": "A step uses an ingredient that is not in the recipe.",
+  "unit.g": "g",
+  "unit.kg": "kg",
+  "unit.ml": "ml",
+  "unit.l": "l",
+  "unit.tsp": "tsp",
+  "unit.tbsp": "tbsp",
   "unit.piece": "piece",
-  "unit.pinch": "pinch",
+  "unit.pinch": "a pinch",
   "unit.to_taste": "to taste",
-  "unit.minutes": "min"
+  "unit.minutes": "min",
+  "number.decimal": "."
 }

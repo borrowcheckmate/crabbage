@@ -6,11 +6,11 @@ use leptos::prelude::*;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
-use crate::i18n::t;
+use crate::i18n::{messages, t};
 use crate::notice::{error_notice, failure, message};
+use crate::recipes::line_text::line_text;
 use crate::recipes::read::get_recipe;
-use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
-use crate::recipes::units::unit_text;
+use crate::recipes::types::{RecipeDetail, StepRow};
 use crate::recipes::write::DeleteRecipe;
 use crate::route::route_id;
 
@@ -67,7 +67,7 @@ fn recipe_view(recipe: RecipeDetail, delete: ServerAction<DeleteRecipe>) -> AnyV
         <p>{servings}</p>
         <p>{owner}</p>
         <h2>{t("recipe.lines.heading")}</h2>
-        <ul>{lines.iter().map(|line| view! { <li>{line_text(line)}</li> }).collect_view()}</ul>
+        <ul>{lines.iter().map(|line| view! { <li>{line_text(line, messages())}</li> }).collect_view()}</ul>
         <h2>{t("recipe.steps.heading")}</h2>
         <ol>{steps.iter().map(step_item).collect_view()}</ol>
         <div class="row">
@@ -82,22 +82,6 @@ fn recipe_view(recipe: RecipeDetail, delete: ServerAction<DeleteRecipe>) -> AnyV
         {move || delete.value().with(|value| failure(value.as_ref()))}
     }
     .into_any()
-}
-
-/// A line as one readable text: the amount, the unit, the ingredient and the note in brackets.
-fn line_text(line: &LineRow) -> String {
-    let amount = line.amount.map(|amount| amount.to_string());
-    let unit = line.unit.as_deref().map(unit_text);
-    let text = [amount, unit, line.ingredient.clone()]
-        .into_iter()
-        .flatten()
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<String>>()
-        .join(" ");
-    match line.note.as_deref() {
-        Some(note) if !note.is_empty() => format!("{text} ({note})"),
-        Some(_) | None => text,
-    }
 }
 
 fn step_item(step: &StepRow) -> impl IntoView {

@@ -120,7 +120,7 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/i18n/mod.rs` | Module declarations and re-exports |
 | `src/i18n/language.rs` | `Language` (`En`, `Nl`), re-exported from the crate root. `code` and `from_code` map to and from `en` and `nl` |
 | `src/i18n/messages.rs` | `Messages`: one language's keys, parsed once per language from its embedded file. `get` returns the key when missing, `format` fills `{name}` placeholders and keeps unknown ones |
-| `src/i18n/context.rs` | `t(key)`, `t_with(key, args)` (fills `{name}` placeholders) and `current_language()` read the language from leptos context, English when none is provided. `document_language()` (`hydrate`) reads the `lang` attribute of the page |
+| `src/i18n/context.rs` | `messages()` (the current language's `Messages`), `t(key)`, `t_with(key, args)` (fills `{name}` placeholders) and `current_language()` read the language from leptos context, English when none is provided. `document_language()` (`hydrate`) reads the `lang` attribute of the page |
 | `src/i18n/tests.rs` | Every file in `locales/` parses, has the English keys and a language code as its name; every key is translated; formatting; language codes |
 
 The language flows from `Config` to `AppState`, then to the Leptos routes and the error fallback, which provide it as context for each render. `shell` sets `<html lang>` from it and `App` reads the text with `t`. The browser takes the language from the `lang` attribute of the page before it hydrates.
@@ -182,7 +182,8 @@ Form encoding: the recipe form sends one hidden field, `draft`, holding the whol
 | Module | Responsibility |
 | --- | --- |
 | `types.rs` | `RecipeSummaryRow`, `RecipeDetail` (with the three rights), `LineRow`, `StepRow`, `PersonRow` and the draft records `RecipeDraft`, `LineDraft`, `StepDraft` (text as typed) |
-| `units.rs` | `unit_text`: the symbol of a unit, translated for piece, pinch and to taste |
+| `units.rs` | `unit_text(messages, symbol)`: the word of a unit from its `unit.*` locale key (`g`, `tl`, `a pinch`, ...). Unknown symbols show as typed |
+| `line_text.rs` | `line_text(line, messages)`: a line's readable text. A count shows no unit word (`2 Egg`), a unitless unit follows the ingredient (`Salt, to taste`), the note follows after a comma. Numbers keep at most two decimals without trailing zeros, with the `number.decimal` locale separator |
 | `list.rs`, `read.rs`, `write.rs`, `editors.rs`, `ingredients.rs` | Server functions: `list_recipes`, `get_recipe`, `create_recipe`, `update_recipe`, `delete_recipe`, `add_recipe_editor`, `remove_recipe_editor`, `list_users` (any signed-in user, for the editor choice) and `ingredient_names` (any signed-in user, for the ingredient suggestions) |
 | `rights.rs` (`ssr`) | `Rights::of` and `permit` (the rule per change), `load` (the recipe or the missing-item error) |
 | `convert.rs` (`ssr`) | Store records to the page records |
@@ -207,7 +208,7 @@ Pages load data in one `<Suspense>` whose closure returns a `Suspend` future tha
 | `tests/server/household.rs` | Group claims on login (admin, households, changes on the next login), switching the active household, 403 for non-members, a user without households |
 | `tests/server/catalog.rs` | Admin create, rename and delete; members refused on every endpoint with 403; alias uniqueness through the API; sections created and reordered; the review queue; merge through the API |
 | `tests/server/recipes.rs` | Recipe endpoints: a member creates and gets a recipe back, another member views but gets 403 on change, a listed editor changes but not deletes or manages editors, a removed editor is refused, an admin changes and deletes anyone's, invalid input is refused in words (English and Dutch), the list and the user and ingredient names |
-| `tests/server/recipe_pages.rs` | The list, a recipe page with lines and numbered steps, Edit and Delete for the users who may use them, the new and edit forms, the editors section for owners and admins, the missing recipe |
+| `tests/server/recipe_pages.rs` | The list, a recipe page with lines and numbered steps (`2 Egg`, `Salt, to taste`), a Dutch recipe page with decimal commas and Dutch unit words, Edit and Delete for the users who may use them, the new and edit forms, the editors section for owners and admins, the missing recipe |
 | `tests/server/ingredient_pages.rs` | The ingredient list rows (one link each, no actions), the search by name and alias (case-insensitive, no-match text), the detail actions, the not-found text, the not-allowed message for members, and the delete and merge questions shown only with `?confirm=delete` and `?confirm=merge` |
 | `tests/server/screenshots.rs` | Ignored. Writes the rendered pages, including a sample recipe and the ingredient pages, to `CRABBAGE_SCREENSHOT_DIR` for review screenshots, with `style/main.css` copied beside them and the link made relative so a `file://` view is styled |
 | `tests/server/pages.rs` | Admin pages render for admins, show the not-allowed message to members, the ingredient list's sections, alternative-name counts and pending badge, and the home page links to them for admins only |

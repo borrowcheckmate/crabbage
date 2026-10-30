@@ -79,8 +79,15 @@
   "recipe.error.step": "Vul de tekst van de stap in.",
   "recipe.error.minutes": "Minuten moeten een geheel getal van minstens 1 zijn.",
   "recipe.error.line": "Een stap gebruikt een ingrediënt dat niet in het recept staat.",
+  "unit.g": "g",
+  "unit.kg": "kg",
+  "unit.ml": "ml",
+  "unit.l": "l",
+  "unit.tsp": "tl",
+  "unit.tbsp": "el",
   "unit.piece": "stuk",
-  "unit.pinch": "snuifje",
+  "unit.pinch": "een snufje",
   "unit.to_taste": "naar smaak",
-  "unit.minutes": "min"
+  "unit.minutes": "min",
+  "number.decimal": ","
 }
