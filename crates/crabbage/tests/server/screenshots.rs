@@ -5,10 +5,15 @@
 use std::path::PathBuf;
 
 use crabbage_store::catalog::{ingredients, sections};
+use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create};
 
 use crate::common::{Harness, body_text, session_token};
 
 #[tokio::test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the writer lists every page it photographs, one line each"
+)]
 #[ignore = "writes review screenshots' HTML; needs CRABBAGE_SCREENSHOT_DIR"]
 async fn write_pages() {
     let dir = PathBuf::from(std::env::var("CRABBAGE_SCREENSHOT_DIR").expect("dir is set"));
@@ -40,6 +45,15 @@ async fn write_pages() {
         .await
         .expect("pending ingredient");
 
+    harness.issuer.set_groups(&[]);
+    session_token(&harness.sign_in().await).expect("sign-in sets a session");
+    let owner = harness.user_id().await;
+    let recipe = create(&harness.pool, owner, &sample_recipe(), 0)
+        .await
+        .expect("recipe");
+    let recipe_path = format!("/recipes/{recipe}");
+    let recipe_edit_path = format!("/recipes/{recipe}/edit");
+
     let pages = [
         ("admin", &["crabbage-admin"][..], "home", "/"),
         (
@@ -57,6 +71,10 @@ async fn write_pages() {
         ("admin", &["crabbage-admin"][..], "review", "/admin/review"),
         ("member", &[][..], "home", "/"),
         ("member", &[][..], "ingredients", "/admin/ingredients"),
+        ("member", &[][..], "recipes", "/recipes"),
+        ("member", &[][..], "recipe", recipe_path.as_str()),
+        ("member", &[][..], "recipe-edit", recipe_edit_path.as_str()),
+        ("member", &[][..], "recipe-new", "/recipes/new"),
     ];
     for (who, groups, name, path) in pages {
         harness.issuer.set_groups(groups);
@@ -65,5 +83,42 @@ async fn write_pages() {
             .await
             .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
         std::fs::write(dir.join(format!("{who}-{name}.html")), body).expect("page is written");
+    }
+}
+
+/// A recipe with three lines and three steps, owned by the member who signs in first.
+fn sample_recipe() -> RecipeInput {
+    let line =
+        |amount: Option<f64>, unit: Option<&str>, ingredient: &str, note: Option<&str>| LineInput {
+            amount,
+            unit: unit.map(str::to_owned),
+            ingredient: Some(ingredient.to_owned()),
+            note: note.map(str::to_owned),
+        };
+    RecipeInput {
+        title: "Pancakes".to_owned(),
+        servings: 4,
+        lines: vec![
+            line(Some(250.0), Some("g"), "Flour", Some("sifted")),
+            line(Some(2.0), Some("piece"), "Egg", None),
+            line(None, Some("to taste"), "Salt", None),
+        ],
+        steps: vec![
+            StepInput {
+                text: "Whisk the eggs with the milk.".to_owned(),
+                duration_seconds: Some(120),
+                line_positions: vec![1],
+            },
+            StepInput {
+                text: "Stir in the flour and a pinch of salt.".to_owned(),
+                duration_seconds: None,
+                line_positions: vec![0, 2],
+            },
+            StepInput {
+                text: "Fry in a hot pan until golden on both sides.".to_owned(),
+                duration_seconds: Some(240),
+                line_positions: vec![],
+            },
+        ],
     }
 }

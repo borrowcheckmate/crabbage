@@ -3,7 +3,7 @@
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
-use super::notice::{error_notice, failure, message};
+use crate::notice::{error_notice, failure, message};
 use leptos::prelude::ServerFnError;
 
 use crate::catalog::SectionRow;

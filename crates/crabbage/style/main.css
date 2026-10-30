@@ -222,3 +222,52 @@ main > form {
     flex: 0 0 auto;
   }
 }
+
+textarea {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+label textarea {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 400;
+}
+
+.rows {
+  display: grid;
+  gap: 0.75rem;
+  flex: 1 1 100%;
+}
+
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (min-width: 40rem) {
+  a.button {
+    width: auto;
+  }
+}
+
+ul + h2,
+ol + h2 {
+  margin-top: 1.25rem;
+}

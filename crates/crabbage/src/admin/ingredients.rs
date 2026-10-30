@@ -3,7 +3,6 @@
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
-use super::notice::{error_notice, failure, message};
 use crate::catalog::ingredients::{
     AddAlias, CreateIngredient, DeleteIngredient, MergeIngredients, RemoveAlias, RenameIngredient,
     SetIngredientSection, list_ingredients,
@@ -11,6 +10,7 @@ use crate::catalog::ingredients::{
 use crate::catalog::sections::list_sections;
 use crate::catalog::{IngredientRow, SectionRow};
 use crate::i18n::t;
+use crate::notice::{error_notice, failure, message};
 use crate::user::current_user;
 
 /// The actions a card of an ingredient can send.

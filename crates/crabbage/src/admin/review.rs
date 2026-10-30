@@ -3,9 +3,9 @@
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
-use super::notice::{error_notice, failure, message};
 use crate::catalog::ingredients::{ApproveIngredient, list_pending_ingredients};
 use crate::i18n::t;
+use crate::notice::{error_notice, failure, message};
 use crate::user::current_user;
 
 /// The review page. Admins see the pending ingredients, everyone else a message. The data is loaded

@@ -15,3 +15,4 @@ pub(crate) use middleware::require_session;
 pub(crate) use oidc::{Oidc, http_client};
 pub use routes::SessionUser;
 pub(crate) use routes::routes;
+pub(crate) use session::now;

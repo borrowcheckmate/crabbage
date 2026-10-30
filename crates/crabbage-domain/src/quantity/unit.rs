@@ -37,6 +37,25 @@ pub enum Unit {
 }
 
 impl Unit {
+    /// Every unit, in the order a form lists them.
+    pub const ALL: [Self; 9] = [
+        Self::Gram,
+        Self::Kilogram,
+        Self::Millilitre,
+        Self::Litre,
+        Self::Teaspoon,
+        Self::Tablespoon,
+        Self::Piece,
+        Self::Pinch,
+        Self::ToTaste,
+    ];
+
+    /// The unit whose [`symbol`](Self::symbol) is `symbol`, or `None` when there is none.
+    #[must_use]
+    pub fn from_symbol(symbol: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|unit| unit.symbol() == symbol)
+    }
+
     /// The dimension this unit measures.
     #[must_use]
     pub const fn dimension(self) -> Dimension {
