@@ -40,12 +40,17 @@ pub(crate) async fn update_recipe(id: i64, draft: String) -> Result<(), ServerFn
 /// Deletes the recipe `id` with everything that belongs to it.
 #[server(prefix = "/api", endpoint = "delete_recipe")]
 pub(crate) async fn delete_recipe(id: i64) -> Result<(), ServerFnError> {
-    use crate::recipes::rights::{Change, permit};
+    use crate::recipes::rights::{Change, load, permit};
     use crabbage_store::recipes::delete;
     let (pool, user) = crate::access::signed_in().await?;
     permit(&pool, user, id, Change::Delete).await?;
+    let image = load(&pool, id).await?.image;
     let found = delete(&pool, id)
         .await
         .map_err(|error| crate::access::store_failure(&error))?;
-    crate::access::ensure_found(found)
+    crate::access::ensure_found(found)?;
+    if let Some(name) = image {
+        drop(crate::images::remove(&crate::access::data_dir()?, &name).await);
+    }
+    Ok(())
 }

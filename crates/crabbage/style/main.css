@@ -350,6 +350,15 @@ label > input[type="checkbox"] {
   accent-color: var(--accent);
 }
 
+.photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+}
+
 .badge {
   display: inline-block;
   margin-left: 0.5rem;

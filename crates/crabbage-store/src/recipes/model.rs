@@ -65,6 +65,8 @@ pub struct Recipe {
     pub steps: Vec<RecipeStep>,
     /// The categories the recipe is filed under, ordered by name.
     pub categories: Vec<Category>,
+    /// The file name of the recipe's photo in the images directory, if it has one.
+    pub image: Option<String>,
 }
 
 /// An ingredient line as the store returns it.
@@ -104,6 +106,8 @@ pub struct RecipeSummary {
     pub servings: i64,
     /// The name of the owner.
     pub owner_name: String,
+    /// The file name of the recipe's photo in the images directory, if it has one.
+    pub image: Option<String>,
 }
 
 /// A user's id and name.

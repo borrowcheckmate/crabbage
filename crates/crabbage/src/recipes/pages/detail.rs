@@ -67,6 +67,7 @@ fn recipe_view(
         categories,
         lines,
         steps,
+        image,
         can_edit,
         can_delete,
         ..
@@ -79,6 +80,7 @@ fn recipe_view(
     let owner = format!("{}: {owner_name}", t("recipe.added_by"));
     view! {
         <h1>{title.clone()}</h1>
+        {image.map(|name| view! { <img class="photo" src=format!("/images/{name}") alt=title.clone()/> })}
         <p>{servings}</p>
         <p>{owner}</p>
         <div class="row">

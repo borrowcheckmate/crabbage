@@ -45,13 +45,15 @@ pub(crate) struct Harness {
     pub(crate) router: Router,
     pub(crate) pool: SqlitePool,
     pub(crate) issuer: FakeIssuer,
+    data_dir: PathBuf,
     _dir: TempDir,
 }
 
-/// The app configuration for tests, with the provider at `issuer_url` and `CRABBAGE_LANGUAGE` set
-/// to `language`, or unset when it is `None`.
-pub(crate) fn config(issuer_url: &str, language: Option<&str>) -> Config {
+/// The app configuration for tests, with the provider at `issuer_url`, the data in `data_dir` and
+/// `CRABBAGE_LANGUAGE` set to `language`, or unset when it is `None`.
+pub(crate) fn config(issuer_url: &str, data_dir: &Path, language: Option<&str>) -> Config {
     Config::from_lookup(|key| match key {
+        "CRABBAGE_DATA_DIR" => Some(data_dir.to_string_lossy().into_owned()),
         "CRABBAGE_PUBLIC_URL" => Some("https://recipes.example.com".to_owned()),
         "OIDC_ISSUER_URL" => Some(issuer_url.to_owned()),
         "OIDC_CLIENT_ID" => Some("crabbage".to_owned()),
@@ -74,15 +76,22 @@ impl Harness {
             .await
             .expect("database opens");
         let issuer = FakeIssuer::start().await;
-        let config = config(issuer.url(), language);
+        let data_dir = dir.path().to_path_buf();
+        let config = config(issuer.url(), &data_dir, language);
         let options = LeptosOptions::builder().output_name("crabbage").build();
         let router = crabbage::router(options, &config, pool.clone()).expect("router builds");
         Self {
             router,
             pool,
             issuer,
+            data_dir,
             _dir: dir,
         }
+    }
+
+    /// The images directory under the harness data directory.
+    pub(crate) fn images_dir(&self) -> PathBuf {
+        self.data_dir.join("images")
     }
 
     pub(crate) async fn session_count(&self) -> i64 {
