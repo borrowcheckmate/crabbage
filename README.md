@@ -2,10 +2,6 @@
 
 A Rust-based recipe book.
 
-## Use this template
-
-Create a repository from this template, then follow [AGENTS.md → New project from this template](AGENTS.md#new-project-from-this-template). The steps work for people and coding agents alike, and remove all template leftovers, this section included.
-
 ## Install
 
 ```sh
