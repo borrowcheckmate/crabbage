@@ -1,5 +1,5 @@
 //! The recipe pages render: the list, a recipe with its lines and numbered steps, and the forms. Edit
-//! and Delete show only to the users who may use them.
+//! and Delete show only to the users who may use them, and delete asks first.
 
 use axum::http::StatusCode;
 
@@ -114,20 +114,61 @@ async fn edit_and_delete_show_only_to_those_who_may_use_them() {
     let owner = sign_in_as(&harness, OWNER, &[]).await;
     let id = create(&harness, &owner, "Pancakes").await;
     let edit_link = format!("href=\"/recipes/{id}/edit\"");
+    let delete_link = format!("href=\"/recipes/{id}?confirm=delete\"");
 
     let body = page(&harness, &owner, &format!("/recipes/{id}")).await;
     assert!(body.contains(&edit_link), "{body}");
-    assert!(body.contains("class=\"danger\""), "{body}");
+    assert!(body.contains(&delete_link), "{body}");
+    assert!(!body.contains("class=\"danger\""), "{body}");
 
     let other = sign_in_as(&harness, OTHER, &[]).await;
     let body = page(&harness, &other, &format!("/recipes/{id}")).await;
     assert!(!body.contains(&edit_link), "{body}");
-    assert!(!body.contains("class=\"danger\""), "{body}");
+    assert!(!body.contains(&delete_link), "{body}");
 
     let admin = sign_in_as(&harness, "admin", &["crabbage-admin"]).await;
     let body = page(&harness, &admin, &format!("/recipes/{id}")).await;
     assert!(body.contains(&edit_link), "{body}");
+    assert!(body.contains(&delete_link), "{body}");
+}
+
+#[tokio::test]
+async fn the_recipe_page_without_confirm_has_no_delete_form() {
+    let harness = Harness::start("recipe-pages-no-confirm").await;
+    let owner = sign_in_as(&harness, OWNER, &[]).await;
+    let id = create(&harness, &owner, "Pancakes").await;
+
+    let body = page(&harness, &owner, &format!("/recipes/{id}")).await;
+    assert!(!body.contains("delete_recipe"), "{body}");
+    assert!(!body.contains("Delete Pancakes?"), "{body}");
+}
+
+#[tokio::test]
+async fn confirm_delete_shows_the_question_and_the_delete_form() {
+    let harness = Harness::start("recipe-pages-confirm-delete").await;
+    let owner = sign_in_as(&harness, OWNER, &[]).await;
+    let id = create(&harness, &owner, "Pancakes").await;
+
+    let body = page(&harness, &owner, &format!("/recipes/{id}?confirm=delete")).await;
+    assert!(body.contains("Delete Pancakes?"), "{body}");
+    assert!(body.contains("delete_recipe"), "{body}");
     assert!(body.contains("class=\"danger\""), "{body}");
+    assert!(body.contains(&format!("href=\"/recipes/{id}\"")), "{body}");
+    assert!(body.contains("Cancel"), "{body}");
+    assert!(!body.contains("?confirm=delete\""), "{body}");
+}
+
+#[tokio::test]
+async fn confirm_delete_is_not_shown_to_those_who_may_not_delete() {
+    let harness = Harness::start("recipe-pages-confirm-other").await;
+    let owner = sign_in_as(&harness, OWNER, &[]).await;
+    let id = create(&harness, &owner, "Pancakes").await;
+
+    let other = sign_in_as(&harness, OTHER, &[]).await;
+    let body = page(&harness, &other, &format!("/recipes/{id}?confirm=delete")).await;
+    assert!(!body.contains("Delete Pancakes?"), "{body}");
+    assert!(!body.contains("delete_recipe"), "{body}");
+    assert!(!body.contains("class=\"danger\""), "{body}");
 }
 
 #[tokio::test]

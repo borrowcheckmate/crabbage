@@ -57,6 +57,7 @@
   "recipe.button.add_line": "Add ingredient",
   "recipe.button.add_step": "Add step",
   "recipe.button.save": "Save",
+  "recipe.confirm.delete": "Delete {name}?",
   "recipe.not_allowed": "You are not allowed to change this recipe.",
   "recipe.new_heading": "New recipe",
   "recipe.edit_heading": "Edit recipe",

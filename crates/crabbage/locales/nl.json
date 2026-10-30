@@ -57,6 +57,7 @@
   "recipe.button.add_line": "Ingrediënt toevoegen",
   "recipe.button.add_step": "Stap toevoegen",
   "recipe.button.save": "Opslaan",
+  "recipe.confirm.delete": "{name} verwijderen?",
   "recipe.not_allowed": "Je mag dit recept niet wijzigen.",
   "recipe.new_heading": "Nieuw recept",
   "recipe.edit_heading": "Recept wijzigen",

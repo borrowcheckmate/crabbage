@@ -56,6 +56,7 @@ async fn write_pages() {
     let recipe_edit_path = format!("/recipes/{recipe}/edit");
     let ingredient_path = format!("/admin/ingredients/{tomato}");
     let ingredient_delete_path = format!("{ingredient_path}?confirm=delete");
+    let recipe_delete_path = format!("{recipe_path}?confirm=delete");
 
     let pages = [
         ("admin", &["crabbage-admin"][..], "home", "/"),
@@ -95,6 +96,12 @@ async fn write_pages() {
         ("member", &[][..], "recipes", "/recipes"),
         ("member", &[][..], "recipe", recipe_path.as_str()),
         ("member", &[][..], "recipe-edit", recipe_edit_path.as_str()),
+        (
+            "member",
+            &[][..],
+            "recipe-delete",
+            recipe_delete_path.as_str(),
+        ),
         ("member", &[][..], "recipe-new", "/recipes/new"),
     ];
     for (who, groups, name, path) in pages {
