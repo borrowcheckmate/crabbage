@@ -24,8 +24,6 @@ pub(crate) type HttpClient = reqwest::Client;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Profile {
-    name: Option<String>,
-    preferred_username: Option<String>,
     groups: Option<Vec<String>>,
 }
 
@@ -134,14 +132,21 @@ impl Oidc {
             .claims(&self.client.id_token_verifier(), &Nonce::new(attempt.nonce))
             .ok()?;
         let subject = claims.subject().as_str().to_owned();
-        let profile = claims.additional_claims();
-        let name = profile
-            .name
-            .as_deref()
-            .or(profile.preferred_username.as_deref())
-            .unwrap_or(&subject)
-            .to_owned();
-        let groups = profile.groups.clone().unwrap_or_default();
+        let name = claims
+            .name()
+            .and_then(|name| name.get(None))
+            .map(|name| name.as_str().to_owned())
+            .or_else(|| {
+                claims
+                    .preferred_username()
+                    .map(|username| username.as_str().to_owned())
+            })
+            .unwrap_or_else(|| subject.clone());
+        let groups = claims
+            .additional_claims()
+            .groups
+            .clone()
+            .unwrap_or_default();
         Some(Identity {
             subject,
             name,

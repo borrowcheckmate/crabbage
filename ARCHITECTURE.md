@@ -199,7 +199,7 @@ Pages load data in one `<Suspense>` whose closure returns a `Suspend` future tha
 | `tests/server/main.rs` | `healthz`, the rendered shell for a signed-in user in English and in Dutch (`lang`, title, sign-out text), the stylesheet link, and the shared harness module declarations |
 | `tests/stylesheet.rs` | String checks on `style/main.css`: the dark colour scheme, a 44px minimum height for inputs and buttons, and a `max-width` on `body` |
 | `tests/strings.rs` | No string literal is used as text in a `view!` block under `src/`. Tests the heuristic on inline samples |
-| `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce) |
+| `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce), the stored name (`name`, `preferred_username`, subject, changes on the next login) |
 | `tests/server/session.rs` | Logout deletes the row and clears the cookie; expired and unknown sessions require a new login |
 | `tests/server/household.rs` | Group claims on login (admin, households, changes on the next login), switching the active household, 403 for non-members, a user without households |
 | `tests/server/catalog.rs` | Admin create, rename and delete; members refused on every endpoint with 403; alias uniqueness through the API; sections created and reordered; the review queue; merge through the API |

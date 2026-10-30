@@ -42,6 +42,8 @@ struct Expectations {
     nonce: Option<String>,
     groups: Vec<String>,
     subject: String,
+    name: Option<String>,
+    preferred_username: Option<String>,
 }
 
 /// A running fake provider. Its ID tokens carry the nonce set with [`FakeIssuer::expect_nonce`].
@@ -71,6 +73,8 @@ impl FakeIssuer {
                 nonce: None,
                 groups: Vec::new(),
                 subject: DEFAULT_SUBJECT.to_owned(),
+                name: None,
+                preferred_username: None,
             })),
         };
         let router = Router::new()
@@ -105,13 +109,28 @@ impl FakeIssuer {
         subject.clone_into(&mut self.expectations.lock().expect("not poisoned").subject);
     }
 
+    /// Makes the next ID tokens carry the `name` claim `name`, or no name when it is `None`.
+    pub(crate) fn set_name(&self, name: Option<&str>) {
+        self.expectations.lock().expect("not poisoned").name = name.map(str::to_owned);
+    }
+
+    /// Makes the next ID tokens carry the `preferred_username` claim, or none when it is `None`.
+    pub(crate) fn set_preferred_username(&self, username: Option<&str>) {
+        self.expectations
+            .lock()
+            .expect("not poisoned")
+            .preferred_username = username.map(str::to_owned);
+    }
+
     fn id_token(&self) -> String {
-        let (nonce, groups, subject) = {
+        let (nonce, groups, subject, name, preferred_username) = {
             let expectations = self.expectations.lock().expect("not poisoned");
             (
                 expectations.nonce.clone(),
                 expectations.groups.clone(),
                 expectations.subject.clone(),
+                expectations.name.clone(),
+                expectations.preferred_username.clone(),
             )
         };
         let now = 1_900_000_000_u64;
@@ -123,8 +142,8 @@ impl FakeIssuer {
             "exp": now + 3600,
             "iat": now,
             "nonce": nonce,
-            "name": "Ada Lovelace",
-            "preferred_username": "ada",
+            "name": name,
+            "preferred_username": preferred_username,
             "groups": groups,
         });
         let signing_input = format!(

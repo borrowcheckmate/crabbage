@@ -2,6 +2,7 @@
 
 use axum::http::StatusCode;
 use axum::http::header::LOCATION;
+use crabbage_store::users;
 use url::Url;
 
 use crate::common::{
@@ -185,4 +186,47 @@ async fn wrong_nonce_in_the_id_token_creates_no_session() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     assert_eq!(body_text(response).await, "login failed");
     assert_eq!(harness.session_count().await, 0);
+}
+
+async fn stored_name(harness: &Harness) -> String {
+    let user = harness.user_id().await;
+    users::find(&harness.pool, user)
+        .await
+        .expect("user reads")
+        .expect("the user exists")
+        .name
+}
+
+#[tokio::test]
+async fn the_name_claim_is_stored_as_the_display_name() {
+    let harness = Harness::start("auth-name-claim").await;
+    harness.issuer.set_name(Some("Ada Lovelace"));
+    harness.issuer.set_preferred_username(Some("ada"));
+    harness.sign_in().await;
+    assert_eq!(stored_name(&harness).await, "Ada Lovelace");
+}
+
+#[tokio::test]
+async fn preferred_username_is_stored_without_a_name_claim() {
+    let harness = Harness::start("auth-preferred-username").await;
+    harness.issuer.set_preferred_username(Some("ada"));
+    harness.sign_in().await;
+    assert_eq!(stored_name(&harness).await, "ada");
+}
+
+#[tokio::test]
+async fn the_subject_is_stored_without_name_claims() {
+    let harness = Harness::start("auth-subject-name").await;
+    harness.sign_in().await;
+    assert_eq!(stored_name(&harness).await, "subject-1");
+}
+
+#[tokio::test]
+async fn a_changed_name_is_stored_on_the_next_login() {
+    let harness = Harness::start("auth-name-changes").await;
+    harness.issuer.set_name(Some("Ada Lovelace"));
+    harness.sign_in().await;
+    harness.issuer.set_name(Some("Ada King"));
+    harness.sign_in().await;
+    assert_eq!(stored_name(&harness).await, "Ada King");
 }
