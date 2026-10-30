@@ -44,12 +44,12 @@ Their responsibilities:
 
 ## crates/crabbage-store
 
-SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` creates the directory and `crabbage.db` if missing, sets WAL journaling and foreign keys on every connection, and applies the embedded migrations. `StoreError` wraps the io, sqlx and migration errors.
+SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` creates the directory and `crabbage.db` if missing, sets WAL journaling and foreign keys on every connection, and applies the embedded migrations. Every write transaction starts with `begin_write` (`BEGIN IMMEDIATE`), so concurrent writers wait for the busy timeout instead of failing to upgrade a read transaction. `StoreError` wraps the io, sqlx and migration errors.
 
 | Module | Responsibility |
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports |
-| `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR` |
+| `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR`; `begin_write` |
 | `src/error.rs` | `StoreError`: io, database and migration failures, `Conflict(text)` when a name or alias is taken or would equal a name or alias, `InUse` when recipe lines use an ingredient, and `UnknownLine` when a step links to a line the recipe does not have |
 | `src/users.rs` | `upsert_user`: one row per OIDC subject, returns the user id. `find`: the name and admin flag of a user (`User`) |
 | `src/sessions.rs` | `create`, `find_user`, `delete`. Takes the raw token and stores only its SHA-256 hash |
@@ -67,6 +67,7 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `src/recipes/editors.rs` | `add_editor` (false for a missing recipe or user; adding twice changes nothing) and `remove_editor` |
 | `migrations/` | SQL migrations, applied in file-name order |
 | `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
+| `tests/concurrent_writes.rs` | Many concurrent creates and renames all succeed |
 | `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs`, `tests/households.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
 | `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines inserted with SQL), section ordering and renumbering |
 | `tests/catalog_categories.rs` | Category order by name, unique names regardless of case, rename, and delete taking the category off its recipes |

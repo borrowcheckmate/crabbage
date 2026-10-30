@@ -17,7 +17,7 @@ pub async fn create(
     input: &RecipeInput,
     now: i64,
 ) -> Result<i64, StoreError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     let id = sqlx::query_scalar(
         "INSERT INTO recipes (owner_id, title, servings, created_at) VALUES (?, ?, ?, ?) RETURNING id",
     )
@@ -40,7 +40,7 @@ pub async fn create(
 /// Returns [`StoreError::UnknownLine`] when a step links to a line that is not in the recipe, or a
 /// database error. Nothing is changed in that case.
 pub async fn update(pool: &SqlitePool, id: i64, input: &RecipeInput) -> Result<bool, StoreError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     let found = sqlx::query("UPDATE recipes SET title = ?, servings = ? WHERE id = ?")
         .bind(&input.title)
         .bind(input.servings)
