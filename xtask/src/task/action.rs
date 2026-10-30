@@ -9,5 +9,4 @@ pub(crate) enum Action {
     Identity(Option<String>),
     CommitMsg(PathBuf),
     PrCheck,
-    Rename(String),
 }

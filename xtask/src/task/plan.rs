@@ -3,7 +3,7 @@ use crate::cli::Command;
 use super::action::Action;
 use super::step::Step;
 
-const IMAGE: &str = "rust-template:local";
+const IMAGE: &str = "crabbage:local";
 const COVERAGE_THRESHOLD: &str = "90";
 
 pub(crate) fn plan(command: &Command) -> Vec<Action> {
@@ -31,7 +31,6 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
             "git",
             &["config", "core.hooksPath", ".githooks"],
         ))],
-        Command::Rename { name } => vec![Action::Rename(name.clone())],
     }
 }
 
@@ -131,11 +130,9 @@ mod tests {
             .into_iter()
             .map(|action| match action {
                 Action::Run(step) => step.to_string(),
-                Action::Policy
-                | Action::Identity(_)
-                | Action::CommitMsg(_)
-                | Action::PrCheck
-                | Action::Rename(_) => format!("{action:?}"),
+                Action::Policy | Action::Identity(_) | Action::CommitMsg(_) | Action::PrCheck => {
+                    format!("{action:?}")
+                }
             })
             .collect()
     }

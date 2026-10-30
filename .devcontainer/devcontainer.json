@@ -1,5 +1,5 @@
 {
-  "name": "rust-template",
+  "name": "crabbage",
   "build": { "dockerfile": "Dockerfile" },
   "remoteUser": "dev",
   "containerUser": "dev",
@@ -10,7 +10,7 @@
     "--pids-limit=4096"
   ],
   "mounts": [
-    "source=rust-template-cargo-registry,target=/usr/local/cargo/registry,type=volume"
+    "source=crabbage-cargo-registry,target=/usr/local/cargo/registry,type=volume"
   ],
   "postCreateCommand": "cargo xtask hooks",
   "customizations": {

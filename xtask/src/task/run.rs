@@ -6,7 +6,7 @@ use std::process::{Command as Process, Stdio};
 
 use crate::cli::Command;
 use crate::policy::{self, Violation};
-use crate::{rename, repo};
+use crate::repo;
 
 use super::action::Action;
 use super::plan::plan;
@@ -39,7 +39,6 @@ fn execute(action: &Action, root: &Path) -> Result<(), String> {
             let body = env::var("PR_BODY").unwrap_or_default();
             report(&policy::check_pull_request(&title, &body))
         }
-        Action::Rename(name) => rename::rename(root, name),
     }
 }
 

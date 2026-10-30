@@ -1,13 +1,13 @@
 [package]
-name = "rust-template"
-description = "Greets people by name."
+name = "crabbage"
+description = "A Rust-based recipe book."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 readme = "../../README.md"
-keywords = ["template", "greeting"]
+keywords = ["recipe", "recipes", "cooking", "recipe-book"]
 categories = ["command-line-utilities"]
 
 [lints]

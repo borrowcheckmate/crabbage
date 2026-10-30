@@ -2,7 +2,6 @@
 
 mod cli;
 mod policy;
-mod rename;
 mod repo;
 mod task;
 

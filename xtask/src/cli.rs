@@ -46,8 +46,6 @@ pub(crate) enum Command {
     Ci,
     /// Use the tracked hooks in .githooks for this clone.
     Hooks,
-    /// Rename the template crate and every reference to it.
-    Rename { name: String },
 }
 
 #[cfg(test)]

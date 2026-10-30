@@ -1,6 +1,6 @@
-# rust-template
+# crabbage
 
-A Rust workspace template with strict linting, policy checks and automation through `cargo xtask`.
+A Rust-based recipe book.
 
 ## Use this template
 
@@ -9,7 +9,7 @@ Create a repository from this template, then follow [AGENTS.md → New project f
 ## Install
 
 ```sh
-cargo install --git https://github.com/borrowcheckmate/rust-template rust-template
+cargo install --git https://github.com/borrowcheckmate/crabbage crabbage
 ```
 
 Or build the container image:
@@ -21,8 +21,8 @@ cargo xtask docker
 ## Usage
 
 ```sh
-rust-template            # Hello, world!
-rust-template Ada        # Hello, Ada!
+crabbage            # Hello, world!
+crabbage Ada        # Hello, Ada!
 ```
 
 Invalid names exit with code 2 and a message on stderr.

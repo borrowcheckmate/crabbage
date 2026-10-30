@@ -5,7 +5,7 @@ use std::io;
 use std::process::{Command, Output};
 
 fn run(args: &[&str]) -> io::Result<Output> {
-    Command::new(env!("CARGO_BIN_EXE_rust-template"))
+    Command::new(env!("CARGO_BIN_EXE_crabbage"))
         .args(args)
         .output()
 }

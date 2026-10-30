@@ -5,7 +5,7 @@ use std::fmt::Display;
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use rust_template::{Greeting, Name};
+use crabbage::{Greeting, Name};
 
 const DEFAULT_NAME: &str = "world";
 const USAGE_ERROR: u8 = 2;

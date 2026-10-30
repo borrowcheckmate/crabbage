@@ -5,7 +5,7 @@ Read this first. It tells you where things live so you only need to open the fil
 ## Layout
 
 ```
-crates/rust-template/   the product: library + binary
+crates/crabbage/   the product: library + binary
 xtask/                  repository automation, invoked as `cargo xtask`
 .githooks/              pre-commit and commit-msg hooks, both call xtask
 .github/                CI, release, dependabot, issue and PR templates
@@ -13,7 +13,7 @@ xtask/                  repository automation, invoked as `cargo xtask`
 Dockerfile              minimal runtime image
 ```
 
-## crates/rust-template
+## crates/crabbage
 
 | Module | Responsibility |
 | --- | --- |
@@ -39,7 +39,6 @@ Dockerfile              minimal runtime image
 | `policy/leaks.rs` | Personal emails, home paths, tokens, image metadata, `authors` |
 | `policy/identity.rs` | Anonymous git author and committer emails |
 | `policy/commit.rs` | Conventional commits, no tool attribution |
-| `rename.rs` | Renames the template crate |
 | `repo.rs` | Git queries |
 
 To add a check, add a submodule under `policy/`, call it from `repository.rs` (file rules) or `commit.rs` (message rules), and test it in the same file.
