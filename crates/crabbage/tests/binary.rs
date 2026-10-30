@@ -1,4 +1,5 @@
-//! Runs the server binary to check its startup errors: a bad configuration and an address in use.
+//! Runs the server binary to check its startup errors: a bad configuration, an address in use and
+//! an unreachable identity provider.
 
 use std::net::TcpListener;
 use std::path::PathBuf;
@@ -53,13 +54,18 @@ impl Drop for TempDir {
     }
 }
 
-fn run_with_site_addr(name: &str, site_addr: &str) -> Result<Output, String> {
+fn run_with(name: &str, site_addr: &str, issuer_url: &str) -> Result<Output, String> {
     let data_dir = TempDir::new(name);
     run(Command::new(env!("CARGO_BIN_EXE_crabbage"))
         .envs(VALID_CONFIG)
+        .env("OIDC_ISSUER_URL", issuer_url)
         .env("CRABBAGE_DATA_DIR", &data_dir.0)
         .env("LEPTOS_OUTPUT_NAME", "crabbage")
         .env("LEPTOS_SITE_ADDR", site_addr))
+}
+
+fn run_with_site_addr(name: &str, site_addr: &str) -> Result<Output, String> {
+    run_with(name, site_addr, "http://127.0.0.1:1")
 }
 
 #[test]
@@ -86,6 +92,20 @@ fn site_addr_in_use_is_a_bind_error() {
     let output =
         run_with_site_addr("addr-in-use", &address.to_string()).expect("binary runs and exits");
     drop(listener);
+    assert!(!output.status.success());
+    assert_ne!(output.stderr.len(), 0);
+}
+
+#[test]
+fn unreachable_issuer_is_a_startup_error() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("port is free");
+    let issuer = format!(
+        "http://{}",
+        listener.local_addr().expect("address is known")
+    );
+    drop(listener);
+    let output =
+        run_with("unreachable-issuer", "127.0.0.1:0", &issuer).expect("binary runs and exits");
     assert!(!output.status.success());
     assert_ne!(output.stderr.len(), 0);
 }

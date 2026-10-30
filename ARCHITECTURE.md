@@ -34,8 +34,19 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `src/lib.rs` | Crate doc, module declarations, re-exports |
 | `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR` |
 | `src/error.rs` | `StoreError` |
+| `src/users.rs` | `upsert_user`: one row per OIDC subject, returns the user id |
+| `src/sessions.rs` | `create`, `find_user`, `delete`. Takes the raw token and stores only its SHA-256 hash |
+| `src/login_attempts.rs` | `create` and `take` for pending logins. `take` deletes the row; attempts expire after 10 minutes |
 | `migrations/` | SQL migrations, applied in file-name order |
 | `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
+| `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
+
+Migrations:
+
+| File | Tables |
+| --- | --- |
+| `0001_households_and_users.sql` | `households`, `users`, `user_households` |
+| `0002_sessions.sql` | `login_attempts` (pending logins by `state`), `sessions` (by token hash, cascade on user delete) |
 
 Migrations are embedded at compile time by `sqlx::migrate!()`. To add one, create `migrations/NNNN_description.sql` with the next number. Never edit an applied migration; add a new one. Tables are `STRICT`.
 
@@ -48,10 +59,35 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/lib.rs` | Crate doc, module declarations, re-exports, and the `hydrate` entry point for the browser |
 | `src/app.rs` | `App` component (title and heading) and `shell`, the HTML document around it |
 | `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
-| `src/server.rs` (`ssr`) | `router`: `/healthz`, the Leptos routes rendered with `shell`, and the site files as fallback |
-| `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), then the Leptos configuration, and serves `router` on `site_addr`. Without `ssr` it is an empty stub |
-| `tests/server.rs` | Requests against `router`: health check and the rendered title |
-| `tests/binary.rs` | Runs the server binary: missing config vars, invalid `LEPTOS_SITE_ADDR` and an address already in use all exit with an error. Each run that gets past config uses its own temp `CRABBAGE_DATA_DIR` |
+| `src/state.rs` (`ssr`) | `AppState`: leptos options, pool, HTTP client and the OIDC client. `FromRef` gives leptos_axum its `LeptosOptions` |
+| `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: discovers the provider, then builds `/healthz`, the `auth` routes, the Leptos routes and the site files as fallback. The session middleware wraps all of them |
+| `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
+| `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, then builds `router` (which does OIDC discovery) and serves it. Without `ssr` it is an empty stub |
+
+### Sign-in (`src/auth/`)
+
+| Module | Responsibility |
+| --- | --- |
+| `oidc.rs` | `Oidc`: discovery of `OIDC_ISSUER_URL`, the authorization request (code, PKCE S256, nonce, state, scopes `openid profile groups`), the code exchange and the ID token check. Name comes from `name`, then `preferred_username`, then the subject. The HTTP client does not follow redirects |
+| `login.rs` | `GET /auth/login`: stores a login attempt, sets the `crabbage_login` cookie (the state, `Path=/auth/`, 10 minutes) and redirects (303) to the provider |
+| `callback.rs` | `GET /auth/callback`: requires the `crabbage_login` cookie to equal `state` (otherwise 400, attempt kept), takes the attempt by `state` (unknown or expired: 400), exchanges the code, verifies the ID token and nonce (failure: 400), upserts the user, creates a session, sets the session cookie, clears the login cookie and redirects to `/` |
+| `logout.rs` | `POST /auth/logout`: deletes the session row, clears the cookie, redirects to `/` |
+| `middleware.rs` | `require_session`: every path except `/healthz`, `/auth/*` and `/pkg/*` needs an unexpired session, otherwise 303 to `/auth/login`. A valid session adds `SessionUser` to the request |
+| `cookie.rs` | `Cookie` (name, path, max age) with two instances: `SESSION` (`crabbage_session`, `Path=/`, 30 days) and `LOGIN` (`crabbage_login`, `Path=/auth/`, 10 minutes). Each reads its value from a request and builds the `Set-Cookie` for set or clear. All are `HttpOnly; Secure; SameSite=Lax` |
+| `session.rs` | Session lifetime, unix time, and the 32-byte base64url session token |
+| `error.rs` | `AuthError`: 400 with a message for rejected logins, 500 for store or randomness failures |
+
+Flow: the login attempt holds `state`, `nonce` and the PKCE verifier in `login_attempts`. The browser also holds the state in the `crabbage_login` cookie, so only the browser that started the login can complete it (login CSRF). The callback checks the cookie before it takes the attempt, then the attempt is deleted, and the ID token must match the stored nonce. The cookie holds the raw token; `sessions` stores only its SHA-256 hash.
+
+### Tests
+
+| Path | Responsibility |
+| --- | --- |
+| `tests/server/main.rs` | `healthz`, the rendered shell for a signed-in user, and the shared harness module declarations |
+| `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce) |
+| `tests/server/session.rs` | Logout deletes the row and clears the cookie; expired and unknown sessions require a new login |
+| `tests/server/common/` | `Harness`: the router on a temp database, and `issuer.rs`, a fake provider on 127.0.0.1 with a runtime-generated RSA key (discovery, JWKS, token endpoint). Its ID token carries the nonce the test sets |
+| `tests/binary.rs` | Runs the server binary: missing config vars, invalid `LEPTOS_SITE_ADDR`, an address already in use and an unreachable issuer all exit with an error. The address is bound before discovery, so the bind tests stay offline. Each run that gets past config uses its own temp `CRABBAGE_DATA_DIR` |
 
 ## xtask
 

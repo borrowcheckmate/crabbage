@@ -11,6 +11,7 @@ keywords = ["recipe", "recipes", "cooking", "recipe-book"]
 categories = ["database"]
 
 [dependencies]
+sha2.workspace = true
 sqlx.workspace = true
 
 [dev-dependencies]

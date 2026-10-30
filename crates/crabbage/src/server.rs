@@ -1,19 +1,47 @@
+use std::error::Error;
+use std::sync::Arc;
+
 use axum::Router;
+use axum::middleware::from_fn_with_state;
 use axum::routing::get;
 use leptos::config::LeptosOptions;
 use leptos_axum::{LeptosRoutes, generate_route_list};
+use sqlx::sqlite::SqlitePool;
 
 use crate::app::{App, shell};
+use crate::auth::{self, Oidc};
+use crate::config::Config;
+use crate::state::AppState;
 
-/// Builds the router for the app: the health check, the rendered pages and the site files.
-pub fn router(options: LeptosOptions) -> Router {
+/// Builds the router for the app: the health check, sign-in, the rendered pages and the site
+/// files. Every route except the health check, sign-in and the site files needs a session.
+///
+/// # Errors
+///
+/// Returns an error if the `OpenID` Connect provider cannot be discovered or the configured URLs
+/// are invalid.
+pub async fn router(
+    options: LeptosOptions,
+    config: &Config,
+    pool: SqlitePool,
+) -> Result<Router, Box<dyn Error>> {
+    let http = auth::http_client()?;
+    let oidc = Oidc::discover(config, &http).await?;
     let routes = generate_route_list(App);
-    Router::new()
+    let state = AppState {
+        options: options.clone(),
+        pool,
+        http,
+        oidc: Arc::new(oidc),
+    };
+    Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
-        .leptos_routes(&options, routes, {
+        .merge(auth::routes())
+        .leptos_routes(&state, routes, {
             let options = options.clone();
             move || shell(options.clone())
         })
-        .fallback(leptos_axum::file_and_error_handler(shell))
-        .with_state(options)
+        .fallback(leptos_axum::file_and_error_handler::<AppState, _>(shell))
+        .layer(from_fn_with_state(state.clone(), auth::require_session))
+        .with_state(state))
 }

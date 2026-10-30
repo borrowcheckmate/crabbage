@@ -11,11 +11,17 @@ repository = "https://github.com/borrowcheckmate/crabbage"
 
 [workspace.dependencies]
 clap = { version = "4.6.7", default-features = false, features = ["std", "derive", "help", "usage", "error-context"] }
-axum = { version = "0.8.9", default-features = false, features = ["http1", "tokio"] }
+axum = { version = "0.8.9", default-features = false, features = ["http1", "query", "tokio"] }
+base64 = { version = "0.23.1", default-features = false, features = ["alloc"] }
+getrandom = { version = "0.4.3", default-features = false }
 http-body-util = { version = "0.1.5", default-features = false }
 leptos = { version = "0.8.22", default-features = false }
 leptos_axum = { version = "0.8.10", default-features = false, features = ["default"] } # file serving is gated behind the default feature
 leptos_meta = { version = "0.8.7", default-features = false }
+openidconnect = { version = "4.0.1", default-features = false, features = ["reqwest", "rustls-tls"] }
+serde = { version = "1.0.228", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1.0.154", default-features = false, features = ["std"] }
+sha2 = { version = "0.10.9", default-features = false }
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite-bundled", "migrate", "macros"] }
 tokio = { version = "1.54.1", default-features = false, features = ["macros", "net", "rt-multi-thread"] }
 tower = { version = "0.5.3", default-features = false, features = ["util"] }

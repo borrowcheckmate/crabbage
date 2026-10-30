@@ -4,10 +4,12 @@
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = crabbage::Config::from_env()?;
-    let _pool = crabbage_store::open(&config.data_dir).await?;
+    let pool = crabbage_store::open(&config.data_dir).await?;
     let options = leptos::config::get_configuration(None)?.leptos_options;
-    let listener = tokio::net::TcpListener::bind(options.site_addr).await?;
-    axum::serve(listener, crabbage::router(options)).await?;
+    let site_addr = options.site_addr;
+    let listener = tokio::net::TcpListener::bind(site_addr).await?;
+    let router = crabbage::router(options, &config, pool).await?;
+    axum::serve(listener, router).await?;
     Ok(())
 }
 
