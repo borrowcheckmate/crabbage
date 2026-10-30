@@ -38,6 +38,8 @@ Their responsibilities:
 | `tests/quantity.rs` | Conversion within and across dimensions, spoons, display, addition, imperial input, unitless amounts and rejection of negative or non-finite amounts |
 | `src/scaling.rs` | `Servings` (at least one, `new` returns `None` for zero) and `scale`: multiplies by the servings ratio, displays, then rounds per unit (g and ml by size, kg and l to 0.05, spoons to 0.25, pieces to 0.5). Non-zero amounts never round to zero; equal servings and unitless amounts are returned unchanged |
 | `tests/scaling.rs` | Ratio scaling, per-unit rounding, the smallest step for tiny amounts, display boundary after rounding, identity at equal servings, unitless amounts, zero servings and overflow |
+| `src/permissions.rs` | `can_manage_catalog(role)`: true only for `Role::Admin`. The catalog is ingredients, store sections and, later, categories |
+| `tests/permissions.rs` | Admins manage the catalog, members do not |
 
 ## crates/crabbage-store
 
@@ -47,14 +49,19 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports |
 | `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR` |
-| `src/error.rs` | `StoreError` |
-| `src/users.rs` | `upsert_user`: one row per OIDC subject, returns the user id |
+| `src/error.rs` | `StoreError`: io, database and migration failures, `Conflict(text)` when a name or alias is taken or would equal a name or alias, and `InUse` when recipe lines use an ingredient |
+| `src/users.rs` | `upsert_user`: one row per OIDC subject, returns the user id. `find`: the name and admin flag of a user (`User`) |
 | `src/sessions.rs` | `create`, `find_user`, `delete`. Takes the raw token and stores only its SHA-256 hash |
 | `src/login_attempts.rs` | `create` and `take` for pending logins. `take` deletes the row; attempts expire after 10 minutes |
 | `src/households.rs` | `sync_membership` (one transaction per login: admin flag, households upserted by group name, memberships replaced, active household kept, cleared or defaulted to the first by group name), `households_of`, `active_household`, `set_active_household` (only for members) |
+| `src/catalog/mod.rs` | Declares `ingredients` and `sections` (both public) and the shared rules in `names.rs` |
+| `src/catalog/names.rs` | Maps unique violations to `Conflict`. A name is never an alias and an alias never a name, both case-insensitively; the checks run inside the store functions |
+| `src/catalog/ingredients.rs` | `Ingredient` with its aliases. `list`, `list_pending`, `create`, `rename`, `delete` (`InUse` while recipe lines use it), `add_alias`, `remove_alias`, `set_section`, `approve`, `merge` (one transaction: recipe lines and aliases move to the target, the source name becomes an alias of it, the source is deleted). Missing rows return `false` |
+| `src/catalog/sections.rs` | `Section`. `list` in position order, `create` at the end, `rename`, `delete` (ingredients keep their row and lose the section), `move_section` renumbers 0 to n-1 with the moved section at the new position |
 | `migrations/` | SQL migrations, applied in file-name order |
 | `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
 | `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs`, `tests/households.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
+| `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines inserted with SQL), section ordering and renumbering |
 
 Migrations:
 
@@ -63,6 +70,7 @@ Migrations:
 | `0001_households_and_users.sql` | `households`, `users`, `user_households` |
 | `0002_sessions.sql` | `login_attempts` (pending logins by `state`), `sessions` (by token hash, cascade on user delete) |
 | `0003_active_household.sql` | `users.active_household_id` (set null when the household is deleted) |
+| `0004_catalog_and_recipes.sql` | `store_sections`, `ingredients` (`pending_review`), `ingredient_aliases` (cascade with the ingredient), `recipes`, `recipe_lines` (`ingredient_id` restricts deletes of used ingredients) |
 
 Migrations are embedded at compile time by `sqlx::migrate!()`. To add one, create `migrations/NNNN_description.sql` with the next number. Never edit an applied migration; add a new one. Tables are `STRICT`.
 
@@ -78,7 +86,13 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `CRABBAGE_LANGUAGE` is parsed into `i18n::Language`. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
 | `src/state.rs` (`ssr`) | `AppState`: leptos options, pool, HTTP client, the configuration, the lazily discovered OIDC client (`oidc()`), the admin group and household prefix used on login, and the language. `FromRef` gives leptos_axum its `LeptosOptions` |
 | `src/household.rs` (`ssr`) | `POST /household` (form field `household_id`): sets the signed-in user's active household. 303 to `/` on success, 403 when the user is not a member |
-| `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: builds `/healthz`, the `auth` routes, the `household` route, the Leptos routes and the site files as fallback. The Leptos routes and the error fallback provide the configured language as context. The session middleware wraps all of them |
+| `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: builds `/healthz`, the `auth` routes, the `household` route, the `api` route, the Leptos routes and the site files as fallback. The Leptos routes provide the pool and the configured language as context, the error fallback the language. The session middleware wraps all of them |
+| `src/api.rs` (`ssr`) | `POST /api/{*fn_name}`: serves every `#[server]` function, providing the pool and the language as context. Behind the session check |
+| `src/access.rs` (`ssr`) | `signed_in` (the pool and the session user id), `require_admin` (the pool, or a 403 with the not-allowed message), `store_failure`, `clean` (trimmed, non-empty), `ensure_found` |
+| `src/app.rs` | `App`: the `Router` with `/` (home, with admin links for admins), `/admin/ingredients`, `/admin/sections` and `/admin/review`, and the sign-out button. `shell` is the HTML document |
+| `src/user.rs` | `current_user` server function: `SignedInUser` (name and `is_admin`) |
+| `src/catalog/` | Catalog server functions and their records, see below. `types.rs` holds `IngredientRow` and `SectionRow` (both builds), `convert.rs` the store conversions (`ssr`) |
+| `src/admin/` | The admin pages: `ingredients.rs`, `sections.rs`, `review.rs`, each showing a not-allowed message to non-admins, and `notice.rs` (failed actions) |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
 | `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
 
@@ -117,6 +131,18 @@ Flow: the login attempt holds `state`, `nonce` and the PKCE verifier in `login_a
 
 Roles and households follow the `groups` claim on every login: the callback replaces the user's admin flag and household memberships, so changes at the provider take effect on the next login. Each `crabbage-household-*` group is a household, created on first sight and shared by its members. The active household defaults to the first by group name, and a user keeps their choice across logins while they stay a member. Users without a household can use recipes; the shopping list and planner need an active household (`has_household_features`).
 
+### Catalog and server functions
+
+Admin pages call server functions. Each is a `#[server(prefix = "/api", endpoint = "...")]` function, so it is served at `/api/<endpoint>`. Input is form-encoded (`PostUrl`, the default) and output is JSON. Every function has an explicit `endpoint`, so the URL does not depend on the function name. The function name in PascalCase is the marker type that `ServerAction::<Marker>` uses in a page.
+
+Each server function in `src/catalog/` begins with `crate::access::require_admin()`, which returns the pool. Errors go through `store_failure`, so each message is translated, and a missing row through `ensure_found`. A non-admin gets a 403 (`ResponseOptions` is set from the context) with the not-allowed text. The body of a server function is compiled for `ssr` only, so anything it needs from the store is imported inside the body. The client build keeps the signature and the record types, which must serialise on both sides.
+
+To add an endpoint: add the store function with its tests in `crabbage-store`, add the `#[server]` function to the matching file in `src/catalog/` with `require_admin`, add a `ServerAction` and its form to the page in `src/admin/`, add the messages to both locale files and cover the endpoint in `tests/server/catalog.rs`.
+
+Permissions: the session user's `is_admin` (set from the admin group on every login) becomes a `Role`, and `can_manage_catalog` decides. The server functions enforce the rule; the page only decides what it shows.
+
+Pages load data in one `<Suspense>` whose closure returns a `Suspend` future that awaits the server functions. Pages do not create `Resource`s: `reactive_graph` keeps the current transition in a process-wide static that `leptos_router` sets around each route, so resources of concurrent server renders can register with another request's transition and never resolve.
+
 ### Tests
 
 | Path | Responsibility |
@@ -126,6 +152,9 @@ Roles and households follow the `groups` claim on every login: the callback repl
 | `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce) |
 | `tests/server/session.rs` | Logout deletes the row and clears the cookie; expired and unknown sessions require a new login |
 | `tests/server/household.rs` | Group claims on login (admin, households, changes on the next login), switching the active household, 403 for non-members, a user without households |
+| `tests/server/catalog.rs` | Admin create, rename and delete; members refused on every endpoint with 403; alias uniqueness through the API; sections created and reordered; the review queue; merge through the API |
+| `tests/server/screenshots.rs` | Ignored. Writes the rendered pages to `CRABBAGE_SCREENSHOT_DIR` for review screenshots |
+| `tests/server/pages.rs` | Admin pages render for admins, show the not-allowed message to members, and the home page links to them for admins only |
 | `tests/server/common/` | `Harness`: the router on a temp database, and `issuer.rs`, a fake provider on 127.0.0.1 with a runtime-generated RSA key (discovery, JWKS, token endpoint). Its ID token carries the nonce and the `groups` claim the test sets |
 | `tests/server/discovery.rs` | Lazy discovery: with an unreachable provider sign-in is 503, and once the provider listens on the same address it is 303 |
 | `tests/binary.rs` | Runs the server binary: missing config vars and invalid `LEPTOS_SITE_ADDR` or an address already in use exit with an error. With an unreachable issuer the server runs: `/healthz` is 200 and `/auth/login` is 503. Each run uses its own temp `CRABBAGE_DATA_DIR`, and the server process is killed when the test ends |

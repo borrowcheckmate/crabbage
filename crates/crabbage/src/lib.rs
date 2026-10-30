@@ -10,6 +10,23 @@ mod app;
 pub use app::{App, shell};
 
 #[cfg(feature = "ssr")]
+mod access;
+
+#[cfg(feature = "ssr")]
+mod api;
+
+#[expect(
+    unreachable_pub,
+    clippy::same_name_method,
+    reason = "the #[component] props builder adds pub methods to a private type, and a builder method named like the trait method"
+)]
+mod admin;
+
+mod catalog;
+
+mod user;
+
+#[cfg(feature = "ssr")]
 mod config;
 
 mod i18n;

@@ -1,0 +1,120 @@
+//! Store sections: create, rename, delete and move up or down.
+
+use leptos::form::ActionForm;
+use leptos::prelude::*;
+
+use super::notice::{failure, message};
+use leptos::prelude::ServerFnError;
+
+use crate::catalog::SectionRow;
+use crate::catalog::sections::{
+    CreateSection, DeleteSection, MoveSection, RenameSection, list_sections,
+};
+use crate::i18n::t;
+use crate::user::current_user;
+
+/// The store sections page. Admins see the forms and the rows, everyone else a message. The data is
+/// loaded inside one suspense.
+#[component]
+pub(crate) fn SectionsPage() -> impl IntoView {
+    let create = ServerAction::<CreateSection>::new();
+    let rename = ServerAction::<RenameSection>::new();
+    let delete = ServerAction::<DeleteSection>::new();
+    let move_section = ServerAction::<MoveSection>::new();
+    view! {
+        <Suspense fallback=|| ()>
+            {move || {
+                let _versions = (
+                    create.version().get(),
+                    rename.version().get(),
+                    delete.version().get(),
+                    move_section.version().get(),
+                );
+                Suspend::new(async move { section_page(create, rename, delete, move_section).await })
+            }}
+        </Suspense>
+    }
+}
+
+async fn section_page(
+    create: ServerAction<CreateSection>,
+    rename: ServerAction<RenameSection>,
+    delete: ServerAction<DeleteSection>,
+    move_section: ServerAction<MoveSection>,
+) -> AnyView {
+    match current_user().await {
+        Ok(user) if user.is_admin => {
+            let sections = list_sections().await;
+            view! {
+                <h1>{t("admin.sections.heading")}</h1>
+                <ActionForm action=create>
+                    <label>{t("admin.label.name")} <input name="name" required/></label>
+                    <button>{t("admin.button.add")}</button>
+                </ActionForm>
+                {move || create.value().with(|value| failure(value.as_ref()))}
+                {move || rename.value().with(|value| failure(value.as_ref()))}
+                {move || delete.value().with(|value| failure(value.as_ref()))}
+                {move || move_section.value().with(|value| failure(value.as_ref()))}
+                {section_rows(Some(sections), rename, delete, move_section)}
+            }
+            .into_any()
+        }
+        Ok(_) | Err(_) => view! { <p>{t("admin.not_allowed")}</p> }.into_any(),
+    }
+}
+
+/// The rows of the section list, or the message that explains why they are missing.
+fn section_rows(
+    sections: Option<Result<Vec<SectionRow>, ServerFnError>>,
+    rename: ServerAction<RenameSection>,
+    delete: ServerAction<DeleteSection>,
+    move_section: ServerAction<MoveSection>,
+) -> AnyView {
+    match sections {
+        Some(Ok(rows)) if rows.is_empty() => {
+            view! { <p>{t("admin.sections.empty")}</p> }.into_any()
+        }
+        Some(Ok(rows)) => rows
+            .into_iter()
+            .map(|row| view! { <SectionRow_ row=row rename=rename delete=delete move_section=move_section/> })
+            .collect_view()
+            .into_any(),
+        Some(Err(error)) => view! { <p>{message(&error)}</p> }.into_any(),
+        None => ().into_any(),
+    }
+}
+
+#[component]
+fn SectionRow_(
+    row: SectionRow,
+    rename: ServerAction<RenameSection>,
+    delete: ServerAction<DeleteSection>,
+    move_section: ServerAction<MoveSection>,
+) -> impl IntoView {
+    let id = row.id;
+    let up = (row.position - 1).to_string();
+    let down = (row.position + 1).to_string();
+    view! {
+        <section>
+            <ActionForm action=rename>
+                <input type="hidden" name="id" value=id/>
+                <label>{t("admin.label.name")} <input name="name" value=row.name.clone() required/></label>
+                <button>{t("admin.button.rename")}</button>
+            </ActionForm>
+            <ActionForm action=move_section>
+                <input type="hidden" name="id" value=id/>
+                <input type="hidden" name="position" value=up/>
+                <button>{t("admin.button.up")}</button>
+            </ActionForm>
+            <ActionForm action=move_section>
+                <input type="hidden" name="id" value=id/>
+                <input type="hidden" name="position" value=down/>
+                <button>{t("admin.button.down")}</button>
+            </ActionForm>
+            <ActionForm action=delete>
+                <input type="hidden" name="id" value=id/>
+                <button>{t("admin.button.delete")}</button>
+            </ActionForm>
+        </section>
+    }
+}

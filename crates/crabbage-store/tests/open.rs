@@ -38,7 +38,7 @@ async fn fresh_dir_gets_a_migrated_database() {
     let dir = TempDir::new("fresh");
     let pool = open(dir.path()).await.unwrap();
     assert!(dir.path().join("crabbage.db").is_file());
-    assert_eq!(migration_count(&pool).await.unwrap(), 3);
+    assert_eq!(migration_count(&pool).await.unwrap(), 4);
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('households', 'users', 'user_households') ORDER BY name",
     )
@@ -53,6 +53,22 @@ async fn fresh_dir_gets_a_migrated_database() {
     .await
     .unwrap();
     assert_eq!(tables, ["login_attempts", "sessions"]);
+    let tables: Vec<String> = sqlx::query_scalar(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('ingredient_aliases', 'ingredients', 'recipe_lines', 'recipes', 'store_sections') ORDER BY name",
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        tables,
+        [
+            "ingredient_aliases",
+            "ingredients",
+            "recipe_lines",
+            "recipes",
+            "store_sections"
+        ]
+    );
 }
 
 #[tokio::test]
@@ -60,7 +76,7 @@ async fn opening_twice_keeps_the_migration_count() {
     let dir = TempDir::new("twice");
     drop(open(dir.path()).await.unwrap());
     let pool = open(dir.path()).await.unwrap();
-    assert_eq!(migration_count(&pool).await.unwrap(), 3);
+    assert_eq!(migration_count(&pool).await.unwrap(), 4);
 }
 
 #[tokio::test]
