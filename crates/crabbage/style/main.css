@@ -1,0 +1,224 @@
+/* Base stylesheet: mobile first, system fonts, light and dark from the system setting. */
+
+:root {
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --text: #1d2420;
+  --muted: #56605a;
+  --border: #c9d0cb;
+  --accent: #2b6a4d;
+  --on-accent: #ffffff;
+  --danger: #b42318;
+  --on-danger: #ffffff;
+  --focus: #2b6a4d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151a17;
+    --surface: #1d2420;
+    --text: #e6ebe7;
+    --muted: #a6b0aa;
+    --border: #3d4842;
+    --accent: #8fd1ae;
+    --on-accent: #0e1712;
+    --danger: #ff8a80;
+    --on-danger: #1f0b09;
+    --focus: #8fd1ae;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+input,
+select,
+button {
+  max-width: 100%;
+}
+
+body {
+  margin: 0 auto;
+  max-width: 40rem;
+  padding: 1rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+  margin: 1rem 0 1.25rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.25rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+ul {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+}
+
+label input,
+label select {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 400;
+}
+
+input,
+select,
+button {
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+input,
+select {
+  width: 100%;
+  color: var(--text);
+  background: var(--surface);
+}
+
+button {
+  width: 100%;
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+  cursor: pointer;
+}
+
+button.secondary {
+  color: var(--text);
+  background: transparent;
+  border-color: var(--border);
+}
+
+button.danger {
+  color: var(--on-danger);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+form > * {
+  flex: 1 1 100%;
+}
+
+form > p {
+  margin: 0;
+}
+
+.card {
+  padding: 1rem;
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.card > * + * {
+  margin-top: 0.75rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.row > form {
+  flex: 0 1 auto;
+}
+
+.row > form > button {
+  width: auto;
+}
+
+.notice {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.notice.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.nav {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.nav a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+main > form {
+  margin-top: 2rem;
+}
+
+@media (min-width: 40rem) {
+  button {
+    width: auto;
+  }
+
+  form > * {
+    flex: 1 1 12rem;
+  }
+
+  form > button {
+    flex: 0 0 auto;
+  }
+}
