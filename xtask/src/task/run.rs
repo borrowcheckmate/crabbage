@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-use std::process::{Command as Process, Stdio};
+use std::process::Command as Process;
 
 use crate::cli::Command;
 use crate::policy::{self, Violation};
@@ -61,26 +61,12 @@ fn run_step(step: &Step, root: &Path) -> Result<(), String> {
     for (key, value) in &step.env {
         process.env(key, value);
     }
-    let spawn_error = |error: io::Error| format!("cannot run {}: {error}", step.program);
-    let Some(expected) = &step.expected_stdout else {
-        let status = process.status().map_err(spawn_error)?;
-        return if status.success() {
-            Ok(())
-        } else {
-            Err(format!("`{step}` failed with {status}"))
-        };
-    };
-    let output = process
-        .stderr(Stdio::inherit())
-        .output()
-        .map_err(spawn_error)?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    if !output.status.success() {
-        return Err(format!("`{step}` failed with {}", output.status));
-    }
-    if stdout.trim() == expected {
+    let status = process
+        .status()
+        .map_err(|error| format!("cannot run {}: {error}", step.program))?;
+    if status.success() {
         Ok(())
     } else {
-        Err(format!("expected `{expected}`, got `{}`", stdout.trim()))
+        Err(format!("`{step}` failed with {status}"))
     }
 }

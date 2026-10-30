@@ -8,7 +8,44 @@ license.workspace = true
 repository.workspace = true
 readme = "../../README.md"
 keywords = ["recipe", "recipes", "cooking", "recipe-book"]
-categories = ["command-line-utilities"]
+categories = ["web-programming"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[test]]
+name = "server"
+required-features = ["ssr"]
+
+[[test]]
+name = "binary"
+required-features = ["ssr"]
+
+[features]
+default = []
+ssr = ["leptos/ssr", "leptos_meta/ssr", "dep:leptos_axum", "dep:axum", "dep:tokio"]
+hydrate = ["leptos/hydrate", "dep:wasm-bindgen"]
+
+[dependencies]
+axum = { workspace = true, optional = true }
+leptos.workspace = true
+leptos_axum = { workspace = true, optional = true }
+leptos_meta.workspace = true
+tokio = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, optional = true }
+
+[dev-dependencies]
+http-body-util.workspace = true
+tower.workspace = true
+
+[package.metadata.leptos]
+output-name = "crabbage"
+site-root = "target/site"
+site-addr = "0.0.0.0:3000"
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
 
 [lints]
 workspace = true
