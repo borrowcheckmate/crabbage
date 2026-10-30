@@ -13,7 +13,7 @@ xtask/                    repository automation, invoked as `cargo xtask`
 .githooks/                pre-commit and commit-msg hooks, both call xtask
 .github/                  CI, release, dependabot, issue and PR templates
 .devcontainer/            development container
-Dockerfile                image build: cross-compiled server, WASM site, scratch runtime
+Dockerfile                image build: native server build, WASM site, scratch runtime
 ```
 
 ## crates/crabbage-domain, crates/crabbage-import
@@ -148,17 +148,17 @@ To add a task, add a variant to `cli.rs` and map it in `task/plan.rs`. Prefer co
 
 ## Container image
 
-`Dockerfile` has five stages. The first four run on the build platform (`$BUILDPLATFORM`), so no emulated compiler runs:
+`Dockerfile` has five stages. Each platform is built natively on a runner of that platform (`ubuntu-24.04` for amd64, `ubuntu-24.04-arm` for arm64), so no emulated compiler runs:
 
 | Stage | Contents |
 | --- | --- |
-| `tools` | Rust on Debian trixie, pinned by digest. Zig, cargo-zigbuild and cargo-leptos from their release archives, each checked by SHA-256 |
+| `tools` | Rust on Debian trixie, pinned by digest. `musl-tools` from apt, and cargo-leptos from its release archive, checked by SHA-256 |
 | `site` | `cargo leptos build --release --frontend-only`: the WASM bundle, JS and CSS in `target/site`, copied to `/out/site` |
-| `server` | `cargo zigbuild` of `crabbage` with `ssr` for `$TARGETARCH`: `x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl`. Bundled SQLite and rustls need no system libraries, so the binary is static |
+| `server` | `cargo build` of `crabbage` with `ssr` for the native musl target `$(uname -m)-unknown-linux-musl`. Bundled SQLite is C code compiled with `musl-gcc`; rustls needs no system libraries, so the binary is static |
 | `data` | `/data` owned by 65532:65532 |
 | final | `FROM scratch`. Copies `/data`, `/site` and `/crabbage`. Sets `CRABBAGE_DATA_DIR`, `LEPTOS_SITE_ROOT`, `LEPTOS_OUTPUT_NAME` and `LEPTOS_SITE_ADDR`. Runs as `65532:65532`, exposes 3000, declares `/data` as a volume |
 
-The tool versions are pinned in `ARG`s with their checksums in the same stage. CI builds `linux/amd64,linux/arm64` with buildx and pushes to `ghcr.io/borrowcheckmate/crabbage` on pushes to `main`.
+The cargo-leptos version and its checksum are pinned in `ARG` and in the `tools` stage. CI's `image` job is a matrix with one leg per platform. Each leg builds its platform with its own GitHub Actions cache scope and pushes the image by digest on pushes to `main`. The `manifest` job then combines the digests into `ghcr.io/borrowcheckmate/crabbage:main` and `:sha-<short>`.
 
 ## Rules enforced by `cargo xtask policy`
 
