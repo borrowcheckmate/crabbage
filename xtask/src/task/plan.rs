@@ -1,0 +1,196 @@
+use crate::cli::Command;
+
+use super::action::Action;
+use super::step::Step;
+
+const IMAGE: &str = "rust-template:local";
+const COVERAGE_THRESHOLD: &str = "90";
+
+pub(crate) fn plan(command: &Command) -> Vec<Action> {
+    match command {
+        Command::Fmt { check } => vec![fmt(*check)],
+        Command::Lint => vec![lint()],
+        Command::Test => vec![test()],
+        Command::Docs => vec![docs()],
+        Command::Coverage => vec![coverage()],
+        Command::Deny => vec![deny()],
+        Command::Policy => vec![Action::Policy],
+        Command::Identity { range } => vec![Action::Identity(range.clone())],
+        Command::CommitMsg { file } => vec![Action::CommitMsg(file.clone())],
+        Command::PrCheck => vec![Action::PrCheck],
+        Command::Docker => docker(),
+        Command::PreCommit => vec![
+            Action::Identity(None),
+            Action::Policy,
+            fmt(true),
+            lint(),
+            test(),
+        ],
+        Command::Ci => vec![fmt(true), Action::Policy, lint(), docs(), test(), deny()],
+        Command::Hooks => vec![Action::Run(Step::new(
+            "git",
+            &["config", "core.hooksPath", ".githooks"],
+        ))],
+        Command::Rename { name } => vec![Action::Rename(name.clone())],
+    }
+}
+
+fn fmt(check: bool) -> Action {
+    let args: &[&str] = if check {
+        &["fmt", "--all", "--check"]
+    } else {
+        &["fmt", "--all"]
+    };
+    Action::Run(Step::cargo(args))
+}
+
+fn lint() -> Action {
+    Action::Run(Step::cargo(&[
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--",
+        "-D",
+        "warnings",
+    ]))
+}
+
+fn test() -> Action {
+    Action::Run(Step::cargo(&[
+        "test",
+        "--workspace",
+        "--all-features",
+        "--locked",
+    ]))
+}
+
+fn docs() -> Action {
+    Action::Run(
+        Step::cargo(&[
+            "doc",
+            "--workspace",
+            "--no-deps",
+            "--document-private-items",
+            "--locked",
+        ])
+        .with_env("RUSTDOCFLAGS", "-D warnings"),
+    )
+}
+
+fn coverage() -> Action {
+    Action::Run(Step::cargo(&[
+        "llvm-cov",
+        "--workspace",
+        "--exclude",
+        "xtask",
+        "--all-features",
+        "--locked",
+        "--fail-under-lines",
+        COVERAGE_THRESHOLD,
+    ]))
+}
+
+fn deny() -> Action {
+    Action::Run(Step::cargo(&["deny", "--locked", "check"]))
+}
+
+fn docker() -> Vec<Action> {
+    vec![
+        Action::Run(Step::new("docker", &["build", "--tag", IMAGE, "."])),
+        Action::Run(
+            Step::new(
+                "docker",
+                &[
+                    "run",
+                    "--rm",
+                    "--read-only",
+                    "--cap-drop=ALL",
+                    "--security-opt=no-new-privileges",
+                    "--network=none",
+                    "--user=65532:65532",
+                    "--pids-limit=16",
+                    "--memory=64m",
+                    "--cpus=1",
+                    IMAGE,
+                    "Docker",
+                ],
+            )
+            .expecting_stdout("Hello, Docker!"),
+        ),
+    ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Action, Command, plan};
+
+    fn shell_lines(command: &Command) -> Vec<String> {
+        plan(command)
+            .into_iter()
+            .map(|action| match action {
+                Action::Run(step) => step.to_string(),
+                Action::Policy
+                | Action::Identity(_)
+                | Action::CommitMsg(_)
+                | Action::PrCheck
+                | Action::Rename(_) => format!("{action:?}"),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn fmt_check_does_not_rewrite() {
+        assert_eq!(
+            shell_lines(&Command::Fmt { check: true }),
+            ["cargo fmt --all --check"]
+        );
+        assert_eq!(
+            shell_lines(&Command::Fmt { check: false }),
+            ["cargo fmt --all"]
+        );
+    }
+
+    #[test]
+    fn lint_denies_warnings() {
+        let lines = shell_lines(&Command::Lint);
+        assert!(lines[0].ends_with("-- -D warnings"), "{lines:?}");
+    }
+
+    #[test]
+    fn pre_commit_checks_identity_and_leaks_first() {
+        let actions = plan(&Command::PreCommit);
+        assert_eq!(actions[0], Action::Identity(None));
+        assert_eq!(actions[1], Action::Policy);
+        assert_eq!(actions.len(), 5);
+    }
+
+    #[test]
+    fn ci_covers_format_policy_lint_docs_tests_and_dependencies() {
+        let lines = shell_lines(&Command::Ci);
+        assert_eq!(lines.len(), 6);
+        assert!(lines.contains(&"Policy".to_owned()));
+        for needle in ["fmt", "clippy", "cargo doc", "cargo test", "cargo deny"] {
+            assert!(lines.iter().any(|line| line.contains(needle)), "{needle}");
+        }
+    }
+
+    #[test]
+    fn docker_runs_without_privileges() {
+        let lines = shell_lines(&Command::Docker);
+        for flag in [
+            "--read-only",
+            "--cap-drop=ALL",
+            "--security-opt=no-new-privileges",
+            "--network=none",
+        ] {
+            assert!(lines[1].contains(flag), "{flag}");
+        }
+    }
+
+    #[test]
+    fn coverage_has_a_threshold() {
+        assert!(shell_lines(&Command::Coverage)[0].contains("--fail-under-lines 90"));
+    }
+}

@@ -1,0 +1,27 @@
+name: Bug
+description: Something behaves differently than documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal commands or input. Leave out personal paths, emails and tokens.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where to look
+      description: The ARCHITECTURE.md section or module you suspect, if known.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: release tag or commit hash

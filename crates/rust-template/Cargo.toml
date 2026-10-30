@@ -1,0 +1,14 @@
+[package]
+name = "rust-template"
+description = "Greets people by name."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords = ["template", "greeting"]
+categories = ["command-line-utilities"]
+
+[lints]
+workspace = true
