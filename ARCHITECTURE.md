@@ -18,7 +18,7 @@ Dockerfile                image build: native server build, WASM site, scratch r
 
 ## crates/crabbage-domain, crates/crabbage-import
 
-Each crate is a library with only a crate doc (`src/lib.rs`) so far. Their responsibilities:
+Their responsibilities:
 
 | Crate | Responsibility |
 | --- | --- |
@@ -36,6 +36,8 @@ Each crate is a library with only a crate doc (`src/lib.rs`) so far. Their respo
 | `src/quantity/amount.rs` | `Quantity` (finite, non-negative amount and unit, `new` returns `None` otherwise): `convert_to` within a dimension, `checked_add` (same unit adds as it is, mixed units add in the base unit), `display` (g below 1000 g else kg; ml below 1000 ml else l; tsp and tbsp kept; count and unitless unchanged) |
 | `src/quantity/imperial.rs` | `ImperialUnit` (oz, lb, cup, fl oz): `to_metric` gives the displayed metric quantity |
 | `tests/quantity.rs` | Conversion within and across dimensions, spoons, display, addition, imperial input, unitless amounts and rejection of negative or non-finite amounts |
+| `src/scaling.rs` | `Servings` (at least one, `new` returns `None` for zero) and `scale`: multiplies by the servings ratio, displays, then rounds per unit (g and ml by size, kg and l to 0.05, spoons to 0.25, pieces to 0.5). Non-zero amounts never round to zero; equal servings and unitless amounts are returned unchanged |
+| `tests/scaling.rs` | Ratio scaling, per-unit rounding, the smallest step for tiny amounts, display boundary after rounding, identity at equal servings, unitless amounts, zero servings and overflow |
 
 ## crates/crabbage-store
 
