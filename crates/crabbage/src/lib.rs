@@ -10,6 +10,12 @@ mod app;
 pub use app::{App, shell};
 
 #[cfg(feature = "ssr")]
+mod config;
+
+#[cfg(feature = "ssr")]
+pub use config::{AiConfig, Config, ConfigError, Language};
+
+#[cfg(feature = "ssr")]
 mod server;
 
 #[cfg(feature = "ssr")]

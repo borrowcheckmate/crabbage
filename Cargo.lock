@@ -359,6 +359,7 @@ dependencies = [
  "leptos_meta",
  "tokio",
  "tower",
+ "url",
  "wasm-bindgen",
 ]
 

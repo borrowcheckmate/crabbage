@@ -18,6 +18,7 @@ leptos_axum = { version = "0.8.10", default-features = false, features = ["defau
 leptos_meta = { version = "0.8.7", default-features = false }
 tokio = { version = "1.54.1", default-features = false, features = ["macros", "net", "rt-multi-thread"] }
 tower = { version = "0.5.3", default-features = false, features = ["util"] }
+url = { version = "2.5.8", default-features = false, features = ["std"] }
 wasm-bindgen = { version = "0.2.130", default-features = false }
 
 [workspace.lints.rust]
