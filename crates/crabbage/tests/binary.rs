@@ -1,13 +1,15 @@
-//! Runs the server binary to check its startup errors: a bad configuration, an address in use and
-//! an unreachable identity provider.
+//! Runs the server binary to check its startup errors (a bad configuration, an address in use) and
+//! its behaviour while the identity provider is unreachable.
 
-use std::net::TcpListener;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
-use std::process::{Command, Output, Stdio};
+use std::process::{Child, Command, Output, Stdio};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(20);
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 
 const VALID_CONFIG: [(&str, &str); 4] = [
     ("CRABBAGE_PUBLIC_URL", "https://recipes.example.com"),
@@ -37,6 +39,48 @@ fn run(command: &mut Command) -> Result<Output, String> {
     child.wait_with_output().map_err(|error| error.to_string())
 }
 
+/// A running server that is killed when dropped, so a failing test leaves no process behind.
+struct Server(Child);
+
+impl Drop for Server {
+    fn drop(&mut self) {
+        drop(self.0.kill());
+        drop(self.0.wait());
+    }
+}
+
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+fn free_loopback_address() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("port is free");
+    listener.local_addr().expect("address is known").to_string()
+}
+
+/// The status code of a `GET` to `path` on `address`, or why the request failed.
+fn status_of(address: &str, path: &str) -> Result<u16, String> {
+    let mut stream = TcpStream::connect(address).map_err(|error| error.to_string())?;
+    stream
+        .set_read_timeout(Some(REQUEST_TIMEOUT))
+        .map_err(|error| error.to_string())?;
+    write!(
+        stream,
+        "GET {path} HTTP/1.1\r\nHost: {address}\r\nConnection: close\r\n\r\n"
+    )
+    .map_err(|error| error.to_string())?;
+    let mut response = String::new();
+    stream
+        .read_to_string(&mut response)
+        .map_err(|error| error.to_string())?;
+    response
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse().ok())
+        .ok_or_else(|| format!("no status line in {response:?}"))
+}
+
 struct TempDir(PathBuf);
 
 impl TempDir {
@@ -54,14 +98,20 @@ impl Drop for TempDir {
     }
 }
 
-fn run_with(name: &str, site_addr: &str, issuer_url: &str) -> Result<Output, String> {
-    let data_dir = TempDir::new(name);
-    run(Command::new(env!("CARGO_BIN_EXE_crabbage"))
+fn server_command(data_dir: &TempDir, site_addr: &str, issuer_url: &str) -> Command {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_crabbage"));
+    command
         .envs(VALID_CONFIG)
         .env("OIDC_ISSUER_URL", issuer_url)
         .env("CRABBAGE_DATA_DIR", &data_dir.0)
         .env("LEPTOS_OUTPUT_NAME", "crabbage")
-        .env("LEPTOS_SITE_ADDR", site_addr))
+        .env("LEPTOS_SITE_ADDR", site_addr);
+    command
+}
+
+fn run_with(name: &str, site_addr: &str, issuer_url: &str) -> Result<Output, String> {
+    let data_dir = TempDir::new(name);
+    run(&mut server_command(&data_dir, site_addr, issuer_url))
 }
 
 fn run_with_site_addr(name: &str, site_addr: &str) -> Result<Output, String> {
@@ -97,15 +147,23 @@ fn site_addr_in_use_is_a_bind_error() {
 }
 
 #[test]
-fn unreachable_issuer_is_a_startup_error() {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("port is free");
-    let issuer = format!(
-        "http://{}",
-        listener.local_addr().expect("address is known")
+fn unreachable_issuer_serves_health_and_fails_sign_in_with_503() {
+    let site_addr = free_loopback_address();
+    let issuer = format!("http://{}", free_loopback_address());
+    let data_dir = TempDir::new("unreachable-issuer");
+    let mut command = server_command(&data_dir, &site_addr, &issuer);
+    let server = Server(
+        command
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("binary starts"),
     );
-    drop(listener);
-    let output =
-        run_with("unreachable-issuer", "127.0.0.1:0", &issuer).expect("binary runs and exits");
-    assert!(!output.status.success());
-    assert_ne!(output.stderr.len(), 0);
+    let deadline = Instant::now() + STARTUP_TIMEOUT;
+    while status_of(&site_addr, "/healthz") != Ok(200) {
+        assert!(Instant::now() < deadline, "/healthz is not served in time");
+        sleep(Duration::from_millis(50));
+    }
+    assert_eq!(status_of(&site_addr, "/auth/login"), Ok(503));
+    drop(server);
 }

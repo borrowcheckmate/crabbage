@@ -3,6 +3,7 @@
 mod action;
 mod plan;
 mod run;
+mod smoke;
 mod step;
 
 pub(crate) use run::run;

@@ -10,6 +10,7 @@ use crate::i18n::Language;
 const REDACTED: &str = "<redacted>";
 
 /// The AI service settings. Present only when AI features are enabled.
+#[derive(Clone)]
 pub struct AiConfig {
     /// Base URL of the OpenAI-compatible API.
     pub base_url: Url,
@@ -30,6 +31,7 @@ impl Debug for AiConfig {
 }
 
 /// The server settings, read from the environment at startup.
+#[derive(Clone)]
 pub struct Config {
     /// Language of the app's text, from `CRABBAGE_LANGUAGE` (default `en`).
     pub language: Language,

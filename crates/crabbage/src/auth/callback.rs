@@ -23,12 +23,12 @@ pub(super) async fn callback(
     if LOGIN.value(&headers).as_deref() != Some(query.state.as_str()) {
         return Err(AuthError::Rejected("login does not match this browser"));
     }
+    let oidc = state.oidc().await?;
     let now = session::now();
     let attempt = login_attempts::take(&state.pool, &query.state, now)
         .await?
         .ok_or(AuthError::Rejected("unknown or expired login"))?;
-    let identity = state
-        .oidc
+    let identity = oidc
         .identity(&state.http, query.code, attempt)
         .await
         .ok_or(AuthError::Rejected("login failed"))?;

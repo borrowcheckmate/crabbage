@@ -9,7 +9,7 @@ use super::session;
 use crate::state::AppState;
 
 pub(super) async fn login(State(state): State<AppState>) -> Result<impl IntoResponse, AuthError> {
-    let (url, state_value, attempt) = state.oidc.authorization();
+    let (url, state_value, attempt) = state.oidc().await?.authorization();
     login_attempts::create(&state.pool, &state_value, &attempt, session::now()).await?;
     Ok((
         [(SET_COOKIE, LOGIN.set(&state_value))],

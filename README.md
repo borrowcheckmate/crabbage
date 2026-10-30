@@ -8,11 +8,13 @@ A Rust-based recipe book.
 cargo install --git https://github.com/borrowcheckmate/crabbage crabbage
 ```
 
-Or build the container image:
+Or run the container image, published for `linux/amd64` and `linux/arm64`:
 
 ```sh
-cargo xtask docker
+docker pull ghcr.io/borrowcheckmate/crabbage:main
 ```
+
+`cargo xtask docker` builds the image locally and smoke-tests `/healthz` in a hardened container.
 
 ## Usage
 
@@ -28,7 +30,7 @@ Release build of the server and the WASM bundle:
 cargo leptos build --release
 ```
 
-The server listens on `site-addr` from `[package.metadata.leptos]` in `crates/crabbage/Cargo.toml`. `GET /healthz` returns `ok`.
+The server listens on `site-addr` from `[package.metadata.leptos]` in `crates/crabbage/Cargo.toml`, or on `LEPTOS_SITE_ADDR`. `GET /healthz` returns `ok` and needs no provider, so it answers even while the provider is unreachable. Sign-in returns `503 Service Unavailable` until the provider can be discovered, and each sign-in request tries again.
 
 The server reads its settings from environment variables at startup and refuses to start if a required one is missing or invalid. The error names every problem.
 
@@ -40,6 +42,7 @@ The server reads its settings from environment variables at startup and refuses 
 | `OIDC_ISSUER_URL` | yes | | `http(s)` issuer URL of the OpenID Connect provider |
 | `OIDC_CLIENT_ID` | yes | | Client ID registered with the provider |
 | `OIDC_CLIENT_SECRET` | yes | | Client secret for the provider (never printed) |
+| `LEPTOS_SITE_ADDR` | no | `127.0.0.1:3000` | Address the server listens on. The image sets `0.0.0.0:3000` |
 | `CRABBAGE_ADMIN_GROUP` | no | `crabbage-admin` | Group whose members administer the app |
 | `CRABBAGE_HOUSEHOLD_GROUP_PREFIX` | no | `crabbage-household-` | Prefix of the groups that name households |
 | `AI_BASE_URL` | with `AI_MODEL` | | `http(s)` base URL of an OpenAI-compatible API. Setting it turns AI on |
@@ -47,6 +50,44 @@ The server reads its settings from environment variables at startup and refuses 
 | `AI_API_KEY` | no | | API key for the AI service, if it needs one (never printed) |
 
 AI is enabled only when both `AI_BASE_URL` and `AI_MODEL` are set. Setting one without the other is an error. Empty values count as unset.
+
+The image runs as user `65532` from `scratch`. It keeps the database in the `/data` volume, so mount a volume there. A bind mount must be writable by user `65532`. The image also sets `LEPTOS_SITE_ROOT=/site`, `LEPTOS_OUTPUT_NAME=crabbage` and `CRABBAGE_DATA_DIR=/data`.
+
+### Docker Compose with Traefik
+
+Traefik terminates TLS and forwards to port 3000. Replace `example.com` with your hostnames.
+
+```yaml
+services:
+  crabbage:
+    image: ghcr.io/borrowcheckmate/crabbage:main
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      CRABBAGE_PUBLIC_URL: https://recipes.example.com
+      OIDC_ISSUER_URL: https://id.example.com
+      OIDC_CLIENT_ID: crabbage
+      OIDC_CLIENT_SECRET: replace-me
+    volumes:
+      - crabbage-data:/data
+    networks: [proxy]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.routers.crabbage.rule: Host(`recipes.example.com`)
+      traefik.http.routers.crabbage.entrypoints: websecure
+      traefik.http.routers.crabbage.tls.certresolver: letsencrypt
+      traefik.http.services.crabbage.loadbalancer.server.port: "3000"
+
+volumes:
+  crabbage-data:
+
+networks:
+  proxy:
+    external: true
+```
 
 Sign-in uses the OpenID Connect provider (Pocket ID). Register `{CRABBAGE_PUBLIC_URL}/auth/callback` as the redirect URI of the client. Every page except `/healthz` needs a session and redirects to `/auth/login` without one.
 

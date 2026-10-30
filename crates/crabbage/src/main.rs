@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = leptos::config::get_configuration(None)?.leptos_options;
     let site_addr = options.site_addr;
     let listener = tokio::net::TcpListener::bind(site_addr).await?;
-    let router = crabbage::router(options, &config, pool).await?;
+    let router = crabbage::router(options, &config, pool)?;
     axum::serve(listener, router).await?;
     Ok(())
 }

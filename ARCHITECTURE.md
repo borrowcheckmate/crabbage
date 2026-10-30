@@ -13,7 +13,7 @@ xtask/                    repository automation, invoked as `cargo xtask`
 .githooks/                pre-commit and commit-msg hooks, both call xtask
 .github/                  CI, release, dependabot, issue and PR templates
 .devcontainer/            development container
-Dockerfile                minimal runtime image
+Dockerfile                image build: native server build, WASM site, scratch runtime
 ```
 
 ## crates/crabbage-domain, crates/crabbage-import
@@ -69,11 +69,11 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/app.rs` | `App` component (title, heading and sign-out button, all from `t`) and `shell`, the HTML document around it. `shell` sets `<html lang>` from the render's language |
 | `src/i18n/` | Translated text, see below. Compiled for both `ssr` and `hydrate` |
 | `src/config/` (`ssr`) | Settings from environment variables: `Config::from_env` and `from_lookup`, `AiConfig`, `ConfigError` listing every problem. `CRABBAGE_LANGUAGE` is parsed into `i18n::Language`. `mod.rs` re-exports; `settings.rs`, `vars.rs` (lookup and parsing), `error.rs`, `tests.rs` |
-| `src/state.rs` (`ssr`) | `AppState`: leptos options, pool, HTTP client, the OIDC client, the admin group and household prefix used on login, and the language. `FromRef` gives leptos_axum its `LeptosOptions` |
+| `src/state.rs` (`ssr`) | `AppState`: leptos options, pool, HTTP client, the configuration, the lazily discovered OIDC client (`oidc()`), the admin group and household prefix used on login, and the language. `FromRef` gives leptos_axum its `LeptosOptions` |
 | `src/household.rs` (`ssr`) | `POST /household` (form field `household_id`): sets the signed-in user's active household. 303 to `/` on success, 403 when the user is not a member |
-| `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: discovers the provider, then builds `/healthz`, the `auth` routes, the `household` route, the Leptos routes and the site files as fallback. The Leptos routes and the error fallback provide the configured language as context. The session middleware wraps all of them |
+| `src/server.rs` (`ssr`) | `router(options, &Config, pool)`: builds `/healthz`, the `auth` routes, the `household` route, the Leptos routes and the site files as fallback. The Leptos routes and the error fallback provide the configured language as context. The session middleware wraps all of them |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
-| `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, then builds `router` (which does OIDC discovery) and serves it. Without `ssr` it is an empty stub |
+| `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
 
 ### Translations (`src/i18n/`, `locales/`)
 
@@ -102,7 +102,9 @@ To add a language: add `locales/<code>.json` with the same keys, add a `Language
 | `middleware.rs` | `require_session`: every path except `/healthz`, `/auth/*` and `/pkg/*` needs an unexpired session, otherwise 303 to `/auth/login`. A valid session adds `SessionUser` to the request |
 | `cookie.rs` | `Cookie` (name, path, max age) with two instances: `SESSION` (`crabbage_session`, `Path=/`, 30 days) and `LOGIN` (`crabbage_login`, `Path=/auth/`, 10 minutes). Each reads its value from a request and builds the `Set-Cookie` for set or clear. All are `HttpOnly; Secure; SameSite=Lax` |
 | `session.rs` | Session lifetime, unix time, and the 32-byte base64url session token |
-| `error.rs` | `AuthError`: 400 with a message for rejected logins, 500 for store or randomness failures |
+| `error.rs` | `AuthError`: 400 with a message for rejected logins, 500 for store or randomness failures, 503 when the provider cannot be discovered |
+
+The provider is discovered by `AppState::oidc()` on the first request that needs it, and the client is kept only after discovery succeeds. While the provider is unreachable, `/auth/login` and `/auth/callback` answer 503 and the next request tries again. `/healthz` and the pages that need no session do not depend on the provider.
 
 Flow: the login attempt holds `state`, `nonce` and the PKCE verifier in `login_attempts`. The browser also holds the state in the `crabbage_login` cookie, so only the browser that started the login can complete it (login CSRF). The callback checks the cookie before it takes the attempt, then the attempt is deleted, and the ID token must match the stored nonce. The cookie holds the raw token; `sessions` stores only its SHA-256 hash.
 
@@ -118,7 +120,8 @@ Roles and households follow the `groups` claim on every login: the callback repl
 | `tests/server/session.rs` | Logout deletes the row and clears the cookie; expired and unknown sessions require a new login |
 | `tests/server/household.rs` | Group claims on login (admin, households, changes on the next login), switching the active household, 403 for non-members, a user without households |
 | `tests/server/common/` | `Harness`: the router on a temp database, and `issuer.rs`, a fake provider on 127.0.0.1 with a runtime-generated RSA key (discovery, JWKS, token endpoint). Its ID token carries the nonce and the `groups` claim the test sets |
-| `tests/binary.rs` | Runs the server binary: missing config vars, invalid `LEPTOS_SITE_ADDR`, an address already in use and an unreachable issuer all exit with an error. The address is bound before discovery, so the bind tests stay offline. Each run that gets past config uses its own temp `CRABBAGE_DATA_DIR` |
+| `tests/server/discovery.rs` | Lazy discovery: with an unreachable provider sign-in is 503, and once the provider listens on the same address it is 303 |
+| `tests/binary.rs` | Runs the server binary: missing config vars and invalid `LEPTOS_SITE_ADDR` or an address already in use exit with an error. With an unreachable issuer the server runs: `/healthz` is 200 and `/auth/login` is 503. Each run uses its own temp `CRABBAGE_DATA_DIR`, and the server process is killed when the test ends |
 
 ## xtask
 
@@ -127,6 +130,7 @@ Roles and households follow the `groups` claim on every login: the callback repl
 | `cli.rs` | Command definitions (clap) |
 | `task/plan.rs` | Maps a command to a list of actions. Composite commands (`ci`, `pre-commit`) live here |
 | `task/run.rs` | Executes actions and reports violations |
+| `task/smoke.rs` | Container smoke test for `cargo xtask docker`: the hardened `docker run` step, `/healthz` polling over a raw HTTP/1.1 `GET` (30 s), and the status-line parser. `run.rs` always runs `docker rm -f` afterwards |
 | `task/step.rs` | An external process invocation |
 | `policy/repository.rs` | Applies every file rule to the tracked files |
 | `policy/comments.rs` | Finds plain comments in Rust source |
@@ -141,6 +145,20 @@ Roles and households follow the `groups` claim on every login: the callback repl
 To add a check, add a submodule under `policy/`, call it from `repository.rs` (file rules) or `commit.rs` (message rules), and test it in the same file.
 
 To add a task, add a variant to `cli.rs` and map it in `task/plan.rs`. Prefer composing existing steps.
+
+## Container image
+
+`Dockerfile` has five stages. Each platform is built natively on a runner of that platform (`ubuntu-24.04` for amd64, `ubuntu-24.04-arm` for arm64), so no emulated compiler runs:
+
+| Stage | Contents |
+| --- | --- |
+| `tools` | Rust on Debian trixie, pinned by digest. `musl-tools` from apt, and cargo-leptos from its release archive, checked by SHA-256 |
+| `site` | `cargo leptos build --release --frontend-only`: the WASM bundle, JS and CSS in `target/site`, copied to `/out/site` |
+| `server` | `cargo build` of `crabbage` with `ssr` for the native musl target `$(uname -m)-unknown-linux-musl`. Bundled SQLite is C code compiled with `musl-gcc`; rustls needs no system libraries, so the binary is static |
+| `data` | `/data` owned by 65532:65532 |
+| final | `FROM scratch`. Copies `/data`, `/site` and `/crabbage`. Sets `CRABBAGE_DATA_DIR`, `LEPTOS_SITE_ROOT`, `LEPTOS_OUTPUT_NAME` and `LEPTOS_SITE_ADDR`. Runs as `65532:65532`, exposes 3000, declares `/data` as a volume |
+
+The cargo-leptos version and its checksum are pinned in `ARG` and in the `tools` stage. CI's `image` job is a matrix with one leg per platform. Each leg builds its platform with its own GitHub Actions cache scope and pushes the image by digest on pushes to `main`. The `manifest` job then combines the digests into `ghcr.io/borrowcheckmate/crabbage:main` and `:sha-<short>`.
 
 ## Rules enforced by `cargo xtask policy`
 

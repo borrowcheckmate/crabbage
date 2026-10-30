@@ -48,6 +48,20 @@ pub(crate) struct Harness {
     _dir: TempDir,
 }
 
+/// The app configuration for tests, with the provider at `issuer_url` and `CRABBAGE_LANGUAGE` set
+/// to `language`, or unset when it is `None`.
+pub(crate) fn config(issuer_url: &str, language: Option<&str>) -> Config {
+    Config::from_lookup(|key| match key {
+        "CRABBAGE_PUBLIC_URL" => Some("https://recipes.example.com".to_owned()),
+        "OIDC_ISSUER_URL" => Some(issuer_url.to_owned()),
+        "OIDC_CLIENT_ID" => Some("crabbage".to_owned()),
+        "OIDC_CLIENT_SECRET" => Some("secret".to_owned()),
+        "CRABBAGE_LANGUAGE" => language.map(str::to_owned),
+        _ => None,
+    })
+    .expect("config is valid")
+}
+
 impl Harness {
     pub(crate) async fn start(name: &str) -> Self {
         Self::start_with_language(name, None).await
@@ -60,19 +74,9 @@ impl Harness {
             .await
             .expect("database opens");
         let issuer = FakeIssuer::start().await;
-        let config = Config::from_lookup(|key| match key {
-            "CRABBAGE_PUBLIC_URL" => Some("https://recipes.example.com".to_owned()),
-            "OIDC_ISSUER_URL" => Some(issuer.url().to_owned()),
-            "OIDC_CLIENT_ID" => Some("crabbage".to_owned()),
-            "OIDC_CLIENT_SECRET" => Some("secret".to_owned()),
-            "CRABBAGE_LANGUAGE" => language.map(str::to_owned),
-            _ => None,
-        })
-        .expect("config is valid");
+        let config = config(issuer.url(), language);
         let options = LeptosOptions::builder().output_name("crabbage").build();
-        let router = crabbage::router(options, &config, pool.clone())
-            .await
-            .expect("router builds");
+        let router = crabbage::router(options, &config, pool.clone()).expect("router builds");
         Self {
             router,
             pool,

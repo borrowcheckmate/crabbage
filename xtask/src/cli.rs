@@ -38,7 +38,7 @@ pub(crate) enum Command {
     CommitMsg { file: PathBuf },
     /// Validate a pull request from the `PR_TITLE` and `PR_BODY` environment variables.
     PrCheck,
-    /// Build the container image.
+    /// Build the container image and smoke-test `/healthz` in a hardened container.
     Docker,
     /// Lint the WASM build of the app with warnings denied.
     Wasm,

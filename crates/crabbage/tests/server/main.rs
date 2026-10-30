@@ -9,6 +9,11 @@ mod common;
     clippy::expect_used,
     reason = "test helpers stop the test on setup failure"
 )]
+mod discovery;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
 mod household;
 mod login;
 mod session;

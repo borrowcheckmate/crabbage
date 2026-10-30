@@ -34,7 +34,7 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 | `cargo xtask policy` | Repository rules, see ARCHITECTURE.md |
 | `cargo xtask identity` | Anonymous git identity |
 | `cargo xtask wasm` | Clippy on the WASM (hydrate) build, warnings denied |
-| `cargo xtask docker` | Build the container image |
+| `cargo xtask docker` | Build the container image and smoke-test `/healthz` (needs Docker) |
 | `cargo xtask ci` | Everything CI runs except coverage and docker |
 
 ## Commits
@@ -66,7 +66,7 @@ Tests must pass on any machine: no absolute paths, no network, no files outside 
 
 ## Docker
 
-Images build from pinned digests, run as a non-root user from `scratch`, and are tested with a read-only filesystem, no capabilities, no network and `no-new-privileges`. Keep it that way.
+Images build from pinned digests and pinned tool downloads, run as a non-root user from `scratch`, and are tested with a read-only filesystem, no capabilities, `no-new-privileges` and a port published on loopback only. Keep it that way.
 
 ## Releases
 
