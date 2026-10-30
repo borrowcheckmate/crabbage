@@ -10,4 +10,5 @@ pub mod sessions;
 pub mod users;
 
 pub use error::StoreError;
+use pool::begin_write;
 pub use pool::open;

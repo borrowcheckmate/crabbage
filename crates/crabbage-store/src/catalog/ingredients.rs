@@ -70,7 +70,7 @@ async fn load(pool: &SqlitePool, sql: &'static str) -> Result<Vec<Ingredient>, S
 ///
 /// Returns [`StoreError::Conflict`] if `name` is already a name or alias, or a database error.
 pub async fn create(pool: &SqlitePool, name: &str) -> Result<i64, StoreError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     ensure_not_an_alias(&mut tx, name).await?;
     let id = sqlx::query_scalar("INSERT INTO ingredients (name) VALUES (?) RETURNING id")
         .bind(name)
@@ -87,7 +87,7 @@ pub async fn create(pool: &SqlitePool, name: &str) -> Result<i64, StoreError> {
 ///
 /// Returns [`StoreError::Conflict`] if `name` is already a name or alias, or a database error.
 pub async fn rename(pool: &SqlitePool, id: i64, name: &str) -> Result<bool, StoreError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     ensure_not_an_alias(&mut tx, name).await?;
     let result = sqlx::query("UPDATE ingredients SET name = ? WHERE id = ?")
         .bind(name)
@@ -126,7 +126,7 @@ pub async fn delete(pool: &SqlitePool, id: i64) -> Result<bool, StoreError> {
 ///
 /// Returns [`StoreError::Conflict`] if `alias` is already a name or alias, or a database error.
 pub async fn add_alias(pool: &SqlitePool, id: i64, alias: &str) -> Result<bool, StoreError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     ensure_not_a_name(&mut tx, alias).await?;
     let result = sqlx::query(
         "INSERT INTO ingredient_aliases (alias, ingredient_id) SELECT ?, id FROM ingredients WHERE id = ?",
@@ -200,7 +200,7 @@ pub async fn merge(pool: &SqlitePool, from: i64, into: i64) -> Result<bool, Stor
     if from == into {
         return Ok(false);
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     let found: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM ingredients WHERE id IN (?, ?)")
         .bind(from)
         .bind(into)

@@ -1,7 +1,8 @@
 use std::path::Path;
 
+use sqlx::Transaction;
 use sqlx::migrate::Migrator;
-use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePool};
+use sqlx::sqlite::{Sqlite, SqliteConnectOptions, SqliteJournalMode, SqlitePool};
 
 use crate::StoreError;
 
@@ -27,4 +28,13 @@ pub async fn open(data_dir: &Path) -> Result<SqlitePool, StoreError> {
     let pool = SqlitePool::connect_with(options).await?;
     MIGRATOR.run(&pool).await?;
     Ok(pool)
+}
+
+/// Begins a transaction that takes the write lock at once. A deferred transaction that reads and
+/// then writes fails with a locked database when another connection wrote in between; this one
+/// waits for the busy timeout instead.
+pub(crate) async fn begin_write(
+    pool: &SqlitePool,
+) -> Result<Transaction<'static, Sqlite>, sqlx::Error> {
+    pool.begin_with("BEGIN IMMEDIATE").await
 }

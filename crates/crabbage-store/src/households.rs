@@ -28,7 +28,7 @@ pub async fn sync_membership(
     is_admin: bool,
     household_groups: &[String],
 ) -> Result<(), StoreError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     sqlx::query("UPDATE users SET is_admin = ? WHERE id = ?")
         .bind(is_admin)
         .bind(user_id)

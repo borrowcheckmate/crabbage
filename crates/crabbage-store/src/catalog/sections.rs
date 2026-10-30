@@ -83,7 +83,7 @@ pub async fn delete(pool: &SqlitePool, id: i64) -> Result<bool, StoreError> {
 ///
 /// Returns an error if a query fails. Nothing is changed in that case.
 pub async fn move_section(pool: &SqlitePool, id: i64, position: i64) -> Result<bool, StoreError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::begin_write(pool).await?;
     let mut ids: Vec<i64> =
         sqlx::query_scalar("SELECT id FROM store_sections ORDER BY position, id")
             .fetch_all(&mut *tx)
