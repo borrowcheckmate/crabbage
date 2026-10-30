@@ -12,9 +12,9 @@ use crate::notice::{error_notice, failure, message};
 use crate::recipes::editors::list_users;
 use crate::recipes::ingredients::ingredient_names;
 use crate::recipes::pages::editor_list::EditorsSection;
-use crate::recipes::pages::route::recipe_id;
 use crate::recipes::read::get_recipe;
 use crate::recipes::write::{CreateRecipe, UpdateRecipe};
+use crate::route::route_id;
 
 /// The page for a new recipe. Saving opens the recipe.
 #[component]
@@ -57,7 +57,7 @@ async fn new_form(create: ServerAction<CreateRecipe>) -> AnyView {
 /// The page for changing a recipe. Saving opens the recipe. Owners and admins also see the editors.
 #[component]
 pub(crate) fn RecipeEditPage() -> impl IntoView {
-    let id = recipe_id();
+    let id = route_id();
     let save = ServerAction::<UpdateRecipe>::new();
     let navigate = use_navigate();
     Effect::new(move |_| {

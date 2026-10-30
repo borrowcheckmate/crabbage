@@ -102,11 +102,12 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/api.rs` (`ssr`) | `POST /api/{*fn_name}`: serves every `#[server]` function, providing the pool and the language as context. Behind the session check |
 | `src/access.rs` (`ssr`) | `signed_in` (the pool and the session user id), `role` (the `Role` of a user), `require_admin` (the pool, or a 403), `refuse` (sets 403 and returns the error with its message, shared by every refusal), `store_failure`, `clean` (trimmed, non-empty), `ensure_found` |
 | `src/notice.rs` | How pages show a failed action or load: `failure`, `error_notice` (`.notice.error`), `message` |
-| `src/app.rs` | `App`: the `Router` with `/` (home: the recipes link for everyone, admin links for admins), `/admin/ingredients`, `/admin/sections`, `/admin/review`, `/recipes`, `/recipes/new`, `/recipes/:id` and `/recipes/:id/edit`, and the sign-out button (`.secondary`). `shell` is the HTML document |
+| `src/route.rs` | `route_id`: the `:id` of the current route as a number, or `None`. Used by the recipe and ingredient pages |
+| `src/app.rs` | `App`: the `Router` with `/` (home: the recipes link for everyone, admin links for admins), `/admin/ingredients`, `/admin/ingredients/:id`, `/admin/sections`, `/admin/review`, `/recipes`, `/recipes/new`, `/recipes/:id` and `/recipes/:id/edit`, and the sign-out button (`.secondary`). `shell` is the HTML document |
 | `src/user.rs` | `current_user` server function: `SignedInUser` (name and `is_admin`) |
 | `src/catalog/` | Catalog server functions and their records, see below. `types.rs` holds `IngredientRow` and `SectionRow` (both builds), `convert.rs` the store conversions (`ssr`) |
 | `src/recipes/` | Recipes: server functions, records and pages, see below |
-| `src/admin/` | The admin pages: `ingredients.rs`, `sections.rs`, `review.rs`, each showing a not-allowed message to non-admins, and `notice.rs` (failed actions and loads, as `.notice.error`) |
+| `src/admin/` | The admin pages: `ingredients/` (`list.rs`: the add form, the search on `q` and one row link per ingredient; `detail.rs`: one ingredient's rename, alternative names, store section, merge and delete, with merge and delete asking first through `?confirm=`), `sections.rs`, `review.rs`, each showing a not-allowed message to non-admins. `mod.rs` declares them and re-exports the pages |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
 | `src/main.rs` (`ssr`) | Server binary: reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
 
@@ -119,7 +120,7 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/i18n/mod.rs` | Module declarations and re-exports |
 | `src/i18n/language.rs` | `Language` (`En`, `Nl`), re-exported from the crate root. `code` and `from_code` map to and from `en` and `nl` |
 | `src/i18n/messages.rs` | `Messages`: one language's keys, parsed once per language from its embedded file. `get` returns the key when missing, `format` fills `{name}` placeholders and keeps unknown ones |
-| `src/i18n/context.rs` | `t(key)` and `current_language()` read the language from leptos context, English when none is provided. `document_language()` (`hydrate`) reads the `lang` attribute of the page |
+| `src/i18n/context.rs` | `t(key)`, `t_with(key, args)` (fills `{name}` placeholders) and `current_language()` read the language from leptos context, English when none is provided. `document_language()` (`hydrate`) reads the `lang` attribute of the page |
 | `src/i18n/tests.rs` | Every file in `locales/` parses, has the English keys and a language code as its name; every key is translated; formatting; language codes |
 
 The language flows from `Config` to `AppState`, then to the Leptos routes and the error fallback, which provide it as context for each render. `shell` sets `<html lang>` from it and `App` reads the text with `t`. The browser takes the language from the `lang` attribute of the page before it hydrates.
@@ -132,7 +133,9 @@ Pages get their look from `style/main.css` and never from inline styles. Use the
 
 | Class | Use |
 | --- | --- |
-| `.card` | A bordered section: one ingredient, store section or review row |
+| `.card` | A bordered section: a store section or review row, or a question with its buttons |
+| `.ingredient-list` | The ingredient list: one bordered box with a divider between rows, each row a `.ingredient-row` link of at least 44px |
+| `.badge` | A small rounded tag, such as Waiting for review |
 | `.row` | A horizontal group that wraps, such as the up and down buttons of a section |
 | `.notice`, `.notice.error` | A status message; `.error` for failed actions, failed loads and the not-allowed message |
 | `.nav` | The home page admin links as large tappable blocks |
@@ -184,7 +187,7 @@ Form encoding: the recipe form sends one hidden field, `draft`, holding the whol
 | `rights.rs` (`ssr`) | `Rights::of` and `permit` (the rule per change), `load` (the recipe or the missing-item error) |
 | `convert.rs` (`ssr`) | Store records to the page records |
 | `draft.rs` (`ssr`) | `parse`: JSON to `RecipeInput`, with the validation: a non-empty title, servings of at least 1, amounts finite and not negative, a unit that is a `Unit` symbol, step text and whole minutes of at least 1 |
-| `pages/` | `RecipesPage` (the list, a card per recipe, New recipe), `RecipePage` (the view, Edit and Delete only when allowed), `RecipeNewPage` and `RecipeEditPage` (the form; the edit page also shows `EditorsSection` to owners and admins), `route.rs` (the id in the address) |
+| `pages/` | `RecipesPage` (the list, a card per recipe, New recipe), `RecipePage` (the view, Edit and Delete only when allowed), `RecipeNewPage` and `RecipeEditPage` (the form; the edit page also shows `EditorsSection` to owners and admins). The id comes from `src/route.rs` |
 | `pages/form/` | `draft.rs` (the signals and the JSON), `fields.rs` (`DraftFields`: title, servings, ingredient rows with a unit select and a datalist of the known names, step rows with a text area and minutes; "Add" buttons append rows and "Remove" buttons drop them), `page.rs` (the two pages) |
 | `pages/editor_list.rs` | The editors of a recipe. Add and remove return the new list, which the section shows in place, so the form on the page keeps what was typed |
 
@@ -205,8 +208,9 @@ Pages load data in one `<Suspense>` whose closure returns a `Suspend` future tha
 | `tests/server/catalog.rs` | Admin create, rename and delete; members refused on every endpoint with 403; alias uniqueness through the API; sections created and reordered; the review queue; merge through the API |
 | `tests/server/recipes.rs` | Recipe endpoints: a member creates and gets a recipe back, another member views but gets 403 on change, a listed editor changes but not deletes or manages editors, a removed editor is refused, an admin changes and deletes anyone's, invalid input is refused in words (English and Dutch), the list and the user and ingredient names |
 | `tests/server/recipe_pages.rs` | The list, a recipe page with lines and numbered steps, Edit and Delete for the users who may use them, the new and edit forms, the editors section for owners and admins, the missing recipe |
-| `tests/server/screenshots.rs` | Ignored. Writes the rendered pages, including a sample recipe, to `CRABBAGE_SCREENSHOT_DIR` for review screenshots, with `style/main.css` copied beside them and the link made relative so a `file://` view is styled |
-| `tests/server/pages.rs` | Admin pages render for admins, show the not-allowed message to members, and the home page links to them for admins only |
+| `tests/server/ingredient_pages.rs` | The ingredient list rows (one link each, no actions), the search by name and alias (case-insensitive, no-match text), the detail actions, the not-found text, the not-allowed message for members, and the delete and merge questions shown only with `?confirm=delete` and `?confirm=merge` |
+| `tests/server/screenshots.rs` | Ignored. Writes the rendered pages, including a sample recipe and the ingredient pages, to `CRABBAGE_SCREENSHOT_DIR` for review screenshots, with `style/main.css` copied beside them and the link made relative so a `file://` view is styled |
+| `tests/server/pages.rs` | Admin pages render for admins, show the not-allowed message to members, the ingredient list's sections, alternative-name counts and pending badge, and the home page links to them for admins only |
 | `tests/server/common/` | `Harness`: the router on a temp database, and `issuer.rs`, a fake provider on 127.0.0.1 with a runtime-generated RSA key (discovery, JWKS, token endpoint). Its ID token carries the nonce and the `groups` claim the test sets |
 | `tests/server/discovery.rs` | Lazy discovery: with an unreachable provider sign-in is 503, and once the provider listens on the same address it is 303 |
 | `tests/binary.rs` | Runs the server binary: missing config vars and invalid `LEPTOS_SITE_ADDR` or an address already in use exit with an error. With an unreachable issuer the server runs: `/healthz` is 200 and `/auth/login` is 503. Each run uses its own temp `CRABBAGE_DATA_DIR`, and the server process is killed when the test ends |

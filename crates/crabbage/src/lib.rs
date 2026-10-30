@@ -26,6 +26,8 @@ mod catalog;
 
 mod notice;
 
+mod route;
+
 #[expect(
     unreachable_pub,
     clippy::same_name_method,

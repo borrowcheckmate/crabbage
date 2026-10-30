@@ -13,6 +13,12 @@ pub(crate) fn t(key: &'static str) -> &'static str {
     Messages::for_language(current_language()).get(key)
 }
 
+/// The text of the message `key` in the current language, with each `{name}` replaced by the value
+/// paired with `name` in `args`.
+pub(crate) fn t_with(key: &str, args: &[(&str, &str)]) -> String {
+    Messages::for_language(current_language()).format(key, args)
+}
+
 /// The language the server rendered the page in, from the `lang` attribute of the document
 /// element. English when the attribute is missing or unknown.
 #[cfg(feature = "hydrate")]

@@ -53,6 +53,8 @@ async fn write_pages() {
         .expect("recipe");
     let recipe_path = format!("/recipes/{recipe}");
     let recipe_edit_path = format!("/recipes/{recipe}/edit");
+    let ingredient_path = format!("/admin/ingredients/{tomato}");
+    let ingredient_delete_path = format!("{ingredient_path}?confirm=delete");
 
     let pages = [
         ("admin", &["crabbage-admin"][..], "home", "/"),
@@ -69,6 +71,24 @@ async fn write_pages() {
             "/admin/sections",
         ),
         ("admin", &["crabbage-admin"][..], "review", "/admin/review"),
+        (
+            "admin",
+            &["crabbage-admin"][..],
+            "ingredient",
+            ingredient_path.as_str(),
+        ),
+        (
+            "admin",
+            &["crabbage-admin"][..],
+            "ingredient-delete",
+            ingredient_delete_path.as_str(),
+        ),
+        (
+            "admin",
+            &["crabbage-admin"][..],
+            "ingredients-search",
+            "/admin/ingredients?q=pom",
+        ),
         ("member", &[][..], "home", "/"),
         ("member", &[][..], "ingredients", "/admin/ingredients"),
         ("member", &[][..], "recipes", "/recipes"),
