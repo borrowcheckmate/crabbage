@@ -1,0 +1,21 @@
+{
+  "name": "crabbage",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "dev",
+  "containerUser": "dev",
+  "updateRemoteUserUID": true,
+  "runArgs": [
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--pids-limit=4096"
+  ],
+  "mounts": [
+    "source=crabbage-cargo-registry,target=/usr/local/cargo/registry,type=volume"
+  ],
+  "postCreateCommand": "cargo xtask hooks",
+  "customizations": {
+    "vscode": {
+      "extensions": ["rust-lang.rust-analyzer", "tamasfe.even-better-toml"]
+    }
+  }
+}

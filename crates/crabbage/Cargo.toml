@@ -1,0 +1,14 @@
+[package]
+name = "crabbage"
+description = "A Rust-based recipe book."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords = ["recipe", "recipes", "cooking", "recipe-book"]
+categories = ["command-line-utilities"]
+
+[lints]
+workspace = true

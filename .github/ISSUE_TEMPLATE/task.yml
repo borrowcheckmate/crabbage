@@ -1,0 +1,34 @@
+name: Task
+description: A unit of work. Split larger work into sub-issues.
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: One or two sentences on what should be true when this is done, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where to look
+      description: Start with the relevant ARCHITECTURE.md section, then the modules or files involved.
+      placeholder: |
+        - ARCHITECTURE.md → <section>
+        - crates/<crate>/src/<module>/
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Verifiable acceptance criteria. Each should map to a test.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Constraints, edge cases or decisions already made. Optional.
