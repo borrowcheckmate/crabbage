@@ -44,6 +44,13 @@ mod user;
 )]
 mod shopping_page;
 
+#[expect(
+    unreachable_pub,
+    clippy::same_name_method,
+    reason = "the component props builder adds pub methods"
+)]
+mod plan_page;
+
 #[cfg(feature = "ssr")]
 mod config;
 
@@ -72,6 +79,8 @@ mod server;
 #[cfg(feature = "ssr")]
 pub use server::router;
 
+#[cfg(feature = "ssr")]
+mod planner;
 #[cfg(feature = "ssr")]
 mod shopping;
 #[cfg(feature = "ssr")]
