@@ -46,11 +46,11 @@ Their responsibilities:
 
 ## crates/crabbage-import
 
-Parses free-text ingredient lines, matches their names to catalogue ingredients and reads recipes from web pages. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version and TLS stack as `openidconnect`). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser.
+Parses free-text ingredient lines, matches their names to catalogue ingredients and reads recipes from web pages. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version and TLS stack as `openidconnect`). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser. The AI client posts a recipe's text and photos to an OpenAI-compatible chat completions endpoint (`reqwest`, the key as a bearer token) and reads the JSON draft from the first answer, checking it before use.
 
 | Module | Responsibility |
 | --- | --- |
-| `src/lib.rs` | Crate doc and the `lines`, `matching` and `web` modules |
+| `src/lib.rs` | Crate doc and the `ai`, `lines`, `matching` and `web` modules |
 | `src/lines/mod.rs` | Declares the line modules and re-exports `parse_line` and `ParsedLine` |
 | `src/lines/line.rs` | `parse_line(text)`: collapses whitespace, reads the amount, unit, name and note. `ParsedLine` (`amount`, `amount_max`, `unit`, `name`, `note`, `original`, `parsed`). A line is parsed when its name has a letter or digit; otherwise it keeps its collapsed text, with no amount, unit or note. A comma or parenthesis starts the note |
 | `src/lines/numbers.rs` | Amounts: integers, decimals with a comma or dot, `1/2`, `1 1/2`, unicode fractions (`½ ¼ ¾ ⅓ ⅔ ⅛`, also glued as `1½`), and ranges with `-`, `–`, `tot`, `to`, `à` |
@@ -73,6 +73,15 @@ Parses free-text ingredient lines, matches their names to catalogue ingredients 
 | `tests/web/address.rs` | Public addresses allowed and private, special and mapped addresses refused |
 | `tests/web/errors.rs` | Display text of every `ImportError` variant |
 | `tests/fixtures/web/*.html` | Small invented pages: plain, `@graph`, type list, sections, string instructions, article only, invalid script before a recipe, and no JSON-LD |
+| `src/ai/mod.rs` | Declares the AI submodules and re-exports `AiClient`, `AiDraft`, `AiLine`, `AiStep`, `parse`, `AiError`, `Image` and `Prompt` |
+| `src/ai/client.rs` | `AiClient` (base URL, optional API key, model, timeout 60 s; `with_timeout`). `complete(prompt)` posts to `{base}/chat/completions` with bearer auth only when a key is set, and reads `choices[0].message.content` through `parse`. Timeouts, non-success statuses, connection failures and answers without a message map to `AiError`. `Debug` prints the key as `<redacted>` |
+| `src/ai/request.rs` | `Prompt` (instructions, text, `Image`s) and `Image` (media type, bytes). Builds the chat body: JSON object response format, a system message with the instructions and the shape of the draft, and a user message with the text part (left out when empty) and one `data:` URL image part per photo |
+| `src/ai/draft.rs` | `AiDraft`, `AiLine`, `AiStep` (serde) and `parse(content)`: strips a ```json fence, reads the draft and checks it: non-blank title, lines and steps present, names and step texts non-blank, amounts not negative, units known to `Unit::from_symbol`, step line indexes existing. Failures are `AiError::Invalid` with the reason |
+| `src/ai/error.rs` | `AiError` (`Timeout`, `Status(u16)`, `Network(text)`, `Invalid(reason)`) with user-facing messages (401, 403 and 429 have their own text) and `std::error::Error` |
+| `tests/ai/main.rs` | Declares the AI test modules and the loopback mock server, which records raw requests and answers with a canned status and body, or never answers |
+| `tests/ai/client.rs` | Request path with and without a trailing slash on the base, bearer auth with and without a key, body parts and the image data URL, the text part left out, a valid answer, and timeouts |
+| `tests/ai/parse.rs` | A full valid draft, fenced content, optional fields, and every invalid case with its reason |
+| `tests/ai/errors.rs` | Display text of every `AiError`, statuses 401, 429 and 500, unreachable service, answers without a message, and the API key absent from errors and `Debug` output for each error case |
 
 ## crates/crabbage-store
 

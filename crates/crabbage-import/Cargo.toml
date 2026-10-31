@@ -11,8 +11,10 @@ keywords = ["recipe", "recipes", "cooking", "recipe-book"]
 categories = ["web-programming"]
 
 [dependencies]
+base64 = { workspace = true }
 crabbage-domain = { version = "0.1.0", path = "../crabbage-domain" }
 reqwest = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
