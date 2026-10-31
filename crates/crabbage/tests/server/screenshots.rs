@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use axum::http::StatusCode;
 use crabbage_store::catalog::{categories, ingredients, sections};
 use crabbage_store::households::households_of;
+use crabbage_store::planner::{PlanEntry, PlannerSettings, save_settings, set_entry};
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create, set_image};
 use crabbage_store::shopping::add_text;
 
@@ -85,6 +86,46 @@ async fn write_pages() {
     let recipe = create(&harness.pool, owner, &sample_recipe(breakfast), 0)
         .await
         .expect("recipe");
+    save_settings(
+        &harness.pool,
+        household,
+        &PlannerSettings {
+            lookback_weeks: 2,
+            servings: 4,
+            weekdays: [
+                Some(breakfast),
+                Some(breakfast),
+                None,
+                Some(breakfast),
+                Some(breakfast),
+                None,
+                Some(breakfast),
+            ],
+        },
+    )
+    .await
+    .expect("planner settings");
+    for date in [
+        "2024-02-26",
+        "2024-02-27",
+        "2024-02-28",
+        "2024-02-29",
+        "2024-03-01",
+        "2024-03-02",
+        "2024-03-03",
+    ] {
+        set_entry(
+            &harness.pool,
+            household,
+            &PlanEntry {
+                date: date.to_owned(),
+                recipe_id: Some(recipe),
+                servings: 4,
+            },
+        )
+        .await
+        .expect("plan entry");
+    }
     for ingredient in [tomato, onion] {
         sqlx::query("INSERT INTO shopping_items (household_id, ingredient_id) VALUES (?, ?)")
             .bind(household)
@@ -105,6 +146,14 @@ async fn write_pages() {
         .await
         .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
     std::fs::write(dir.join("member-shopping.html"), shopping_body).expect("page is written");
+    let plan_body = body_text(
+        harness
+            .get("/plan?week=2024-02-26", Some(&shopping_token))
+            .await,
+    )
+    .await
+    .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+    std::fs::write(dir.join("member-plan.html"), plan_body).expect("page is written");
     std::fs::create_dir_all(harness.images_dir()).expect("images directory is created");
     std::fs::write(harness.images_dir().join(PHOTO_NAME), PHOTO).expect("photo is written");
     set_image(&harness.pool, recipe, Some(PHOTO_NAME))

@@ -36,6 +36,11 @@ mod login;
     reason = "test helpers stop the test on setup failure"
 )]
 mod pages;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+mod planner;
 mod recipe_browse;
 #[expect(
     clippy::expect_used,

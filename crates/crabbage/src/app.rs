@@ -5,6 +5,7 @@ use leptos_router::path;
 
 use crate::admin::{CategoriesPage, IngredientPage, IngredientsPage, ReviewPage, SectionsPage};
 use crate::i18n::{current_language, t};
+use crate::plan_page::PlanPage;
 use crate::recipes::{
     CookPage, RecipeEditPage, RecipeImportPage, RecipeNewPage, RecipePage, RecipesPage,
 };
@@ -33,6 +34,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/recipes/:id/cook") view=CookPage/>
                     <Route path=path!("/recipes/:id/edit") view=RecipeEditPage/>
                     <Route path=path!("/shopping") view=ShoppingPage/>
+                    <Route path=path!("/plan") view=PlanPage/>
                 </Routes>
                 <form method="post" action="/auth/logout">
                     <button class="secondary">{t("app.sign_out")}</button>
@@ -54,6 +56,7 @@ fn Home() -> impl IntoView {
                     <nav class="nav">
                         <a href="/recipes">{t("recipes.nav")}</a>
                         <a href="/shopping">{t("shopping.nav")}</a>
+                        <a href="/plan">{t("plan.nav")}</a>
                         {is_admin.then(|| view! {
                             <a href="/admin/ingredients">{t("admin.nav.ingredients")}</a>
                             <a href="/admin/sections">{t("admin.nav.sections")}</a>

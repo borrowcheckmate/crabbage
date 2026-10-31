@@ -16,6 +16,7 @@ use crate::auth;
 use crate::config::Config;
 use crate::household;
 use crate::images;
+use crate::planner::routes as planner_routes;
 use crate::recipes::{PhotoDrafts, import_photo_routes, photo_routes, rating_routes};
 use crate::shopping::routes as shopping_routes;
 use crate::state::AppState;
@@ -63,6 +64,7 @@ pub fn router(
         .merge(import_photo_routes())
         .merge(rating_routes())
         .merge(shopping_routes())
+        .merge(planner_routes())
         .leptos_routes_with_context(
             &state,
             routes,
