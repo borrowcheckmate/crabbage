@@ -1,6 +1,7 @@
 //! SQLite persistence for recipes and their related data.
 
 pub mod catalog;
+mod defaults;
 mod error;
 pub mod households;
 pub mod login_attempts;
@@ -11,6 +12,7 @@ pub mod sessions;
 pub mod shopping;
 pub mod users;
 
+pub use defaults::seed_defaults;
 pub use error::StoreError;
 use pool::begin_write;
 pub use pool::open;

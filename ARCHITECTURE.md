@@ -118,6 +118,7 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | Module | Responsibility |
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports |
+| `src/defaults.rs` | `seed_defaults(pool, language)`: reads the versioned catalog JSON, seeds translated sections, ingredients, aliases and categories once when the catalog is empty, and records existing catalogs as seeded |
 | `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR`; `begin_write` |
 | `src/error.rs` | `StoreError`: io, database and migration failures, `Conflict(text)` when a name or alias is taken or would equal a name or alias, `InUse` when recipe lines use an ingredient, `UnknownLine` when a step links to a line the recipe does not have, `InvalidStars` when a rating is not from 1 to 5, `Empty` when a shopping text is blank, and planner date or setting validation errors |
 | `src/users.rs` | `upsert_user`: one row per OIDC subject, returns the user id. `find`: the name and admin flag of a user (`User`) |
@@ -146,13 +147,15 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `src/recipes/standing.rs` | `rate(pool, recipe, user, stars)` (upsert; `InvalidStars` for anything outside 1 to 5 before the database is touched; `false` for a missing recipe), and `set_favourite(pool, recipe, user, bool)` (`false` for a missing recipe). Both writes run in `begin_write` |
 | `src/recipes/image.rs` | `set_image(pool, id, Option<&str>)`: sets or clears the file name of the recipe's photo (the `image` column of `recipes`, from migration 0004) and returns the name it replaced, `None` when there was none or the recipe is missing |
 | `src/recipes/editors.rs` | `add_editor` (false for a missing recipe or user; adding twice changes nothing) and `remove_editor` |
-| `migrations/` | SQL migrations, applied in file-name order. `0008_planner.sql` stores household planner settings and weekday categories, and dated recipe or rest entries; deleting a household cascades, deleting a category clears weekday choices, and deleting a recipe turns its plan entry into rest |
+| `migrations/` | SQL migrations, applied in file-name order. `0008_planner.sql` stores household planner settings and weekday categories, and dated recipe or rest entries; deleting a household cascades, deleting a category clears weekday choices, and deleting a recipe turns its plan entry into rest. `0011_catalog_seed.sql` adds the one-row seed marker |
+| `defaults/catalog.json` | Versioned English and Dutch defaults: 12 ordered store sections, 197 ingredients with aliases, and 12 dinner categories |
 | `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
 | `tests/concurrent_writes.rs` | Many concurrent creates and renames all succeed |
 | `tests/recipes_images.rs` | `set_image` returns the replaced name, clears it, reads back through `get` and `list`, and does nothing for a missing recipe |
 | `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs`, `tests/households.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
 | `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines and shopping items inserted with SQL, both re-pointed), section ordering and renumbering |
 | `tests/catalog_categories.rs` | Category order by name, unique names regardless of case, rename, and delete taking the category off its recipes |
+| `tests/defaults.rs`, `src/defaults.rs` tests | One-time seed behavior, existing catalog preservation, deleted defaults remaining deleted, and translated data uniqueness |
 | `tests/planner.rs` | Settings defaults and per-household round trips; recipe and rest entry upserts, inclusive ordered ranges, recipe history and household isolation; invalid dates and servings |
 | `tests/recipes_categories.rs` | Categories stored by name with unknown ids ignored, replaced on update, the list filtered by category |
 | `tests/recipes_round_trip.rs` | Lines and steps round-trip in order with step-line links, unknown ingredients created pending, alias and case-insensitive resolution, list order, `UnknownLine` |
@@ -210,7 +213,7 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/recipes/` | Recipes: server functions, records and pages, see below |
 | `src/admin/` | Admin pages use a bounded, single-column layout with divider rows, inline create and search controls, explicit loading and failure notices, and a not-allowed alert for non-admins. `ingredients/` (`list.rs`: add, search on `q`, one row link per ingredient; `detail.rs`: rename, alternative names, store section, merge and delete, with merge and delete asking first through `?confirm=`), `sections.rs`, `categories.rs` (add, rename and delete), `review.rs`, and `mealie/` (`page.rs`: URL and password token form, live progress/summary and status-load failure; `runner.rs`: imports Mealie catalog data once, creates pending ingredients and categories, imports recipes in a spawned task, records per-recipe outcomes and skips stored Mealie ids). Server functions enforce admin access independently of page visibility. `mod.rs` declares them and re-exports the pages |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
-| `src/main.rs` (`ssr`) | Server binary: `--healthcheck` runs the health probe and exits without loading app configuration or starting the server; otherwise reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
+| `src/main.rs` (`ssr`) | Server binary: `--healthcheck` runs the health probe and exits without loading app configuration or starting the server; otherwise reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), seeds an empty catalog in the configured language, binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
 
 ### Translations (`src/i18n/`, `locales/`)
 

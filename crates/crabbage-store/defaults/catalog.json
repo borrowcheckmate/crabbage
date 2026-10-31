@@ -1,0 +1,3002 @@
+{
+ "sections": [
+  {
+   "en": "Produce",
+   "nl": "Groente en fruit",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Onion",
+      "aliases": [
+       "onions",
+       "yellow onion",
+       "yellow onions",
+       "brown onion",
+       "brown onions"
+      ]
+     },
+     "nl": {
+      "name": "Ui",
+      "aliases": [
+       "uien",
+       "gele ui",
+       "gele uien"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Red onion",
+      "aliases": [
+       "red onions"
+      ]
+     },
+     "nl": {
+      "name": "Rode ui",
+      "aliases": [
+       "rode uien"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Shallot",
+      "aliases": [
+       "shallots"
+      ]
+     },
+     "nl": {
+      "name": "Sjalot",
+      "aliases": [
+       "sjalotten",
+       "sjalotje",
+       "sjalotjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Spring onion",
+      "aliases": [
+       "spring onions",
+       "scallion",
+       "scallions",
+       "green onion",
+       "green onions"
+      ]
+     },
+     "nl": {
+      "name": "Bosui",
+      "aliases": [
+       "bosuien",
+       "bosuitje",
+       "bosuitjes",
+       "lente-ui",
+       "lente-uien",
+       "lente-uitje",
+       "lente-uitjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Garlic",
+      "aliases": [
+       "garlic clove",
+       "garlic cloves",
+       "clove garlic",
+       "cloves garlic",
+       "clove of garlic",
+       "cloves of garlic"
+      ]
+     },
+     "nl": {
+      "name": "Knoflook",
+      "aliases": [
+       "teen knoflook",
+       "tenen knoflook",
+       "teentje knoflook",
+       "teentjes knoflook",
+       "knoflookteen",
+       "knoflookteentje",
+       "knoflookteentjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Leek",
+      "aliases": [
+       "leeks"
+      ]
+     },
+     "nl": {
+      "name": "Prei",
+      "aliases": [
+       "preien"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Carrot",
+      "aliases": [
+       "carrots"
+      ]
+     },
+     "nl": {
+      "name": "Wortel",
+      "aliases": [
+       "wortels",
+       "winterpeen",
+       "peen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Potato",
+      "aliases": [
+       "potatoes",
+       "floury potatoes",
+       "waxy potatoes"
+      ]
+     },
+     "nl": {
+      "name": "Aardappel",
+      "aliases": [
+       "aardappelen",
+       "aardappels",
+       "kruimige aardappelen",
+       "vastkokende aardappelen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Baby potatoes",
+      "aliases": [
+       "new potatoes",
+       "small potatoes"
+      ]
+     },
+     "nl": {
+      "name": "Krieltjes",
+      "aliases": [
+       "krieltje",
+       "kriel",
+       "krielaardappelen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Sweet potato",
+      "aliases": [
+       "sweet potatoes"
+      ]
+     },
+     "nl": {
+      "name": "Zoete aardappel",
+      "aliases": [
+       "zoete aardappelen",
+       "bataat",
+       "bataten"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Tomato",
+      "aliases": [
+       "tomatoes"
+      ]
+     },
+     "nl": {
+      "name": "Tomaat",
+      "aliases": [
+       "tomaten"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cherry tomato",
+      "aliases": [
+       "cherry tomatoes"
+      ]
+     },
+     "nl": {
+      "name": "Cherrytomaat",
+      "aliases": [
+       "cherrytomaten",
+       "cherrytomaatjes",
+       "kerstomaat",
+       "kerstomaten",
+       "kerstomaatjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Bell pepper",
+      "aliases": [
+       "bell peppers",
+       "red pepper",
+       "red peppers",
+       "red bell pepper",
+       "green pepper",
+       "yellow pepper",
+       "pepper (bell)"
+      ]
+     },
+     "nl": {
+      "name": "Paprika",
+      "aliases": [
+       "paprika's",
+       "rode paprika",
+       "rode paprika's",
+       "groene paprika",
+       "gele paprika",
+       "puntpaprika"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cucumber",
+      "aliases": [
+       "cucumbers"
+      ]
+     },
+     "nl": {
+      "name": "Komkommer",
+      "aliases": [
+       "komkommers"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Courgette",
+      "aliases": [
+       "courgettes",
+       "zucchini",
+       "zucchinis"
+      ]
+     },
+     "nl": {
+      "name": "Courgette",
+      "aliases": [
+       "courgettes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Aubergine",
+      "aliases": [
+       "aubergines",
+       "eggplant",
+       "eggplants"
+      ]
+     },
+     "nl": {
+      "name": "Aubergine",
+      "aliases": [
+       "aubergines"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Broccoli",
+      "aliases": [
+       "broccoli florets"
+      ]
+     },
+     "nl": {
+      "name": "Broccoli",
+      "aliases": [
+       "broccoliroosjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cauliflower",
+      "aliases": [
+       "cauliflower florets"
+      ]
+     },
+     "nl": {
+      "name": "Bloemkool",
+      "aliases": [
+       "bloemkoolroosjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Spinach",
+      "aliases": [
+       "fresh spinach",
+       "baby spinach"
+      ]
+     },
+     "nl": {
+      "name": "Spinazie",
+      "aliases": [
+       "verse spinazie",
+       "bladspinazie",
+       "babyspinazie"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Lettuce",
+      "aliases": [
+       "iceberg lettuce",
+       "little gem",
+       "romaine lettuce"
+      ]
+     },
+     "nl": {
+      "name": "Sla",
+      "aliases": [
+       "ijsbergsla",
+       "kropsla",
+       "romainesla",
+       "little gem"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Rocket",
+      "aliases": [
+       "arugula"
+      ]
+     },
+     "nl": {
+      "name": "Rucola",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Mixed salad leaves",
+      "aliases": [
+       "salad leaves",
+       "mixed salad"
+      ]
+     },
+     "nl": {
+      "name": "Melange sla",
+      "aliases": [
+       "slamix",
+       "gemengde sla"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Pointed cabbage",
+      "aliases": [
+       "sweetheart cabbage"
+      ]
+     },
+     "nl": {
+      "name": "Spitskool",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Red cabbage",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Rode kool",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "White cabbage",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Witte kool",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Kale",
+      "aliases": [
+       "curly kale"
+      ]
+     },
+     "nl": {
+      "name": "Boerenkool",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Sauerkraut",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Zuurkool",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Endive",
+      "aliases": [
+       "curly endive"
+      ]
+     },
+     "nl": {
+      "name": "Andijvie",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Chicory",
+      "aliases": [
+       "belgian endive"
+      ]
+     },
+     "nl": {
+      "name": "Witlof",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Mushroom",
+      "aliases": [
+       "mushrooms",
+       "button mushrooms",
+       "white mushrooms",
+       "chestnut mushrooms"
+      ]
+     },
+     "nl": {
+      "name": "Champignon",
+      "aliases": [
+       "champignons",
+       "kastanjechampignon",
+       "kastanjechampignons",
+       "witte champignons"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Celery",
+      "aliases": [
+       "celery stalk",
+       "celery stalks",
+       "celery sticks"
+      ]
+     },
+     "nl": {
+      "name": "Bleekselderij",
+      "aliases": [
+       "selderij",
+       "stengel bleekselderij",
+       "stengels bleekselderij"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Celeriac",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Knolselderij",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Fennel",
+      "aliases": [
+       "fennel bulb"
+      ]
+     },
+     "nl": {
+      "name": "Venkel",
+      "aliases": [
+       "venkelknol"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Butternut squash",
+      "aliases": [
+       "squash",
+       "pumpkin"
+      ]
+     },
+     "nl": {
+      "name": "Pompoen",
+      "aliases": [
+       "flespompoen",
+       "butternut",
+       "butternut pompoen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Green beans",
+      "aliases": [
+       "green bean",
+       "french beans"
+      ]
+     },
+     "nl": {
+      "name": "Sperziebonen",
+      "aliases": [
+       "sperzieboon",
+       "haricots verts"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Asparagus",
+      "aliases": [
+       "white asparagus",
+       "green asparagus"
+      ]
+     },
+     "nl": {
+      "name": "Asperge",
+      "aliases": [
+       "asperges",
+       "witte asperges",
+       "groene asperges"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Beetroot",
+      "aliases": [
+       "beetroots",
+       "beets",
+       "cooked beetroot"
+      ]
+     },
+     "nl": {
+      "name": "Biet",
+      "aliases": [
+       "bieten",
+       "rode biet",
+       "rode bieten",
+       "gekookte bieten"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Radish",
+      "aliases": [
+       "radishes"
+      ]
+     },
+     "nl": {
+      "name": "Radijs",
+      "aliases": [
+       "radijsjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Bean sprouts",
+      "aliases": [
+       "beansprouts"
+      ]
+     },
+     "nl": {
+      "name": "Taugé",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Pak choi",
+      "aliases": [
+       "bok choy",
+       "pak choy"
+      ]
+     },
+     "nl": {
+      "name": "Paksoi",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Ginger",
+      "aliases": [
+       "fresh ginger",
+       "ginger root"
+      ]
+     },
+     "nl": {
+      "name": "Gember",
+      "aliases": [
+       "verse gember",
+       "gemberwortel"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Red chilli",
+      "aliases": [
+       "red chillies",
+       "chilli",
+       "chillies",
+       "chili pepper",
+       "chili peppers",
+       "red chili"
+      ]
+     },
+     "nl": {
+      "name": "Rode peper",
+      "aliases": [
+       "rode pepers",
+       "chilipeper",
+       "chilipepers",
+       "spaanse peper"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Lemon",
+      "aliases": [
+       "lemons",
+       "lemon juice",
+       "juice of a lemon"
+      ]
+     },
+     "nl": {
+      "name": "Citroen",
+      "aliases": [
+       "citroenen",
+       "citroensap"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Lime",
+      "aliases": [
+       "limes",
+       "lime juice"
+      ]
+     },
+     "nl": {
+      "name": "Limoen",
+      "aliases": [
+       "limoenen",
+       "limoensap"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Apple",
+      "aliases": [
+       "apples"
+      ]
+     },
+     "nl": {
+      "name": "Appel",
+      "aliases": [
+       "appels"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Banana",
+      "aliases": [
+       "bananas"
+      ]
+     },
+     "nl": {
+      "name": "Banaan",
+      "aliases": [
+       "bananen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Orange",
+      "aliases": [
+       "oranges"
+      ]
+     },
+     "nl": {
+      "name": "Sinaasappel",
+      "aliases": [
+       "sinaasappels"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Avocado",
+      "aliases": [
+       "avocados"
+      ]
+     },
+     "nl": {
+      "name": "Avocado",
+      "aliases": [
+       "avocado's"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Parsley",
+      "aliases": [
+       "fresh parsley",
+       "flat-leaf parsley",
+       "flat leaf parsley"
+      ]
+     },
+     "nl": {
+      "name": "Peterselie",
+      "aliases": [
+       "verse peterselie",
+       "platte peterselie",
+       "krulpeterselie"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Basil",
+      "aliases": [
+       "fresh basil",
+       "basil leaves"
+      ]
+     },
+     "nl": {
+      "name": "Basilicum",
+      "aliases": [
+       "verse basilicum",
+       "basilicumblaadjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Coriander",
+      "aliases": [
+       "fresh coriander",
+       "cilantro"
+      ]
+     },
+     "nl": {
+      "name": "Koriander",
+      "aliases": [
+       "verse koriander"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Chives",
+      "aliases": [
+       "fresh chives"
+      ]
+     },
+     "nl": {
+      "name": "Bieslook",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Dill",
+      "aliases": [
+       "fresh dill"
+      ]
+     },
+     "nl": {
+      "name": "Dille",
+      "aliases": [
+       "verse dille"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Mint",
+      "aliases": [
+       "fresh mint",
+       "mint leaves"
+      ]
+     },
+     "nl": {
+      "name": "Munt",
+      "aliases": [
+       "verse munt",
+       "muntblaadjes"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "en": "Bakery",
+   "nl": "Brood en bakkerij",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Bread",
+      "aliases": [
+       "loaf",
+       "sliced bread"
+      ]
+     },
+     "nl": {
+      "name": "Brood",
+      "aliases": [
+       "volkorenbrood",
+       "casinobrood"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Baguette",
+      "aliases": [
+       "baguettes",
+       "french bread"
+      ]
+     },
+     "nl": {
+      "name": "Stokbrood",
+      "aliases": [
+       "stokbroden",
+       "baguette"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Tortilla",
+      "aliases": [
+       "tortillas",
+       "wrap",
+       "wraps",
+       "tortilla wraps"
+      ]
+     },
+     "nl": {
+      "name": "Tortilla",
+      "aliases": [
+       "tortilla's",
+       "wrap",
+       "wraps"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Pitta bread",
+      "aliases": [
+       "pitta",
+       "pita",
+       "pita bread",
+       "pitas"
+      ]
+     },
+     "nl": {
+      "name": "Pitabroodje",
+      "aliases": [
+       "pitabroodjes",
+       "pita",
+       "pitabrood"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Naan",
+      "aliases": [
+       "naan bread",
+       "naans"
+      ]
+     },
+     "nl": {
+      "name": "Naanbrood",
+      "aliases": [
+       "naan",
+       "naanbroden"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Burger bun",
+      "aliases": [
+       "burger buns",
+       "hamburger bun",
+       "hamburger buns"
+      ]
+     },
+     "nl": {
+      "name": "Hamburgerbroodje",
+      "aliases": [
+       "hamburgerbroodjes",
+       "burgerbroodje",
+       "burgerbroodjes"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "en": "Meat and fish",
+   "nl": "Vlees en vis",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Chicken breast",
+      "aliases": [
+       "chicken breasts",
+       "chicken fillet",
+       "chicken fillets",
+       "chicken breast fillets"
+      ]
+     },
+     "nl": {
+      "name": "Kipfilet",
+      "aliases": [
+       "kipfilets",
+       "kippenborst"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Chicken thigh",
+      "aliases": [
+       "chicken thighs",
+       "boneless chicken thighs",
+       "chicken thigh fillets"
+      ]
+     },
+     "nl": {
+      "name": "Kippendij",
+      "aliases": [
+       "kippendijen",
+       "kippendijfilet",
+       "kippendijfilets",
+       "dijfilet"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Minced beef",
+      "aliases": [
+       "beef mince",
+       "ground beef"
+      ]
+     },
+     "nl": {
+      "name": "Rundergehakt",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Mixed mince",
+      "aliases": [
+       "minced meat",
+       "mince",
+       "ground meat"
+      ]
+     },
+     "nl": {
+      "name": "Gehakt",
+      "aliases": [
+       "half-om-half gehakt",
+       "gehakt half-om-half",
+       "half om half gehakt"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Chicken mince",
+      "aliases": [
+       "ground chicken"
+      ]
+     },
+     "nl": {
+      "name": "Kipgehakt",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Beef strips",
+      "aliases": [
+       "stir-fry beef"
+      ]
+     },
+     "nl": {
+      "name": "Runderreepjes",
+      "aliases": [
+       "biefreepjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Stewing beef",
+      "aliases": [
+       "braising steak",
+       "beef chuck"
+      ]
+     },
+     "nl": {
+      "name": "Runderstoofvlees",
+      "aliases": [
+       "stoofvlees",
+       "riblappen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Steak",
+      "aliases": [
+       "steaks",
+       "sirloin steak"
+      ]
+     },
+     "nl": {
+      "name": "Biefstuk",
+      "aliases": [
+       "biefstukken"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Pork tenderloin",
+      "aliases": [
+       "pork fillet"
+      ]
+     },
+     "nl": {
+      "name": "Varkenshaas",
+      "aliases": [
+       "varkenshaasje"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Pork chop",
+      "aliases": [
+       "pork chops"
+      ]
+     },
+     "nl": {
+      "name": "Karbonade",
+      "aliases": [
+       "karbonades",
+       "schouderkarbonade"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Bacon",
+      "aliases": [
+       "bacon lardons",
+       "lardons",
+       "diced bacon",
+       "smoked bacon"
+      ]
+     },
+     "nl": {
+      "name": "Spekjes",
+      "aliases": [
+       "ontbijtspek",
+       "spek",
+       "gerookte spekjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Smoked sausage",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Rookworst",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Sausage",
+      "aliases": [
+       "sausages"
+      ]
+     },
+     "nl": {
+      "name": "Worst",
+      "aliases": [
+       "worstjes",
+       "braadworst",
+       "braadworsten"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Chorizo",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Chorizo",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Ham",
+      "aliases": [
+       "cooked ham",
+       "diced ham"
+      ]
+     },
+     "nl": {
+      "name": "Ham",
+      "aliases": [
+       "hamblokjes",
+       "beenham"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Salmon",
+      "aliases": [
+       "salmon fillet",
+       "salmon fillets"
+      ]
+     },
+     "nl": {
+      "name": "Zalm",
+      "aliases": [
+       "zalmfilet",
+       "zalmfilets"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Smoked salmon",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Gerookte zalm",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Cod",
+      "aliases": [
+       "cod fillet",
+       "cod fillets"
+      ]
+     },
+     "nl": {
+      "name": "Kabeljauw",
+      "aliases": [
+       "kabeljauwfilet",
+       "kabeljauwfilets"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "White fish",
+      "aliases": [
+       "white fish fillet",
+       "white fish fillets"
+      ]
+     },
+     "nl": {
+      "name": "Witvis",
+      "aliases": [
+       "witvisfilet",
+       "witvisfilets",
+       "pangasius"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Prawns",
+      "aliases": [
+       "prawn",
+       "shrimp",
+       "shrimps",
+       "king prawns"
+      ]
+     },
+     "nl": {
+      "name": "Garnalen",
+      "aliases": [
+       "garnaal",
+       "gepelde garnalen",
+       "scampi's"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "en": "Dairy, cheese and eggs",
+   "nl": "Zuivel, kaas en eieren",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Milk",
+      "aliases": [
+       "whole milk",
+       "semi-skimmed milk"
+      ]
+     },
+     "nl": {
+      "name": "Melk",
+      "aliases": [
+       "volle melk",
+       "halfvolle melk"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Butter",
+      "aliases": [
+       "unsalted butter",
+       "salted butter"
+      ]
+     },
+     "nl": {
+      "name": "Boter",
+      "aliases": [
+       "roomboter",
+       "ongezouten roomboter"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cooking cream",
+      "aliases": [
+       "single cream",
+       "cream"
+      ]
+     },
+     "nl": {
+      "name": "Kookroom",
+      "aliases": [
+       "room"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Whipping cream",
+      "aliases": [
+       "double cream",
+       "heavy cream"
+      ]
+     },
+     "nl": {
+      "name": "Slagroom",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Crème fraîche",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Crème fraîche",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Sour cream",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Zure room",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Yoghurt",
+      "aliases": [
+       "yogurt",
+       "plain yoghurt",
+       "natural yoghurt"
+      ]
+     },
+     "nl": {
+      "name": "Yoghurt",
+      "aliases": [
+       "volle yoghurt",
+       "magere yoghurt"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Greek yoghurt",
+      "aliases": [
+       "greek yogurt"
+      ]
+     },
+     "nl": {
+      "name": "Griekse yoghurt",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Quark",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Kwark",
+      "aliases": [
+       "magere kwark",
+       "volle kwark"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Egg",
+      "aliases": [
+       "eggs",
+       "large eggs",
+       "medium eggs"
+      ]
+     },
+     "nl": {
+      "name": "Ei",
+      "aliases": [
+       "eieren",
+       "eitje",
+       "eitjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Grated cheese",
+      "aliases": [
+       "cheese",
+       "cheddar",
+       "gouda"
+      ]
+     },
+     "nl": {
+      "name": "Geraspte kaas",
+      "aliases": [
+       "kaas",
+       "belegen kaas",
+       "jong belegen kaas",
+       "goudse kaas"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Parmesan",
+      "aliases": [
+       "parmigiano reggiano",
+       "grated parmesan"
+      ]
+     },
+     "nl": {
+      "name": "Parmezaanse kaas",
+      "aliases": [
+       "parmezaan",
+       "parmigiano reggiano",
+       "geraspte parmezaan"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Mozzarella",
+      "aliases": [
+       "buffalo mozzarella",
+       "mozzarella ball"
+      ]
+     },
+     "nl": {
+      "name": "Mozzarella",
+      "aliases": [
+       "buffelmozzarella",
+       "bolletje mozzarella"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Feta",
+      "aliases": [
+       "feta cheese"
+      ]
+     },
+     "nl": {
+      "name": "Feta",
+      "aliases": [
+       "fetakaas"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Goat's cheese",
+      "aliases": [
+       "goats cheese",
+       "goat cheese"
+      ]
+     },
+     "nl": {
+      "name": "Geitenkaas",
+      "aliases": [
+       "zachte geitenkaas"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Mascarpone",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Mascarpone",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Ricotta",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Ricotta",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Halloumi",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Halloumi",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Cream cheese",
+      "aliases": [
+       "soft cheese"
+      ]
+     },
+     "nl": {
+      "name": "Roomkaas",
+      "aliases": [
+       "smeerkaas"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "en": "Pasta, rice and world foods",
+   "nl": "Pasta, rijst en wereldkeuken",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Pasta",
+      "aliases": [
+       "dried pasta"
+      ]
+     },
+     "nl": {
+      "name": "Pasta",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Spaghetti",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Spaghetti",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Penne",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Penne",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Fusilli",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Fusilli",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Macaroni",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Macaroni",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Tagliatelle",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Tagliatelle",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Lasagne sheets",
+      "aliases": [
+       "lasagna sheets",
+       "lasagne",
+       "lasagna noodles"
+      ]
+     },
+     "nl": {
+      "name": "Lasagnebladen",
+      "aliases": [
+       "lasagnevellen",
+       "lasagne bladen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Orzo",
+      "aliases": [
+       "risoni"
+      ]
+     },
+     "nl": {
+      "name": "Orzo",
+      "aliases": [
+       "risoni"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Gnocchi",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Gnocchi",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Rice",
+      "aliases": [
+       "white rice",
+       "basmati rice",
+       "jasmine rice",
+       "long grain rice"
+      ]
+     },
+     "nl": {
+      "name": "Rijst",
+      "aliases": [
+       "witte rijst",
+       "basmatirijst",
+       "pandanrijst",
+       "zilvervliesrijst",
+       "langkorrelige rijst"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Risotto rice",
+      "aliases": [
+       "arborio rice",
+       "arborio"
+      ]
+     },
+     "nl": {
+      "name": "Risottorijst",
+      "aliases": [
+       "arboriorijst",
+       "arborio rijst"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Egg noodles",
+      "aliases": [
+       "noodles",
+       "wok noodles"
+      ]
+     },
+     "nl": {
+      "name": "Mie",
+      "aliases": [
+       "mienestjes",
+       "eiernoedels",
+       "noedels",
+       "woknoedels"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Rice noodles",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Rijstnoedels",
+      "aliases": [
+       "rijstvermicelli"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Couscous",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Couscous",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Bulgur",
+      "aliases": [
+       "bulgur wheat"
+      ]
+     },
+     "nl": {
+      "name": "Bulgur",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Quinoa",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Quinoa",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Soy sauce",
+      "aliases": [
+       "soya sauce",
+       "light soy sauce"
+      ]
+     },
+     "nl": {
+      "name": "Sojasaus",
+      "aliases": [
+       "ketjap asin"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Sweet soy sauce",
+      "aliases": [
+       "kecap manis",
+       "ketjap manis"
+      ]
+     },
+     "nl": {
+      "name": "Ketjap",
+      "aliases": [
+       "ketjap manis",
+       "zoete sojasaus"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Coconut milk",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Kokosmelk",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Curry paste",
+      "aliases": [
+       "red curry paste",
+       "green curry paste",
+       "yellow curry paste"
+      ]
+     },
+     "nl": {
+      "name": "Currypasta",
+      "aliases": [
+       "rode currypasta",
+       "groene currypasta",
+       "gele currypasta"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Fish sauce",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Vissaus",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Sesame oil",
+      "aliases": [
+       "toasted sesame oil"
+      ]
+     },
+     "nl": {
+      "name": "Sesamolie",
+      "aliases": [
+       "geroosterde sesamolie"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Rice vinegar",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Rijstazijn",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Sriracha",
+      "aliases": [
+       "sriracha sauce"
+      ]
+     },
+     "nl": {
+      "name": "Sriracha",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Sambal",
+      "aliases": [
+       "sambal oelek",
+       "chilli paste"
+      ]
+     },
+     "nl": {
+      "name": "Sambal",
+      "aliases": [
+       "sambal oelek"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Taco seasoning",
+      "aliases": [
+       "fajita seasoning"
+      ]
+     },
+     "nl": {
+      "name": "Tacokruiden",
+      "aliases": [
+       "fajitakruiden"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "en": "Tins, jars and sauces",
+   "nl": "Conserven en sauzen",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Chopped tomatoes",
+      "aliases": [
+       "tinned tomatoes",
+       "canned tomatoes",
+       "diced tomatoes",
+       "tin of chopped tomatoes"
+      ]
+     },
+     "nl": {
+      "name": "Tomatenblokjes",
+      "aliases": [
+       "gehakte tomaten",
+       "tomaten in blik",
+       "blik tomatenblokjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Passata",
+      "aliases": [
+       "tomato passata",
+       "sieved tomatoes"
+      ]
+     },
+     "nl": {
+      "name": "Passata",
+      "aliases": [
+       "gezeefde tomaten"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Tomato puree",
+      "aliases": [
+       "tomato paste"
+      ]
+     },
+     "nl": {
+      "name": "Tomatenpuree",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Chickpeas",
+      "aliases": [
+       "chickpea",
+       "tinned chickpeas"
+      ]
+     },
+     "nl": {
+      "name": "Kikkererwten",
+      "aliases": [
+       "kikkererwt"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Kidney beans",
+      "aliases": [
+       "red kidney beans"
+      ]
+     },
+     "nl": {
+      "name": "Kidneybonen",
+      "aliases": [
+       "rode kidneybonen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "White beans",
+      "aliases": [
+       "cannellini beans",
+       "butter beans"
+      ]
+     },
+     "nl": {
+      "name": "Witte bonen",
+      "aliases": [
+       "cannellinibonen",
+       "boterbonen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Black beans",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Zwarte bonen",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Lentils",
+      "aliases": [
+       "red lentils",
+       "green lentils",
+       "brown lentils"
+      ]
+     },
+     "nl": {
+      "name": "Linzen",
+      "aliases": [
+       "rode linzen",
+       "groene linzen",
+       "bruine linzen"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Sweetcorn",
+      "aliases": [
+       "corn",
+       "corn kernels",
+       "tinned sweetcorn"
+      ]
+     },
+     "nl": {
+      "name": "Maïs",
+      "aliases": [
+       "maiskorrels"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Tuna",
+      "aliases": [
+       "tinned tuna",
+       "canned tuna"
+      ]
+     },
+     "nl": {
+      "name": "Tonijn",
+      "aliases": [
+       "tonijn in blik"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Olives",
+      "aliases": [
+       "olive",
+       "black olives",
+       "green olives",
+       "kalamata olives"
+      ]
+     },
+     "nl": {
+      "name": "Olijven",
+      "aliases": [
+       "olijf",
+       "zwarte olijven",
+       "groene olijven",
+       "kalamata olijven"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Capers",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Kappertjes",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Stock cube",
+      "aliases": [
+       "stock cubes",
+       "stock",
+       "broth",
+       "vegetable stock",
+       "chicken stock",
+       "beef stock",
+       "bouillon"
+      ]
+     },
+     "nl": {
+      "name": "Bouillonblokje",
+      "aliases": [
+       "bouillonblokjes",
+       "bouillon",
+       "groentebouillon",
+       "kippenbouillon",
+       "runderbouillon"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Mayonnaise",
+      "aliases": [
+       "mayo"
+      ]
+     },
+     "nl": {
+      "name": "Mayonaise",
+      "aliases": [
+       "mayo"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Ketchup",
+      "aliases": [
+       "tomato ketchup"
+      ]
+     },
+     "nl": {
+      "name": "Ketchup",
+      "aliases": [
+       "tomatenketchup"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Mustard",
+      "aliases": [
+       "dijon mustard",
+       "wholegrain mustard"
+      ]
+     },
+     "nl": {
+      "name": "Mosterd",
+      "aliases": [
+       "dijonmosterd",
+       "grove mosterd"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Olive oil",
+      "aliases": [
+       "extra virgin olive oil"
+      ]
+     },
+     "nl": {
+      "name": "Olijfolie",
+      "aliases": [
+       "extra vergine olijfolie"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Vegetable oil",
+      "aliases": [
+       "sunflower oil",
+       "oil",
+       "neutral oil",
+       "rapeseed oil"
+      ]
+     },
+     "nl": {
+      "name": "Zonnebloemolie",
+      "aliases": [
+       "olie",
+       "plantaardige olie",
+       "arachideolie",
+       "raapzaadolie"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Vinegar",
+      "aliases": [
+       "white wine vinegar",
+       "red wine vinegar"
+      ]
+     },
+     "nl": {
+      "name": "Azijn",
+      "aliases": [
+       "witte wijnazijn",
+       "rode wijnazijn"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Balsamic vinegar",
+      "aliases": [
+       "balsamic"
+      ]
+     },
+     "nl": {
+      "name": "Balsamicoazijn",
+      "aliases": [
+       "balsamico"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Pesto",
+      "aliases": [
+       "green pesto",
+       "basil pesto"
+      ]
+     },
+     "nl": {
+      "name": "Pesto",
+      "aliases": [
+       "groene pesto",
+       "basilicumpesto"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Honey",
+      "aliases": [
+       "runny honey"
+      ]
+     },
+     "nl": {
+      "name": "Honing",
+      "aliases": [
+       "vloeibare honing"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Peanut butter",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Pindakaas",
+      "aliases": []
+     }
+    }
+   ]
+  },
+  {
+   "en": "Herbs and spices",
+   "nl": "Kruiden en specerijen",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Salt",
+      "aliases": [
+       "sea salt",
+       "table salt"
+      ]
+     },
+     "nl": {
+      "name": "Zout",
+      "aliases": [
+       "zeezout",
+       "keukenzout"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Black pepper",
+      "aliases": [
+       "pepper",
+       "ground black pepper",
+       "freshly ground pepper"
+      ]
+     },
+     "nl": {
+      "name": "Peper",
+      "aliases": [
+       "zwarte peper",
+       "versgemalen peper",
+       "gemalen peper"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Paprika",
+      "aliases": [
+       "smoked paprika",
+       "sweet paprika",
+       "paprika powder"
+      ]
+     },
+     "nl": {
+      "name": "Paprikapoeder",
+      "aliases": [
+       "gerookt paprikapoeder",
+       "zoet paprikapoeder"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cumin",
+      "aliases": [
+       "ground cumin",
+       "cumin seeds"
+      ]
+     },
+     "nl": {
+      "name": "Komijn",
+      "aliases": [
+       "komijnpoeder",
+       "djinten",
+       "komijnzaad"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Curry powder",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Kerriepoeder",
+      "aliases": [
+       "kerrie"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Turmeric",
+      "aliases": [
+       "ground turmeric"
+      ]
+     },
+     "nl": {
+      "name": "Kurkuma",
+      "aliases": [
+       "geelwortel"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cinnamon",
+      "aliases": [
+       "ground cinnamon",
+       "cinnamon stick"
+      ]
+     },
+     "nl": {
+      "name": "Kaneel",
+      "aliases": [
+       "kaneelstokje"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Oregano",
+      "aliases": [
+       "dried oregano"
+      ]
+     },
+     "nl": {
+      "name": "Oregano",
+      "aliases": [
+       "gedroogde oregano"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Thyme",
+      "aliases": [
+       "fresh thyme",
+       "dried thyme"
+      ]
+     },
+     "nl": {
+      "name": "Tijm",
+      "aliases": [
+       "verse tijm",
+       "gedroogde tijm"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Rosemary",
+      "aliases": [
+       "fresh rosemary",
+       "rosemary sprig"
+      ]
+     },
+     "nl": {
+      "name": "Rozemarijn",
+      "aliases": [
+       "verse rozemarijn",
+       "takje rozemarijn"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Bay leaf",
+      "aliases": [
+       "bay leaves"
+      ]
+     },
+     "nl": {
+      "name": "Laurierblad",
+      "aliases": [
+       "laurierblaadjes",
+       "laurierblaadje"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Chilli flakes",
+      "aliases": [
+       "chili flakes",
+       "red pepper flakes",
+       "crushed chillies"
+      ]
+     },
+     "nl": {
+      "name": "Chilivlokken",
+      "aliases": [
+       "gedroogde chilivlokken"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Chilli powder",
+      "aliases": [
+       "chili powder",
+       "cayenne pepper",
+       "cayenne"
+      ]
+     },
+     "nl": {
+      "name": "Chilipoeder",
+      "aliases": [
+       "cayennepeper"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Nutmeg",
+      "aliases": [
+       "ground nutmeg"
+      ]
+     },
+     "nl": {
+      "name": "Nootmuskaat",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Italian herbs",
+      "aliases": [
+       "italian seasoning",
+       "mixed herbs"
+      ]
+     },
+     "nl": {
+      "name": "Italiaanse kruiden",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Garam masala",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Garam masala",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Ground coriander",
+      "aliases": [
+       "coriander seeds"
+      ]
+     },
+     "nl": {
+      "name": "Korianderpoeder",
+      "aliases": [
+       "ketoembar",
+       "korianderzaad"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Ground ginger",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Gemberpoeder",
+      "aliases": []
+     }
+    }
+   ]
+  },
+  {
+   "en": "Baking",
+   "nl": "Bakproducten",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Flour",
+      "aliases": [
+       "plain flour",
+       "all-purpose flour",
+       "wheat flour"
+      ]
+     },
+     "nl": {
+      "name": "Bloem",
+      "aliases": [
+       "tarwebloem"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Self-raising flour",
+      "aliases": [
+       "self rising flour"
+      ]
+     },
+     "nl": {
+      "name": "Zelfrijzend bakmeel",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Sugar",
+      "aliases": [
+       "white sugar",
+       "caster sugar",
+       "granulated sugar"
+      ]
+     },
+     "nl": {
+      "name": "Suiker",
+      "aliases": [
+       "kristalsuiker",
+       "witte suiker",
+       "fijne kristalsuiker"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Brown sugar",
+      "aliases": [
+       "light brown sugar",
+       "soft brown sugar"
+      ]
+     },
+     "nl": {
+      "name": "Basterdsuiker",
+      "aliases": [
+       "bruine basterdsuiker",
+       "lichtbruine basterdsuiker"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Icing sugar",
+      "aliases": [
+       "powdered sugar"
+      ]
+     },
+     "nl": {
+      "name": "Poedersuiker",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Baking powder",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Bakpoeder",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Yeast",
+      "aliases": [
+       "dried yeast",
+       "instant yeast"
+      ]
+     },
+     "nl": {
+      "name": "Gist",
+      "aliases": [
+       "gedroogde gist",
+       "droge gist"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Vanilla sugar",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Vanillesuiker",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Vanilla extract",
+      "aliases": [
+       "vanilla essence"
+      ]
+     },
+     "nl": {
+      "name": "Vanille-extract",
+      "aliases": [
+       "vanillearoma"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cornflour",
+      "aliases": [
+       "cornstarch",
+       "corn starch"
+      ]
+     },
+     "nl": {
+      "name": "Maizena",
+      "aliases": [
+       "maiszetmeel"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Breadcrumbs",
+      "aliases": [
+       "panko"
+      ]
+     },
+     "nl": {
+      "name": "Paneermeel",
+      "aliases": [
+       "panko"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Dark chocolate",
+      "aliases": [
+       "plain chocolate"
+      ]
+     },
+     "nl": {
+      "name": "Pure chocolade",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Oats",
+      "aliases": [
+       "rolled oats",
+       "porridge oats"
+      ]
+     },
+     "nl": {
+      "name": "Havermout",
+      "aliases": []
+     }
+    }
+   ]
+  },
+  {
+   "en": "Nuts and dried fruit",
+   "nl": "Noten en gedroogd fruit",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Pine nuts",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Pijnboompitten",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Walnuts",
+      "aliases": [
+       "walnut"
+      ]
+     },
+     "nl": {
+      "name": "Walnoten",
+      "aliases": [
+       "walnoot"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Cashew nuts",
+      "aliases": [
+       "cashews"
+      ]
+     },
+     "nl": {
+      "name": "Cashewnoten",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Almonds",
+      "aliases": [
+       "almond",
+       "flaked almonds"
+      ]
+     },
+     "nl": {
+      "name": "Amandelen",
+      "aliases": [
+       "amandel",
+       "amandelschaafsel"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Peanuts",
+      "aliases": [
+       "peanut",
+       "unsalted peanuts"
+      ]
+     },
+     "nl": {
+      "name": "Pinda's",
+      "aliases": [
+       "pinda",
+       "ongezouten pinda's"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Sesame seeds",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Sesamzaad",
+      "aliases": [
+       "sesamzaadjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Raisins",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Rozijnen",
+      "aliases": []
+     }
+    }
+   ]
+  },
+  {
+   "en": "Frozen",
+   "nl": "Diepvries",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Peas",
+      "aliases": [
+       "frozen peas",
+       "garden peas"
+      ]
+     },
+     "nl": {
+      "name": "Doperwten",
+      "aliases": [
+       "erwten",
+       "doperwtjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Puff pastry",
+      "aliases": [
+       "puff pastry sheets"
+      ]
+     },
+     "nl": {
+      "name": "Bladerdeeg",
+      "aliases": [
+       "plakjes bladerdeeg"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Edamame",
+      "aliases": [
+       "edamame beans"
+      ]
+     },
+     "nl": {
+      "name": "Edamame",
+      "aliases": [
+       "edamameboontjes"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Frozen spinach",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Diepvriesspinazie",
+      "aliases": [
+       "spinazie a la creme"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "en": "Drinks",
+   "nl": "Dranken",
+   "ingredients": [
+    {
+     "en": {
+      "name": "White wine",
+      "aliases": [
+       "dry white wine"
+      ]
+     },
+     "nl": {
+      "name": "Witte wijn",
+      "aliases": [
+       "droge witte wijn"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Red wine",
+      "aliases": []
+     },
+     "nl": {
+      "name": "Rode wijn",
+      "aliases": []
+     }
+    }
+   ]
+  },
+  {
+   "en": "Household",
+   "nl": "Huishouden",
+   "ingredients": [
+    {
+     "en": {
+      "name": "Kitchen roll",
+      "aliases": [
+       "paper towels"
+      ]
+     },
+     "nl": {
+      "name": "Keukenpapier",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Aluminium foil",
+      "aliases": [
+       "tin foil",
+       "foil"
+      ]
+     },
+     "nl": {
+      "name": "Aluminiumfolie",
+      "aliases": [
+       "aluminium folie"
+      ]
+     }
+    },
+    {
+     "en": {
+      "name": "Baking paper",
+      "aliases": [
+       "parchment paper"
+      ]
+     },
+     "nl": {
+      "name": "Bakpapier",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Washing-up liquid",
+      "aliases": [
+       "dish soap"
+      ]
+     },
+     "nl": {
+      "name": "Afwasmiddel",
+      "aliases": []
+     }
+    },
+    {
+     "en": {
+      "name": "Bin bags",
+      "aliases": [
+       "rubbish bags",
+       "trash bags"
+      ]
+     },
+     "nl": {
+      "name": "Vuilniszakken",
+      "aliases": []
+     }
+    }
+   ]
+  }
+ ],
+ "categories": [
+  {
+   "en": "Pasta",
+   "nl": "Pasta"
+  },
+  {
+   "en": "Rice and noodles",
+   "nl": "Rijst en noedels"
+  },
+  {
+   "en": "Potatoes",
+   "nl": "Aardappelen"
+  },
+  {
+   "en": "Soup",
+   "nl": "Soep"
+  },
+  {
+   "en": "Fish",
+   "nl": "Vis"
+  },
+  {
+   "en": "Meat",
+   "nl": "Vlees"
+  },
+  {
+   "en": "Chicken",
+   "nl": "Kip"
+  },
+  {
+   "en": "Vegetarian",
+   "nl": "Vegetarisch"
+  },
+  {
+   "en": "Oven dish",
+   "nl": "Ovenschotel"
+  },
+  {
+   "en": "Salad",
+   "nl": "Salade"
+  },
+  {
+   "en": "Quick",
+   "nl": "Snel klaar"
+  },
+  {
+   "en": "Weekend",
+   "nl": "Weekend"
+  }
+ ]
+}
