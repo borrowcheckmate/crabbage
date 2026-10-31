@@ -70,7 +70,8 @@ impl FakeIssuer {
         let listener = TcpListener::bind(address).await.expect("address is free");
         let address = listener.local_addr().expect("address is known");
         let issuer = Self {
-            url: format!("http://{address}/"),
+            // NOTE: no trailing slash, like Pocket ID, so the issuer must match the configured text exactly.
+            url: format!("http://{address}"),
             expectations: Arc::new(Mutex::new(Expectations {
                 nonce: None,
                 groups: Vec::new(),
@@ -180,9 +181,9 @@ impl FakeIssuer {
 async fn discovery(axum::extract::State(issuer): axum::extract::State<FakeIssuer>) -> Response {
     let document = json!({
         "issuer": issuer.url,
-        "authorization_endpoint": format!("{}authorize", issuer.url),
-        "token_endpoint": format!("{}token", issuer.url),
-        "jwks_uri": format!("{}jwks", issuer.url),
+        "authorization_endpoint": format!("{}/authorize", issuer.url),
+        "token_endpoint": format!("{}/token", issuer.url),
+        "jwks_uri": format!("{}/jwks", issuer.url),
         "response_types_supported": ["code"],
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": ["RS256"],

@@ -58,7 +58,7 @@ fn defaults_apply_when_optional_vars_are_unset() {
     assert_eq!(config.admin_group, "admin");
     assert_eq!(config.household_group_prefix, "crabbage-household-");
     assert_eq!(config.public_url.as_str(), "https://recipes.example.com/");
-    assert_eq!(config.oidc_issuer_url.as_str(), "https://id.example.com/");
+    assert_eq!(config.oidc_issuer_url, "https://id.example.com");
     assert_eq!(config.oidc_client_id, "crabbage");
     assert_eq!(config.oidc_client_secret, "secret");
     assert!(config.ai.is_none());
