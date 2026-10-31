@@ -44,6 +44,20 @@ Their responsibilities:
 | `tests/permissions.rs` | Admins manage the catalog, members do not; owner, listed editor, admin and other member for each recipe rule |
 | `tests/unit_symbols.rs` | `Unit::from_symbol` finds every unit by its symbol and nothing else |
 
+## crates/crabbage-import
+
+Parses free-text ingredient lines. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`.
+
+| Module | Responsibility |
+| --- | --- |
+| `src/lib.rs` | Crate doc and the `lines` module |
+| `src/lines/mod.rs` | Declares the line modules and re-exports `parse_line` and `ParsedLine` |
+| `src/lines/line.rs` | `parse_line(text)`: collapses whitespace, reads the amount, unit, name and note. `ParsedLine` (`amount`, `amount_max`, `unit`, `name`, `note`, `original`, `parsed`). A line is parsed when its name has a letter or digit; otherwise it keeps its collapsed text, with no amount, unit or note. A comma or parenthesis starts the note |
+| `src/lines/numbers.rs` | Amounts: integers, decimals with a comma or dot, `1/2`, `1 1/2`, unicode fractions (`½ ¼ ¾ ⅓ ⅔ ⅛`, also glued as `1½`), and ranges with `-`, `–`, `tot`, `to`, `à` |
+| `src/lines/units.rs` | `Measure` and the English and Dutch unit table. Domain units map directly; `dl` and `cl` scale to ml; `cup`, `oz`, `lb` and `fl oz` convert to metric through `ImperialUnit`. Units without a domain counterpart (`clove`, `teen`, `blik`) stay in the name. Drops a `.` and a following `of` or `of the` after a unit |
+| `src/lines/words.rs` | `strip`: whole-word, case-insensitive match at the start of a text |
+| `tests/lines.rs` | Table tests for amounts, units, names and notes in both languages, unparsed lines and whitespace |
+
 ## crates/crabbage-store
 
 SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` creates the directory and `crabbage.db` if missing, sets WAL journaling and foreign keys on every connection, and applies the embedded migrations. Every write transaction starts with `begin_write` (`BEGIN IMMEDIATE`), so concurrent writers wait for the busy timeout instead of failing to upgrade a read transaction. `StoreError` wraps the io, sqlx and migration errors.

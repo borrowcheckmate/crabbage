@@ -536,6 +536,9 @@ version = "0.1.0"
 [[package]]
 name = "crabbage-import"
 version = "0.1.0"
+dependencies = [
+ "crabbage-domain",
+]
 
 [[package]]
 name = "crabbage-store"
