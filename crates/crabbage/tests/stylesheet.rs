@@ -71,6 +71,35 @@ fn today_and_week_plan_reflow_from_phone_to_paired_panes() {
 }
 
 #[test]
+fn navigation_labels_fit_without_breaking_words() {
+    let css = stylesheet();
+    let desktop = declarations_of(&css, ".primary-nav a").unwrap_or_default();
+    let mobile = declarations_of(&css, ".mobile-nav a").unwrap_or_default();
+    assert!(css.contains("grid-template-columns:190px minmax(0,1fr)"));
+    for declarations in [desktop, mobile] {
+        assert!(declarations.contains("overflow-wrap:normal"));
+        assert!(declarations.contains("word-break:normal"));
+        assert!(declarations.contains("hyphens:manual"));
+    }
+    assert!(css.contains("text-overflow:ellipsis"));
+}
+
+#[test]
+fn today_side_heading_aligns_with_the_left_column() {
+    let css = stylesheet();
+    let heading = declarations_of(&css, ".today-side .today-section-heading").unwrap_or_default();
+    assert!(heading.contains("margin-top: 0"));
+}
+
+#[test]
+fn shell_shadow_uses_a_dark_theme_token() {
+    let css = stylesheet();
+    assert!(css.contains("--shadow: #0002"));
+    assert!(css.contains("--shadow: #0005"));
+    assert!(css.contains("box-shadow:0 8px 24px var(--shadow)"));
+}
+
+#[test]
 fn focus_remains_visible() {
     let css = stylesheet();
     assert!(css.contains(":focus-visible"));
