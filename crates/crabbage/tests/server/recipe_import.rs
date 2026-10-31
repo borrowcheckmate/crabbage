@@ -133,12 +133,20 @@ async fn the_preview_fills_the_form_and_marks_the_unresolved_line() {
 
 #[tokio::test]
 async fn an_ai_that_fails_is_reported_on_the_preview() {
-    let extra = [
-        ("CRABBAGE_IMPORT_ALLOW_PRIVATE", "true"),
-        ("AI_BASE_URL", "http://127.0.0.1:1/v1"),
-        ("AI_MODEL", "small"),
-    ];
+    let extra = [("CRABBAGE_IMPORT_ALLOW_PRIVATE", "true")];
     let harness = Harness::start_with("import-ai", None, &extra).await;
+    crabbage_store::settings::save(
+        &harness.pool,
+        &crabbage_store::settings::AiSettings {
+            ai_enabled: true,
+            provider: "custom".to_owned(),
+            base_url: "http://127.0.0.1:1/v1".to_owned(),
+            model: "small".to_owned(),
+            api_key: None,
+        },
+    )
+    .await
+    .expect("AI settings save");
     let token = sign_in_as(&harness, MEMBER, &[]).await;
     let base = serve().await;
     let body = page(

@@ -25,8 +25,11 @@ pub(crate) async fn import_recipe(url: String) -> Result<ImportPreview, ServerFn
 /// Whether the AI is configured, so the page offers reading photos.
 #[server(prefix = "/api", endpoint = "ai_enabled")]
 pub(crate) async fn ai_enabled() -> Result<bool, ServerFnError> {
-    crate::access::signed_in().await?;
-    Ok(crate::access::config()?.ai_enabled())
+    let (pool, _user) = crate::access::signed_in().await?;
+    crabbage_store::settings::get(&pool)
+        .await
+        .map(|settings| settings.is_enabled())
+        .map_err(|_error| ServerFnError::new(crate::i18n::t("catalog.error.database")))
 }
 
 /// The preview of the photo import stored under `token`, only for the user who made it. An unknown,

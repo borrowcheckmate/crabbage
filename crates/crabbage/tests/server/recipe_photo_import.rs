@@ -46,8 +46,20 @@ async fn with_ai_draft(
     draft: &'static str,
 ) -> (Harness, UnboundedReceiver<Value>) {
     let (base, requests) = serve_ai(status, draft).await;
-    let extra = [("AI_BASE_URL", base.as_str()), ("AI_MODEL", "small")];
-    (Harness::start_with(name, None, &extra).await, requests)
+    let harness = Harness::start(name).await;
+    crabbage_store::settings::save(
+        &harness.pool,
+        &crabbage_store::settings::AiSettings {
+            ai_enabled: true,
+            provider: "custom".to_owned(),
+            base_url: base,
+            model: "small".to_owned(),
+            api_key: None,
+        },
+    )
+    .await
+    .expect("AI settings save");
+    (harness, requests)
 }
 
 pub(crate) fn png() -> Vec<u8> {

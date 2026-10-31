@@ -34,6 +34,18 @@ async fn write_pages() {
         &[("CRABBAGE_IMPORT_ALLOW_PRIVATE", "true")],
     )
     .await;
+    crabbage_store::settings::save(
+        &harness.pool,
+        &crabbage_store::settings::AiSettings {
+            ai_enabled: false,
+            provider: "openai".to_owned(),
+            base_url: "https://api.openai.com/v1".to_owned(),
+            model: "gpt-4o-mini".to_owned(),
+            api_key: Some("screenshot-key".to_owned()),
+        },
+    )
+    .await
+    .expect("AI settings saved");
     let source = serve_with(imported_page).await;
     let produce = sections::create(&harness.pool, "Produce")
         .await
@@ -236,6 +248,7 @@ async fn write_pages() {
         ("admin", &["admin"][..], "review", "/admin/review"),
         ("admin", &["admin"][..], "categories", "/admin/categories"),
         ("admin", &["admin"][..], "mealie", "/admin/mealie"),
+        ("admin", &["admin"][..], "settings", "/admin/settings"),
         (
             "admin",
             &["admin"][..],

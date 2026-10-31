@@ -61,7 +61,6 @@ fn defaults_apply_when_optional_vars_are_unset() {
     assert_eq!(config.oidc_issuer_url, "https://id.example.com");
     assert_eq!(config.oidc_client_id, "crabbage");
     assert_eq!(config.oidc_client_secret, "secret");
-    assert!(config.ai.is_none());
     assert!(!config.import_allow_private);
 }
 
@@ -126,92 +125,23 @@ fn non_http_url_is_rejected() {
 
 #[test]
 fn every_problem_is_reported_together() {
-    let text = error_text(&[("CRABBAGE_LANGUAGE", "fr"), ("AI_MODEL", "gpt")]);
+    let text = error_text(&[("CRABBAGE_LANGUAGE", "fr")]);
     for needle in [
         "CRABBAGE_LANGUAGE is invalid",
         "CRABBAGE_PUBLIC_URL is not set",
         "OIDC_CLIENT_SECRET is not set",
-        "AI_BASE_URL is not set",
     ] {
         assert!(text.contains(needle), "{needle} missing from {text}");
     }
 }
 
 #[test]
-fn ai_absent_is_disabled() {
-    let config = Config::from_lookup(lookup(&REQUIRED)).unwrap();
-    assert!(!config.ai_enabled());
-    assert!(config.ai.is_none());
-}
-
-#[test]
-fn ai_key_alone_leaves_ai_disabled() {
-    let pairs = with_required(&[("AI_API_KEY", "key")]);
-    let config = Config::from_lookup(lookup(&pairs)).unwrap();
-    assert!(!config.ai_enabled());
-}
-
-#[test]
-fn ai_full_is_enabled() {
-    let pairs = with_required(&[
-        ("AI_BASE_URL", "https://ai.example.com/v1"),
-        ("AI_MODEL", "small"),
-        ("AI_API_KEY", "key"),
-    ]);
-    let config = Config::from_lookup(lookup(&pairs)).unwrap();
-    assert!(config.ai_enabled());
-    let ai = config.ai.unwrap();
-    assert_eq!(ai.base_url.as_str(), "https://ai.example.com/v1");
-    assert_eq!(ai.model, "small");
-    assert_eq!(ai.api_key.as_deref(), Some("key"));
-}
-
-#[test]
-fn ai_key_is_optional() {
-    let pairs = with_required(&[
-        ("AI_BASE_URL", "http://localhost:8080"),
-        ("AI_MODEL", "small"),
-    ]);
-    let config = Config::from_lookup(lookup(&pairs)).unwrap();
-    assert!(config.ai_enabled());
-    assert!(config.ai.unwrap().api_key.is_none());
-}
-
-#[test]
-fn ai_base_url_without_model_is_an_error() {
-    let text = error_text(&with_required(&[("AI_BASE_URL", "https://ai.example.com")]));
-    assert!(text.contains("AI_MODEL is not set"), "{text}");
-}
-
-#[test]
-fn ai_model_without_base_url_is_an_error() {
-    let text = error_text(&with_required(&[("AI_MODEL", "small")]));
-    assert!(text.contains("AI_BASE_URL is not set"), "{text}");
-}
-
-#[test]
-fn ai_invalid_base_url_is_an_error() {
-    let text = error_text(&with_required(&[
-        ("AI_BASE_URL", "wss://ai.example.com"),
-        ("AI_MODEL", "small"),
-    ]));
-    assert!(text.contains("AI_BASE_URL is invalid"), "{text}");
-}
-
-#[test]
 fn debug_redacts_secrets() {
-    let pairs = with_required(&[
-        ("AI_BASE_URL", "https://ai.example.com"),
-        ("AI_MODEL", "small"),
-        ("AI_API_KEY", "ai-key"),
-    ]);
-    let config = Config::from_lookup(lookup(&pairs)).unwrap();
+    let config = Config::from_lookup(lookup(&REQUIRED)).unwrap();
     let debug = format!("{config:?}");
     assert!(
         debug.contains("oidc_client_secret: \"<redacted>\""),
         "{debug}"
     );
-    assert!(debug.contains("api_key: Some(\"<redacted>\")"), "{debug}");
     assert!(!debug.contains("secret\""), "{debug}");
-    assert!(!debug.contains("ai-key"), "{debug}");
 }

@@ -14,6 +14,7 @@ use axum::routing::post;
 use crabbage_import::ai::{AiClient, Image};
 use crabbage_import::pipeline::from_photos;
 use crabbage_store::catalog::ingredients::list;
+use crabbage_store::settings;
 
 use super::import::{candidates, preview};
 use super::photo::MAX_UPLOAD_BYTES;
@@ -40,14 +41,21 @@ async fn upload(
     Extension(user): Extension<SessionUser>,
     mut multipart: Multipart,
 ) -> Result<Redirect, StatusCode> {
-    let ai = state.config.ai.as_ref().ok_or(StatusCode::NOT_FOUND)?;
+    let ai = settings::get(&state.pool).await.map_err(internal_error)?;
+    if !ai.is_enabled() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    let base_url = url::Url::parse(&ai.base_url).map_err(|_error| StatusCode::NOT_FOUND)?;
+    if !matches!(base_url.scheme(), "http" | "https") {
+        return Err(StatusCode::NOT_FOUND);
+    }
     let images = images(&mut multipart).await?;
     if images.is_empty() {
         return Ok(back("photo_error=invalid"));
     }
     let count = images.len().to_string();
     let ingredients = list(&state.pool).await.map_err(internal_error)?;
-    let client = AiClient::new(ai.base_url.clone(), ai.api_key.clone(), ai.model.clone());
+    let client = AiClient::new(base_url, ai.api_key, ai.model);
     let language = state.config.language.code();
     let Ok(imported) =
         from_photos(images.clone(), &candidates(&ingredients), &client, language).await

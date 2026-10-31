@@ -32,7 +32,7 @@ cargo leptos build --release
 
 The server listens on `site-addr` from `[package.metadata.leptos]` in `crates/crabbage/Cargo.toml`, or on `LEPTOS_SITE_ADDR`. `GET /healthz` returns `ok` and needs no provider, so it answers even while the provider is unreachable. Sign-in returns `503 Service Unavailable` until the provider can be discovered, and each sign-in request tries again.
 
-The server reads its settings from environment variables at startup and refuses to start if a required one is missing or invalid. The error names every problem.
+The server reads its startup settings from environment variables and refuses to start if a required one is missing or invalid. The error names every problem.
 
 On first startup, an empty catalog is populated with translated ingredient, aisle and dinner category defaults in the configured language.
 
@@ -47,14 +47,11 @@ On first startup, an empty catalog is populated with translated ingredient, aisl
 | `LEPTOS_SITE_ADDR` | no | `127.0.0.1:3000` | Address the server listens on. The image sets `0.0.0.0:3000` |
 | `CRABBAGE_ADMIN_GROUP` | no | `admin` | Group whose members administer the app |
 | `CRABBAGE_HOUSEHOLD_GROUP_PREFIX` | no | `crabbage-household-` | Prefix of the groups that name households |
-
-Membership can come from groups or custom claims. Put users in the configured admin group and in groups named with the household prefix (the full group name identifies each household), or set `crabbage_role: "admin"` and `crabbage_household` (a string or list of strings) as custom claims on a Pocket ID group. Pocket ID merges group custom claims into members' ID token claims. If two groups set the same claim key, only one value arrives; use one group per household.
-| `AI_BASE_URL` | with `AI_MODEL` | | `http(s)` base URL of an OpenAI-compatible API. Setting it turns AI on |
-| `AI_MODEL` | with `AI_BASE_URL` | | Model to request. Setting it turns AI on |
-| `AI_API_KEY` | no | | API key for the AI service, if it needs one (never printed) |
 | `CRABBAGE_IMPORT_ALLOW_PRIVATE` | no | `false` | `true` or `false`: allow importing from private network addresses (e.g. a LAN recipe server) |
 
-AI is enabled only when both `AI_BASE_URL` and `AI_MODEL` are set. Setting one without the other is an error. Empty values count as unset.
+Membership can come from groups or custom claims. Put users in the configured admin group and in groups named with the household prefix (the full group name identifies each household), or set `crabbage_role: "admin"` and `crabbage_household` (a string or list of strings) as custom claims on a Pocket ID group. Pocket ID merges group custom claims into members' ID token claims. If two groups set the same claim key, only one value arrives; use one group per household.
+
+Configure the AI provider, model and optional API key on the admin settings page. AI is enabled there only when the switch is on and the base URL and model are valid.
 
 The image runs as user `65532` from `scratch`. It keeps the database in the `/data` volume, so mount a volume there. A bind mount must be writable by user `65532`. The image also sets `LEPTOS_SITE_ROOT=/site`, `LEPTOS_OUTPUT_NAME=crabbage` and `CRABBAGE_DATA_DIR=/data`.
 

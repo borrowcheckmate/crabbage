@@ -7,6 +7,7 @@ use crabbage_import::matching::Candidate;
 use crabbage_import::pipeline::{Imported, complete};
 use crabbage_import::web::{ImportError, Limits, extract, fetch};
 use crabbage_store::catalog::ingredients::{Ingredient, list};
+use crabbage_store::settings;
 use leptos::prelude::ServerFnError;
 use sqlx::sqlite::SqlitePool;
 
@@ -116,12 +117,21 @@ pub(crate) async fn read_page(
     let draft = extract(&html).map_err(|error| failure(&error))?;
     let ingredients = list(pool).await.map_err(|error| store_failure(&error))?;
     let candidates = candidates(&ingredients);
-    let ai = config
-        .ai
-        .as_ref()
-        .map(|ai| AiClient::new(ai.base_url.clone(), ai.api_key.clone(), ai.model.clone()));
+    let settings = settings::get(pool)
+        .await
+        .map_err(|_error| ServerFnError::new(t("catalog.error.database")))?;
+    let ai = ai_client(&settings);
     let imported = complete(&draft, &candidates, ai.as_ref(), config.language.code()).await;
-    Ok(preview(&imported, url, config.ai_enabled()))
+    Ok(preview(&imported, url, settings.is_enabled()))
+}
+
+fn ai_client(settings: &settings::AiSettings) -> Option<AiClient> {
+    if !settings.is_enabled() {
+        return None;
+    }
+    let base_url = url::Url::parse(&settings.base_url).ok()?;
+    matches!(base_url.scheme(), "http" | "https")
+        .then(|| AiClient::new(base_url, settings.api_key.clone(), settings.model.clone()))
 }
 
 /// The catalogue ingredients as candidates for matching names.

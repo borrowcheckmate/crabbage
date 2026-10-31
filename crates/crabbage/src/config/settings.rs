@@ -9,27 +9,6 @@ use crate::i18n::Language;
 
 const REDACTED: &str = "<redacted>";
 
-/// The AI service settings. Present only when AI features are enabled.
-#[derive(Clone)]
-pub struct AiConfig {
-    /// Base URL of the OpenAI-compatible API.
-    pub base_url: Url,
-    /// API key sent to the service, if it requires one.
-    pub api_key: Option<String>,
-    /// Name of the model to request.
-    pub model: String,
-}
-
-impl Debug for AiConfig {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("AiConfig")
-            .field("base_url", &self.base_url)
-            .field("api_key", &self.api_key.as_ref().map(|_| REDACTED))
-            .field("model", &self.model)
-            .finish()
-    }
-}
-
 /// The server settings, read from the environment at startup.
 #[derive(Clone)]
 pub struct Config {
@@ -50,8 +29,6 @@ pub struct Config {
     pub admin_group: String,
     /// Prefix of the groups that name households, from `CRABBAGE_HOUSEHOLD_GROUP_PREFIX` (default `crabbage-household-`).
     pub household_group_prefix: String,
-    /// AI settings, or `None` when AI features are disabled.
-    pub ai: Option<AiConfig>,
     /// Whether recipe imports may fetch private network addresses, from
     /// `CRABBAGE_IMPORT_ALLOW_PRIVATE` (default `false`).
     pub import_allow_private: bool,
@@ -68,7 +45,6 @@ impl Debug for Config {
             .field("oidc_client_secret", &REDACTED)
             .field("admin_group", &self.admin_group)
             .field("household_group_prefix", &self.household_group_prefix)
-            .field("ai", &self.ai)
             .field("import_allow_private", &self.import_allow_private)
             .finish()
     }
@@ -109,7 +85,6 @@ impl Config {
         let household_group_prefix = vars
             .get("CRABBAGE_HOUSEHOLD_GROUP_PREFIX")
             .unwrap_or_else(|| "crabbage-household-".to_owned());
-        let ai = vars.ai();
         let import_allow_private = vars.flag("CRABBAGE_IMPORT_ALLOW_PRIVATE");
         match (
             language,
@@ -133,16 +108,9 @@ impl Config {
                 oidc_client_secret,
                 admin_group,
                 household_group_prefix,
-                ai,
                 import_allow_private,
             }),
             _ => Err(ConfigError::new(vars.problems)),
         }
-    }
-
-    /// Whether AI features are enabled.
-    #[must_use]
-    pub const fn ai_enabled(&self) -> bool {
-        self.ai.is_some()
     }
 }
