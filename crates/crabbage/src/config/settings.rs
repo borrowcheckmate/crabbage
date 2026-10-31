@@ -39,8 +39,9 @@ pub struct Config {
     pub data_dir: PathBuf,
     /// Public URL the app is served at, from `CRABBAGE_PUBLIC_URL`.
     pub public_url: Url,
-    /// Issuer URL of the `OpenID` Connect provider, from `OIDC_ISSUER_URL`.
-    pub oidc_issuer_url: Url,
+    /// Issuer URL of the `OpenID` Connect provider, from `OIDC_ISSUER_URL`, kept exactly as written
+    /// because providers compare the issuer character for character.
+    pub oidc_issuer_url: String,
     /// Client ID registered with the provider, from `OIDC_CLIENT_ID`.
     pub oidc_client_id: String,
     /// Client secret for the provider, from `OIDC_CLIENT_SECRET`.
@@ -97,7 +98,9 @@ impl Config {
             .get("CRABBAGE_DATA_DIR")
             .map_or_else(|| PathBuf::from("/data"), PathBuf::from);
         let public_url = vars.url("CRABBAGE_PUBLIC_URL");
-        let oidc_issuer_url = vars.url("OIDC_ISSUER_URL");
+        let oidc_issuer_url = vars
+            .url("OIDC_ISSUER_URL")
+            .and_then(|_| vars.get("OIDC_ISSUER_URL"));
         let oidc_client_id = vars.required("OIDC_CLIENT_ID");
         let oidc_client_secret = vars.required("OIDC_CLIENT_SECRET");
         let admin_group = vars

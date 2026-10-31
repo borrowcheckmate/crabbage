@@ -101,7 +101,7 @@ impl Oidc {
         http: &HttpClient,
     ) -> Result<Self, Box<dyn Error>> {
         let metadata = CoreProviderMetadata::discover_async(
-            IssuerUrl::from_url(config.oidc_issuer_url.clone()),
+            IssuerUrl::new(config.oidc_issuer_url.clone())?,
             http,
         )
         .await?;
