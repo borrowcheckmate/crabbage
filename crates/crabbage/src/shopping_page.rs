@@ -9,12 +9,13 @@
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::i18n::t;
+use crate::i18n::{t, t_with};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct ShoppingRow {
     ids: Vec<i64>,
     label: String,
+    quantity: String,
     ingredient_id: Option<i64>,
     ingredient: Option<String>,
     text: Option<String>,
@@ -43,6 +44,7 @@ async fn shopping_list() -> Result<(Vec<ShoppingRow>, Vec<(i64, String)>), Serve
         .map(|item| ShoppingRow {
             ids: vec![item.id],
             label: String::new(),
+            quantity: String::new(),
             ingredient_id: item.ingredient_id,
             ingredient: item.ingredient,
             text: item.text,
@@ -68,25 +70,29 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
     let resource = Resource::new(|| (), |()| shopping_list());
     let rows = RwSignal::new(Vec::<ShoppingRow>::new());
     let sections = RwSignal::new(Vec::<(i64, String)>::new());
+    let load_failed = RwSignal::new(false);
     #[cfg(feature = "hydrate")]
-    connect_events(rows);
+    connect_events(rows, load_failed);
     view! {
         <h1>{t("shopping.heading")}</h1>
-        <form class="shopping-add" method="post" action="/shopping/items">
-            <label for="shopping-text">{t("shopping.add.label")}</label>
-            <input id="shopping-text" name="text" type="text" required/>
-            <button>{t("shopping.add.button")}</button>
-        </form>
         <Suspense fallback=|| ()>
             {move || Suspend::new(async move {
-                if let Ok((items, names)) = resource.await {
-                    rows.set(merge_rows(items));
-                    sections.set(names);
+                match resource.await {
+                    Ok((items, names)) => {
+                        rows.set(merge_rows(items));
+                        sections.set(names);
+                    }
+                    Err(_) => load_failed.set(true),
                 }
                 view! {
-                    <Show when=move || rows.get().iter().any(|item| item.checked)>
-                        <form method="post" action="/shopping/clear-checked"><button class="secondary">{t("shopping.clear")}</button></form>
-                    </Show>
+                    <p class="shopping-count">{move || remaining_text(rows.get().iter().filter(|item| !item.checked).count())}</p>
+                    <form class="shopping-add" method="post" action="/shopping/items">
+                        <label class="shopping-visually-hidden" for="shopping-text">{t("shopping.add.label")}</label>
+                        <input id="shopping-text" name="text" type="text" placeholder=t("shopping.add.placeholder") required/>
+                        <button type="submit" aria-label=t("shopping.add.button")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+                    </form>
+                    <Show when=move || load_failed.get()><p class="shopping-error" role="status">{t("shopping.error")}</p></Show>
+                    <div class="shopping-layout"><div class="shopping-list">
                     <Show when=move || rows.get().is_empty()>
                         <p>{t("shopping.empty")}</p>
                     </Show>
@@ -99,12 +105,17 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
                                     <input type="hidden" name="on" value=if item.checked { "false" } else { "true" }/>
                                     <button class="shopping-item" aria-pressed=item.checked>
                                         <span class="shopping-check" aria-hidden="true">{if item.checked { "✓" } else { "" }}</span>
-                                        <span>{item.label.clone()}</span>
+                                        <span class="shopping-name">{item.label.clone()}</span>
+                                        <span class="shopping-quantity">{item.quantity.clone()}</span>
                                     </button>
                                 </form>
                             </For>
                         </section>
                     </For>
+                    <Show when=move || rows.get().iter().any(|item| item.checked)>
+                        <form class="shopping-clear" method="post" action="/shopping/clear-checked"><button class="quiet">{t("shopping.clear")}</button></form>
+                    </Show>
+                    </div><aside class="shopping-review"><span class="shopping-eyebrow">{t("shopping.next")}</span><h2>{t("shopping.review.heading")}</h2><p>{t("shopping.review.copy")}</p><button type="button" disabled=true>{t("shopping.review.button")}<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button><p class="shopping-note">{t("shopping.review.note")}</p></aside></div>
                 }
             })}
         </Suspense>
@@ -126,6 +137,17 @@ struct ShoppingEventRow {
     checked: bool,
     section_id: Option<i64>,
     section_position: Option<i64>,
+}
+
+#[cfg(feature = "hydrate")]
+type ShoppingListener = wasm_bindgen::prelude::Closure<dyn FnMut(web_sys::Event)>;
+
+#[cfg(feature = "hydrate")]
+type ShoppingEventSource = (web_sys::EventSource, ShoppingListener, ShoppingListener);
+
+#[cfg(feature = "hydrate")]
+thread_local! {
+    static SOURCE: std::cell::RefCell<Option<ShoppingEventSource>> = const { std::cell::RefCell::new(None) };
 }
 
 fn grouped_rows(mut rows: Vec<ShoppingRow>, sections: &[(i64, String)]) -> Vec<Group> {
@@ -245,10 +267,8 @@ fn merge_group(group: &[ShoppingRow]) -> Option<ShoppingRow> {
     let mut result = first;
     result.ids = ids;
     result.amounts = amounts;
-    result.label = format_line(
-        result.ingredient.as_deref().unwrap_or_default(),
-        &result.amounts,
-    );
+    result.quantity = quantities_text(&result.amounts);
+    result.label = result.ingredient.clone().unwrap_or_default();
     Some(result)
 }
 
@@ -262,12 +282,13 @@ fn singleton_row(mut row: ShoppingRow) -> ShoppingRow {
         .amount
         .map(|amount| vec![(amount, row.unit.clone().unwrap_or_default())])
         .unwrap_or_default();
-    row.label = format_line(name, &row.amounts);
+    row.quantity = quantities_text(&row.amounts);
+    row.label = name.to_owned();
     row
 }
 
-fn format_line(name: &str, amounts: &[(f64, String)]) -> String {
-    let quantities = amounts
+fn quantities_text(amounts: &[(f64, String)]) -> String {
+    amounts
         .iter()
         .map(|(amount, unit)| {
             let value = format!("{amount:.2}")
@@ -281,65 +302,109 @@ fn format_line(name: &str, amounts: &[(f64, String)]) -> String {
             }
         })
         .collect::<Vec<_>>()
-        .join(" + ");
-    if quantities.is_empty() {
-        name.to_owned()
+        .join(" + ")
+}
+
+fn remaining_text(count: usize) -> String {
+    let key = if count == 1 {
+        "shopping.remaining.one"
     } else {
-        format!("{name}: {quantities}")
+        "shopping.remaining.many"
+    };
+    t_with(key, &[("count", &count.to_string())])
+}
+
+#[cfg(feature = "hydrate")]
+fn connect_events(rows: RwSignal<Vec<ShoppingRow>>, error: RwSignal<bool>) {
+    let Ok(source) = web_sys::EventSource::new("/shopping/events") else {
+        return;
+    };
+    let list_callback = list_listener(rows, error);
+    let error_callback = error_listener(error);
+    listen_for_updates(&source, &list_callback, &error_callback);
+    replace_event_source((source, list_callback, error_callback));
+    on_cleanup(close_event_source);
+}
+
+#[cfg(feature = "hydrate")]
+fn list_listener(rows: RwSignal<Vec<ShoppingRow>>, error: RwSignal<bool>) -> ShoppingListener {
+    use wasm_bindgen::prelude::Closure;
+    Closure::<dyn FnMut(web_sys::Event)>::new(move |event| update_from_event(event, rows, error))
+}
+
+#[cfg(feature = "hydrate")]
+fn update_from_event(
+    event: web_sys::Event,
+    rows: RwSignal<Vec<ShoppingRow>>,
+    error: RwSignal<bool>,
+) {
+    use wasm_bindgen::JsCast;
+    let Ok(message) = event.dyn_into::<web_sys::MessageEvent>() else {
+        return;
+    };
+    let Some(json) = message.data().as_string() else {
+        return;
+    };
+    let Ok(items) = serde_json::from_str::<Vec<ShoppingEventRow>>(&json) else {
+        return;
+    };
+    rows.set(merge_rows(items.into_iter().map(event_row).collect()));
+    error.set(false);
+}
+
+#[cfg(feature = "hydrate")]
+fn event_row(item: ShoppingEventRow) -> ShoppingRow {
+    ShoppingRow {
+        ids: vec![item.id],
+        label: String::new(),
+        quantity: String::new(),
+        ingredient_id: item.ingredient_id,
+        ingredient: item.ingredient,
+        text: item.text,
+        amount: item.amount,
+        unit: item.unit,
+        amounts: Vec::new(),
+        checked: item.checked,
+        section_id: item.section_id,
+        section_position: item.section_position,
     }
 }
 
 #[cfg(feature = "hydrate")]
-fn connect_events(rows: RwSignal<Vec<ShoppingRow>>) {
-    use std::cell::RefCell;
-    use wasm_bindgen::JsCast;
+fn error_listener(error: RwSignal<bool>) -> ShoppingListener {
     use wasm_bindgen::prelude::Closure;
-    use web_sys::{Event, EventSource, MessageEvent};
-    type Source = (EventSource, Closure<dyn FnMut(Event)>);
-    let Ok(source) = EventSource::new("/shopping/events") else {
-        return;
-    };
-    let callback = Closure::<dyn FnMut(Event)>::new(move |event: Event| {
-        if let Ok(message) = event.dyn_into::<MessageEvent>()
-            && let Some(json) = message.data().as_string()
-            && let Ok(items) = serde_json::from_str::<Vec<ShoppingEventRow>>(&json)
-        {
-            rows.set(merge_rows(
-                items
-                    .into_iter()
-                    .map(|item| ShoppingRow {
-                        ids: vec![item.id],
-                        label: String::new(),
-                        ingredient_id: item.ingredient_id,
-                        ingredient: item.ingredient,
-                        text: item.text,
-                        amount: item.amount,
-                        unit: item.unit,
-                        amounts: Vec::new(),
-                        checked: item.checked,
-                        section_id: item.section_id,
-                        section_position: item.section_position,
-                    })
-                    .collect(),
-            ));
-        }
-    });
-    let _listener_result =
-        source.add_event_listener_with_callback("list", callback.as_ref().unchecked_ref());
-    thread_local! {
-        static SOURCE: RefCell<Option<Source>> = const { RefCell::new(None) };
-    }
+    Closure::<dyn FnMut(web_sys::Event)>::new(move |_event| error.set(true))
+}
+
+#[cfg(feature = "hydrate")]
+fn listen_for_updates(
+    source: &web_sys::EventSource,
+    list: &ShoppingListener,
+    error: &ShoppingListener,
+) {
+    use wasm_bindgen::JsCast;
+    let _list_result =
+        source.add_event_listener_with_callback("list", list.as_ref().unchecked_ref());
+    let _error_result =
+        source.add_event_listener_with_callback("error", error.as_ref().unchecked_ref());
+}
+
+#[cfg(feature = "hydrate")]
+fn replace_event_source(source: ShoppingEventSource) {
     SOURCE.with(|current| {
-        if let Some((previous, _)) = current.borrow_mut().replace((source, callback)) {
+        if let Some((previous, _, _)) = current.borrow_mut().replace(source) {
             previous.close();
         }
     });
-    on_cleanup(move || {
-        SOURCE.with(|current| {
-            if let Some((source, callback)) = current.borrow_mut().take() {
-                source.close();
-                drop(callback);
-            }
-        });
+}
+
+#[cfg(feature = "hydrate")]
+fn close_event_source() {
+    SOURCE.with(|current| {
+        if let Some((source, list, error)) = current.borrow_mut().take() {
+            source.close();
+            drop(list);
+            drop(error);
+        }
     });
 }

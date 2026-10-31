@@ -230,5 +230,14 @@
   "system.loading": "Loading…",
   "system.not_found.heading": "Page not found",
   "system.not_found.message": "This page is unavailable or may have been moved.",
-  "system.not_found.home": "Go to Today"
+  "system.not_found.home": "Go to Today",
+  "shopping.error": "The shopping list could not be updated. Check your connection and reload the page.",
+  "shopping.next": "Next step",
+  "shopping.review.heading": "Export to Appie",
+  "shopping.review.copy": "Choose matching products and check pack sizes before exporting.",
+  "shopping.review.button": "Review products",
+  "shopping.review.note": "Appie integration concept · Preview only",
+  "shopping.add.placeholder": "Add something to the list…",
+  "shopping.remaining.one": "{count} item left · Shared with your household",
+  "shopping.remaining.many": "{count} items left · Shared with your household"
 }
