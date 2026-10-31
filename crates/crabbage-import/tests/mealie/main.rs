@@ -1,6 +1,7 @@
 //! Mealie API client tests.
 
 mod client;
+mod mapping;
 
 use crabbage_import::mealie::{MealieClient, MealieError};
 use serde_json::json;
