@@ -5,6 +5,7 @@ mod complete;
 mod from_draft;
 mod merge;
 mod needs_ai;
+mod photos;
 mod server;
 
 use crabbage_import::matching::Candidate;

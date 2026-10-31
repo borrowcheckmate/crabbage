@@ -22,6 +22,24 @@ pub(crate) async fn import_recipe(url: String) -> Result<ImportPreview, ServerFn
     crate::recipes::import::read_page(&pool, &config, &url).await
 }
 
+/// Whether the AI is configured, so the page offers reading photos.
+#[server(prefix = "/api", endpoint = "ai_enabled")]
+pub(crate) async fn ai_enabled() -> Result<bool, ServerFnError> {
+    crate::access::signed_in().await?;
+    Ok(crate::access::config()?.ai_enabled())
+}
+
+/// The preview of the photo import stored under `token`, only for the user who made it. An unknown,
+/// expired or foreign token comes back as the translated expiry message.
+#[server(prefix = "/api", endpoint = "photo_preview")]
+pub(crate) async fn photo_preview(token: String) -> Result<ImportPreview, ServerFnError> {
+    use crate::recipes::photo_drafts::PhotoDrafts;
+    let (_pool, user) = crate::access::signed_in().await?;
+    leptos::prelude::use_context::<std::sync::Arc<PhotoDrafts>>()
+        .and_then(|drafts| drafts.get(&token, user, std::time::Instant::now()))
+        .ok_or_else(|| ServerFnError::new(crate::i18n::t("import.photos_expired")))
+}
+
 /// Creates a recipe from the reviewed JSON draft like `create_recipe` does, then downloads the
 /// photo at `image`, if any, and attaches it. A photo that cannot be downloaded or stored does not
 /// fail the save.

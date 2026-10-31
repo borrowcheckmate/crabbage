@@ -6,7 +6,7 @@ use crabbage_import::ai::AiClient;
 use crabbage_import::matching::Candidate;
 use crabbage_import::pipeline::{Imported, complete};
 use crabbage_import::web::{ImportError, Limits, extract, fetch};
-use crabbage_store::catalog::ingredients::list;
+use crabbage_store::catalog::ingredients::{Ingredient, list};
 use leptos::prelude::ServerFnError;
 use sqlx::sqlite::SqlitePool;
 
@@ -114,20 +114,25 @@ pub(crate) async fn read_page(
     let html = fetch(url, &limits).await.map_err(|error| failure(&error))?;
     let draft = extract(&html).map_err(|error| failure(&error))?;
     let ingredients = list(pool).await.map_err(|error| store_failure(&error))?;
-    let candidates: Vec<Candidate<'_>> = ingredients
-        .iter()
-        .map(|ingredient| Candidate {
-            id: ingredient.id,
-            name: &ingredient.name,
-            aliases: &ingredient.aliases,
-        })
-        .collect();
+    let candidates = candidates(&ingredients);
     let ai = config
         .ai
         .as_ref()
         .map(|ai| AiClient::new(ai.base_url.clone(), ai.api_key.clone(), ai.model.clone()));
     let imported = complete(&draft, &candidates, ai.as_ref(), config.language.code()).await;
     Ok(preview(&imported, url, config.ai_enabled()))
+}
+
+/// The catalogue ingredients as candidates for matching names.
+pub(super) fn candidates(ingredients: &[Ingredient]) -> Vec<Candidate<'_>> {
+    ingredients
+        .iter()
+        .map(|ingredient| Candidate {
+            id: ingredient.id,
+            name: &ingredient.name,
+            aliases: &ingredient.aliases,
+        })
+        .collect()
 }
 
 fn failure(error: &ImportError) -> ServerFnError {
