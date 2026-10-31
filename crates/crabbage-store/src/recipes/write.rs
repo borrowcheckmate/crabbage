@@ -17,14 +17,25 @@ pub async fn create(
     input: &RecipeInput,
     now: i64,
 ) -> Result<i64, StoreError> {
+    create_inner(pool, owner_id, input, now, None).await
+}
+
+pub(super) async fn create_inner(
+    pool: &SqlitePool,
+    owner_id: i64,
+    input: &RecipeInput,
+    now: i64,
+    mealie_id: Option<&str>,
+) -> Result<i64, StoreError> {
     let mut tx = crate::begin_write(pool).await?;
     let id = sqlx::query_scalar(
-        "INSERT INTO recipes (owner_id, title, servings, created_at) VALUES (?, ?, ?, ?) RETURNING id",
+        "INSERT INTO recipes (owner_id, title, servings, created_at, mealie_id) VALUES (?, ?, ?, ?, ?) RETURNING id",
     )
     .bind(owner_id)
     .bind(&input.title)
     .bind(input.servings)
     .bind(now)
+    .bind(mealie_id)
     .fetch_one(&mut *tx)
     .await?;
     write_contents(&mut tx, id, input).await?;

@@ -32,6 +32,7 @@ async fn member_sees_the_not_allowed_message_on_admin_pages() {
         "/admin/sections",
         "/admin/categories",
         "/admin/review",
+        "/admin/mealie",
     ] {
         let response = harness.get(path, Some(&token)).await;
         assert_eq!(response.status(), StatusCode::OK, "{path}");
@@ -51,10 +52,46 @@ async fn home_links_to_the_admin_pages_only_for_admins() {
     let body = body_text(harness.get("/", Some(&admin)).await).await;
     assert!(body.contains("href=\"/admin/ingredients\""), "{body}");
     assert!(body.contains("href=\"/admin/categories\""), "{body}");
+    assert!(body.contains("href=\"/admin/mealie\""), "{body}");
 
     let member = token_for(&harness, &[]).await;
     let body = body_text(harness.get("/", Some(&member)).await).await;
     assert!(!body.contains("/admin/ingredients"), "{body}");
+    assert!(!body.contains("/admin/mealie"), "{body}");
+}
+
+#[tokio::test]
+async fn admin_mealie_page_has_a_password_token_form_and_summary_labels() {
+    let harness = Harness::start("pages-mealie").await;
+    let token = token_for(&harness, &["crabbage-admin"]).await;
+    let body = body_text(harness.get("/admin/mealie", Some(&token)).await).await;
+    for expected in [
+        "Import from Mealie</h1>",
+        "name=\"url\"",
+        "name=\"token\"",
+        "type=\"password\"",
+    ] {
+        assert!(body.contains(expected), "{expected}: {body}");
+    }
+}
+
+#[tokio::test]
+async fn member_cannot_start_a_mealie_migration() {
+    let harness = Harness::start("pages-mealie-member-start").await;
+    let token = token_for(&harness, &[]).await;
+    let response = harness
+        .post_form(
+            "/admin/mealie/start",
+            Some(&token),
+            "url=http%3A%2F%2F127.0.0.1%3A1&token=invalid",
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM recipes")
+        .fetch_one(&harness.pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 0);
 }
 
 #[tokio::test]

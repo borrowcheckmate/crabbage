@@ -10,6 +10,7 @@ use leptos_axum::{LeptosRoutes, generate_route_list};
 use sqlx::sqlite::SqlitePool;
 use tokio::sync::OnceCell;
 
+use crate::admin::mealie::routes as mealie_routes;
 use crate::api;
 use crate::app::{App, shell};
 use crate::auth;
@@ -48,12 +49,14 @@ pub fn router(
         language: config.language,
         photo_drafts: Arc::new(PhotoDrafts::default()),
         shopping: crate::shopping::ShoppingHub::default(),
+        mealie_migration: Arc::default(),
     };
     let language = state.language;
     let context_pool = state.pool.clone();
     let context_data_dir = config.data_dir.clone();
     let context_config = Arc::clone(&state.config);
     let context_drafts = Arc::clone(&state.photo_drafts);
+    let context_migration = Arc::clone(&state.mealie_migration);
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
@@ -65,6 +68,7 @@ pub fn router(
         .merge(rating_routes())
         .merge(shopping_routes())
         .merge(planner_routes())
+        .merge(mealie_routes())
         .leptos_routes_with_context(
             &state,
             routes,
@@ -74,6 +78,7 @@ pub fn router(
                 provide_context(context_data_dir.clone());
                 provide_context(Arc::clone(&context_config));
                 provide_context(Arc::clone(&context_drafts));
+                provide_context(Arc::clone(&context_migration));
             },
             move || shell(options.clone()),
         )
