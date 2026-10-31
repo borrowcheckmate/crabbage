@@ -10,7 +10,7 @@ use leptos_router::hooks::{use_navigate, use_query_map};
 use super::form::{Draft, DraftFields};
 use crate::i18n::{t, t_with};
 use crate::notice::{error_notice, failure, message};
-use crate::recipes::import_fns::{SaveImport, import_recipe};
+use crate::recipes::import_fns::{SaveImport, ai_enabled, import_recipe, photo_preview};
 use crate::recipes::ingredients::ingredient_names;
 use crate::recipes::types::ImportPreview;
 
@@ -38,26 +38,64 @@ pub(crate) fn RecipeImportPage() -> impl IntoView {
         </form>
         <Suspense fallback=|| ()>
             {move || {
-                let url = query.with(|map| map.get("url").unwrap_or_default().trim().to_owned());
-                Suspend::new(async move { preview(url, save).await })
+                let (url, photos, error) = query.with(|map| {
+                    (
+                        map.get("url").unwrap_or_default().trim().to_owned(),
+                        map.get("photos").unwrap_or_default(),
+                        map.get("photo_error").unwrap_or_default(),
+                    )
+                });
+                Suspend::new(async move { content(url, photos, error, save).await })
             }}
         </Suspense>
         {move || save.value().with(|value| failure(value.as_ref()))}
     }
 }
 
-async fn preview(url: String, save: ServerAction<SaveImport>) -> AnyView {
-    if url.is_empty() {
+async fn content(
+    url: String,
+    photos: String,
+    error: String,
+    save: ServerAction<SaveImport>,
+) -> AnyView {
+    let form = ai_enabled().await.unwrap_or(false).then(photo_form);
+    let problem = match error.as_str() {
+        "invalid" => Some(error_notice(t("import.photo_error.invalid"))),
+        "ai" => Some(error_notice(t("import.photo_error.ai"))),
+        _ => None,
+    };
+    view! { {form} {problem} {preview(url, photos, save).await} }.into_any()
+}
+
+fn photo_form() -> impl IntoView {
+    view! {
+        <form method="post" action="/recipes/import/photos" enctype="multipart/form-data">
+            <label>
+                {t("import.photos_label")}
+                <input type="file" name="photo" accept="image/*" multiple required/>
+            </label>
+            <p>{t("import.photos_hint")}</p>
+            <button>{t("import.photos_button")}</button>
+        </form>
+    }
+}
+
+async fn preview(url: String, photos: String, save: ServerAction<SaveImport>) -> AnyView {
+    if url.is_empty() && photos.is_empty() {
         return ().into_any();
     }
-    match load(url).await {
+    match load(url, photos).await {
         Ok((preview, names)) => review(preview, names, save),
         Err(error) => error_notice(&message(&error)),
     }
 }
 
-async fn load(url: String) -> Result<(ImportPreview, Vec<String>), ServerFnError> {
-    let preview = import_recipe(url).await?;
+async fn load(url: String, photos: String) -> Result<(ImportPreview, Vec<String>), ServerFnError> {
+    let preview = if photos.is_empty() {
+        import_recipe(url).await?
+    } else {
+        photo_preview(photos).await?
+    };
     Ok((preview, ingredient_names().await?))
 }
 

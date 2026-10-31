@@ -16,7 +16,7 @@ use crate::auth;
 use crate::config::Config;
 use crate::household;
 use crate::images;
-use crate::recipes::{photo_routes, rating_routes};
+use crate::recipes::{PhotoDrafts, import_photo_routes, photo_routes, rating_routes};
 use crate::state::AppState;
 
 /// Builds the router for the app.
@@ -44,11 +44,13 @@ pub fn router(
         admin_group: config.admin_group.clone(),
         household_group_prefix: config.household_group_prefix.clone(),
         language: config.language,
+        photo_drafts: Arc::new(PhotoDrafts::default()),
     };
     let language = state.language;
     let context_pool = state.pool.clone();
     let context_data_dir = config.data_dir.clone();
     let context_config = Arc::clone(&state.config);
+    let context_drafts = Arc::clone(&state.photo_drafts);
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
@@ -56,6 +58,7 @@ pub fn router(
         .merge(api::routes())
         .merge(images::routes())
         .merge(photo_routes())
+        .merge(import_photo_routes())
         .merge(rating_routes())
         .leptos_routes_with_context(
             &state,
@@ -65,6 +68,7 @@ pub fn router(
                 provide_context(language);
                 provide_context(context_data_dir.clone());
                 provide_context(Arc::clone(&context_config));
+                provide_context(Arc::clone(&context_drafts));
             },
             move || shell(options.clone()),
         )

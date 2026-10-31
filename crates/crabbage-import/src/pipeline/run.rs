@@ -30,15 +30,20 @@ pub async fn complete(
 
 fn prompt(draft: &Draft, instance_language: &str) -> Prompt {
     Prompt {
-        instructions: format!(
-            "Write the recipe in the language with the code {instance_language}. Use only these \
-             unit symbols: g, kg, ml, l, tsp, tbsp, piece, pinch, or none. Give every step the \
-             zero-based indexes of the ingredient lines it uses. Keep the amounts for the stated \
-             servings."
-        ),
+        instructions: instructions(instance_language),
         text: text(draft),
         images: Vec::new(),
     }
+}
+
+/// The instructions every AI pass starts with.
+pub(super) fn instructions(instance_language: &str) -> String {
+    format!(
+        "Write the recipe in the language with the code {instance_language}. Use only these \
+         unit symbols: g, kg, ml, l, tsp, tbsp, piece, pinch, or none. Give every step the \
+         zero-based indexes of the ingredient lines it uses. Keep the amounts for the stated \
+         servings."
+    )
 }
 
 fn text(draft: &Draft) -> String {

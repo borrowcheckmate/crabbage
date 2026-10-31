@@ -5,11 +5,13 @@
 
 use std::path::PathBuf;
 
+use axum::http::StatusCode;
 use crabbage_store::catalog::{categories, ingredients, sections};
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create, set_image};
 
 use crate::common::{Harness, body_text, session_token, sign_in_as};
 use crate::recipe_import::serve_with;
+use crate::recipe_photo_import::with_ai;
 
 #[tokio::test]
 #[expect(
@@ -206,6 +208,12 @@ async fn write_pages() {
             );
         std::fs::write(dir.join(format!("{who}-{name}.html")), body).expect("page is written");
     }
+    let (with_ai, _requests) = with_ai("screenshots-ai", StatusCode::OK).await;
+    let token = sign_in_as(&with_ai, "member", &[]).await;
+    let body = body_text(with_ai.get("/recipes/import", Some(&token)).await)
+        .await
+        .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+    std::fs::write(dir.join("member-recipe-import-photos.html"), body).expect("page is written");
 }
 
 const PHOTO_NAME: &str = "5a0c1e2f3b4d5e6f7a8b9c0d1e2f3a4b.png";
