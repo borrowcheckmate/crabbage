@@ -7,6 +7,7 @@ mod error;
 mod fetch;
 mod import;
 mod jsonld;
+mod language;
 
 pub use address::is_public;
 pub use draft::Draft;

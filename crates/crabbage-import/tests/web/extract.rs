@@ -31,6 +31,7 @@ fn a_plain_recipe_gives_every_field() {
         Draft {
             title: "Lemon Pancakes".to_owned(),
             servings: Some(4),
+            language: Some("en".to_owned()),
             image: Some("https://example.com/images/pancakes.jpg".to_owned()),
             lines: strings(&["2 eggs", "200 ml milk", "150 g flour", "1 lemon, zest only"]),
             steps: strings(&["Whisk the eggs and milk.", "Add the flour and zest."]),

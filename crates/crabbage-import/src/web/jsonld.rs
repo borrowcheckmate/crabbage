@@ -3,6 +3,7 @@ use std::time::Duration;
 use serde_json::{Map, Value};
 
 use super::duration;
+use super::language::html_lang;
 use super::{Draft, ImportError};
 
 /// Reads the first schema.org `Recipe` in the page's JSON-LD. Scripts that are not valid JSON and
@@ -12,10 +13,13 @@ use super::{Draft, ImportError};
 ///
 /// [`ImportError::NoRecipe`] when no usable recipe is found.
 pub fn extract(html: &str) -> Result<Draft, ImportError> {
+    let page_language = html_lang(html);
     json_ld_scripts(html)
         .into_iter()
         .filter_map(|script| serde_json::from_str::<Value>(script).ok())
-        .find_map(|value| recipe_node(&value).and_then(draft))
+        .find_map(|value| {
+            recipe_node(&value).and_then(|recipe| draft(recipe, page_language.as_deref()))
+        })
         .ok_or(ImportError::NoRecipe)
 }
 
@@ -66,10 +70,11 @@ fn has_recipe_type(kind: &Value) -> bool {
     }
 }
 
-fn draft(recipe: &Map<String, Value>) -> Option<Draft> {
+fn draft(recipe: &Map<String, Value>, page_language: Option<&str>) -> Option<Draft> {
     Some(Draft {
         title: title(recipe)?,
         servings: recipe.get("recipeYield").and_then(servings),
+        language: language(recipe).or_else(|| page_language.map(str::to_owned)),
         image: recipe.get("image").and_then(image),
         lines: recipe
             .get("recipeIngredient")
@@ -86,6 +91,13 @@ fn draft(recipe: &Map<String, Value>) -> Option<Draft> {
 fn title(recipe: &Map<String, Value>) -> Option<String> {
     recipe
         .get("name")
+        .and_then(Value::as_str)
+        .and_then(non_empty)
+}
+
+fn language(recipe: &Map<String, Value>) -> Option<String> {
+    recipe
+        .get("inLanguage")
         .and_then(Value::as_str)
         .and_then(non_empty)
 }

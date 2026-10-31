@@ -79,6 +79,16 @@ const MEASURES: &[(&str, Measure)] = &[
     ("pounds", Measure::Imperial(ImperialUnit::Pound)),
 ];
 
+/// The measure of a whole unit symbol, ignoring case: `cup`, `oz` or `fl oz`. Unlike [`leading`], the
+/// symbol must be the whole text.
+pub(crate) fn measure_of(symbol: &str) -> Option<Measure> {
+    let symbol = symbol.trim();
+    MEASURES
+        .iter()
+        .find(|(word, _)| word.eq_ignore_ascii_case(symbol))
+        .map(|(_, measure)| *measure)
+}
+
 /// The unit at the start of `text` and the text after it. A `.` after the unit and a following
 /// `of` or `of the` are left out.
 pub(crate) fn leading(text: &str) -> Option<(Measure, &str)> {

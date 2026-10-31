@@ -46,21 +46,22 @@ Their responsibilities:
 
 ## crates/crabbage-import
 
-Parses free-text ingredient lines, matches their names to catalogue ingredients and reads recipes from web pages. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version and TLS stack as `openidconnect`). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser. The AI client posts a recipe's text and photos to an OpenAI-compatible chat completions endpoint (`reqwest`, the key as a bearer token) and reads the JSON draft from the first answer, checking it before use.
+Parses free-text ingredient lines, matches their names to catalogue ingredients, reads recipes from web pages and completes them with AI when needed. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version and TLS stack as `openidconnect`). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser. The AI client posts a recipe's text and photos to an OpenAI-compatible chat completions endpoint (`reqwest`, the key as a bearer token) and reads the JSON draft from the first answer, checking it before use.
 
 | Module | Responsibility |
 | --- | --- |
-| `src/lib.rs` | Crate doc and the `ai`, `lines`, `matching` and `web` modules |
-| `src/lines/mod.rs` | Declares the line modules and re-exports `parse_line` and `ParsedLine` |
+| `src/lib.rs` | Crate doc and the `ai`, `lines`, `matching`, `pipeline` and `web` modules |
+| `src/lines/mod.rs` | Declares the line modules, re-exports `parse_line` and `ParsedLine`, and re-exports `measure_of` for the crate |
 | `src/lines/line.rs` | `parse_line(text)`: collapses whitespace, reads the amount, unit, name and note. `ParsedLine` (`amount`, `amount_max`, `unit`, `name`, `note`, `original`, `parsed`). A line is parsed when its name has a letter or digit; otherwise it keeps its collapsed text, with no amount, unit or note. A comma or parenthesis starts the note |
 | `src/lines/numbers.rs` | Amounts: integers, decimals with a comma or dot, `1/2`, `1 1/2`, unicode fractions (`½ ¼ ¾ ⅓ ⅔ ⅛`, also glued as `1½`), and ranges with `-`, `–`, `tot`, `to`, `à` |
-| `src/lines/units.rs` | `Measure` and the English and Dutch unit table. Domain units map directly; `dl` and `cl` scale to ml; `cup`, `oz`, `lb` and `fl oz` convert to metric through `ImperialUnit`. Units without a domain counterpart (`clove`, `teen`, `blik`) stay in the name. Drops a `.` and a following `of` or `of the` after a unit |
+| `src/lines/units.rs` | `Measure` and the English and Dutch unit table. Domain units map directly; `dl` and `cl` scale to ml; `cup`, `oz`, `lb` and `fl oz` convert to metric through `ImperialUnit`. Units without a domain counterpart (`clove`, `teen`, `blik`) stay in the name. `measure_of(symbol)` (crate-only) finds the measure of a whole symbol, ignoring case, for the AI draft check and the merge. Drops a `.` and a following `of` or `of the` after a unit |
 | `src/lines/words.rs` | `strip`: whole-word, case-insensitive match at the start of a text |
 | `tests/lines/main.rs`, `tests/lines/table.rs` | Table tests for amounts, units, names and notes in both languages, unparsed lines and whitespace |
 | `src/matching.rs` | `normalise` (lowercase, trimmed, whitespace collapsed, Latin-1 diacritics folded to ASCII), `Candidate` (id, name, aliases), `match_ingredient` (first normalised name match, then first alias match, empty input matches nothing), `match_all` (`Matches`: one link per input in order, and the original spellings of unmatched names, once per normalised name, in first-seen order) |
 | `tests/matching.rs` | Case, whitespace and diacritics, exact name and alias matches, names beating aliases, no partial matches, empty input, unmatched names in order and once |
 | `src/web/mod.rs` | Declares the web submodules and re-exports `import`, `extract`, `fetch`, `Limits`, `Draft`, `ImportError` and `is_public` |
-| `src/web/draft.rs` | `Draft`: title, servings, image, ingredient lines, steps, and the prep, cook and total times as `Duration` |
+| `src/web/language.rs` | `html_lang(html)` (crate-only): the `lang` attribute of the `<html` tag, the name matched without case, the value with or without quotes, empty values as none. `xml:lang` is not read |
+| `src/web/draft.rs` | `Draft`: title, servings, `language`, image, ingredient lines, steps, and the prep, cook and total times as `Duration`. `language` is the recipe's `inLanguage` string, else the page's `html` `lang`, else none |
 | `src/web/error.rs` | `ImportError` (`NotHttp`, `PrivateAddress`, `Timeout`, `TooLarge`, `Status(u16)`, `Network(text)`, `NoRecipe`) with English messages and `std::error::Error` |
 | `src/web/jsonld.rs` | `extract(html)`: the first schema.org `Recipe` in the `application/ld+json` scripts, searched in top-level objects and arrays and in `@graph`. Scripts that are not JSON are skipped and a recipe needs a name. Servings are the first integer of the yield, ingredients are trimmed non-empty lines, steps come from text, name, string lines or `HowToSection` `itemListElement`s flattened in order |
 | `src/web/duration.rs` | `parse`: ISO 8601 durations of days, hours, minutes and whole seconds (`PT1H30M`, `P0DT20M`, `PT90S`); anything else is `None` |
@@ -72,16 +73,29 @@ Parses free-text ingredient lines, matches their names to catalogue ingredients 
 | `tests/web/fetch.rs` | Loopback server: body, redirect, declared and streamed size limits, timeout, 404, `import`, refused schemes and private addresses |
 | `tests/web/address.rs` | Public addresses allowed and private, special and mapped addresses refused |
 | `tests/web/errors.rs` | Display text of every `ImportError` variant |
+| `tests/web/language.rs` | The language from `inLanguage`, from the `html` `lang` (quotes, case, other attributes, `xml:lang` ignored), and none when neither is given |
 | `tests/fixtures/web/*.html` | Small invented pages: plain, `@graph`, type list, sections, string instructions, article only, invalid script before a recipe, and no JSON-LD |
 | `src/ai/mod.rs` | Declares the AI submodules and re-exports `AiClient`, `AiDraft`, `AiLine`, `AiStep`, `parse`, `AiError`, `Image` and `Prompt` |
 | `src/ai/client.rs` | `AiClient` (base URL, optional API key, model, timeout 60 s; `with_timeout`). `complete(prompt)` posts to `{base}/chat/completions` with bearer auth only when a key is set, and reads `choices[0].message.content` through `parse`. Timeouts, non-success statuses, connection failures and answers without a message map to `AiError`. `Debug` prints the key as `<redacted>` |
 | `src/ai/request.rs` | `Prompt` (instructions, text, `Image`s) and `Image` (media type, bytes). Builds the chat body: JSON object response format, a system message with the instructions and the shape of the draft, and a user message with the text part (left out when empty) and one `data:` URL image part per photo |
-| `src/ai/draft.rs` | `AiDraft`, `AiLine`, `AiStep` (serde) and `parse(content)`: strips a ```json fence, reads the draft and checks it: non-blank title, lines and steps present, names and step texts non-blank, amounts not negative, units known to `Unit::from_symbol`, step line indexes existing. Failures are `AiError::Invalid` with the reason |
+| `src/ai/draft.rs` | `AiDraft`, `AiLine`, `AiStep` (serde) and `parse(content)`: strips a ```json fence, reads the draft and checks it: non-blank title, lines and steps present, names and step texts non-blank, amounts not negative, units known to `Unit::from_symbol` or to the line parser's unit table (`measure_of`, so `cup` is accepted and `handful` is not), step line indexes existing. Failures are `AiError::Invalid` with the reason |
 | `src/ai/error.rs` | `AiError` (`Timeout`, `Status(u16)`, `Network(text)`, `Invalid(reason)`) with user-facing messages (401, 403 and 429 have their own text) and `std::error::Error` |
 | `tests/ai/main.rs` | Declares the AI test modules and the loopback mock server, which records raw requests and answers with a canned status and body, or never answers |
 | `tests/ai/client.rs` | Request path with and without a trailing slash on the base, bearer auth with and without a key, body parts and the image data URL, the text part left out, a valid answer, and timeouts |
-| `tests/ai/parse.rs` | A full valid draft, fenced content, optional fields, and every invalid case with its reason |
+| `tests/ai/parse.rs` | A full valid draft, fenced content, optional fields, every invalid case with its reason, and the line parser's units (`cup`, `oz`, `fl oz`, `dl`) accepted |
 | `tests/ai/errors.rs` | Display text of every `AiError`, statuses 401, 429 and 500, unreachable service, answers without a message, and the API key absent from errors and `Debug` output for each error case |
+| `src/pipeline/mod.rs` | Declares the pipeline submodules and re-exports `from_draft`, `needs_ai`, `merge`, `complete`, `Imported`, `ImportedLine` and `ImportedStep` |
+| `src/pipeline/imported.rs` | `Imported` (title, servings, image, lines, steps, `unmatched`, `ai_error`), `ImportedLine` (amount, domain unit, name, note, `ingredient_id`, `original`) and `ImportedStep` (text, sorted `line_positions`). Units are always metric or domain units |
+| `src/pipeline/deterministic.rs` | `from_draft(draft, candidates)`: each line parsed with `parse_line`, matched by name with `match_all` (unparsed lines are unmatched by their text), and each step linked to the parsed lines whose normalised names it contains as whole words (a letter or digit on either side blocks the match) |
+| `src/pipeline/decide.rs` | `needs_ai(imported, page_language, instance_language)`: true for a blank title, missing servings, no lines or steps, unmatched lines, or a page language whose primary subtag differs from the instance's. An unknown page language alone does not trigger it |
+| `src/pipeline/merge.rs` | `merge(ai, base, candidates)`: the AI's title, lines and steps; servings from the AI or else the page; the page's photo. Each line's unit is converted to metric (`Unit::from_symbol` first, else `measure_of` and `Measure::quantity`; a measure without an amount is dropped). The AI's `ingredient_id` is kept only when it is a candidate's id, else the name is matched again. Step positions are sorted and deduplicated, and `unmatched` is recomputed from the lines without an id |
+| `src/pipeline/run.rs` | `complete(draft, candidates, ai, instance_language)`: `from_draft`, then, when an AI client is configured and `needs_ai`, one `complete` call with a text-only `Prompt` (the instructions name the language code, the allowed unit symbols and the zero-based line indexes), merged on success. A failure keeps the reading with `ai_error` set to the error's text |
+| `tests/pipeline/main.rs` | Shared fixtures: a draft, candidates, a complete `Imported` |
+| `tests/pipeline/from_draft.rs` | Matched, alias-matched, unmatched and unparsed lines, unmatched names once, step links by whole word in English and Dutch, unparsed lines linking to nothing, and a name named twice in a step linked once |
+| `tests/pipeline/needs_ai.rs` | Each trigger alone, the complete draft in the instance language false, `nl-NL` and `nl_BE` against `nl` false, `en-GB` against `nl` true, and an unknown page language false |
+| `tests/pipeline/merge.rs` | Imperial units to metric (cup, oz, dl), a measure without an amount, domain units and amounts kept, bogus and valid ingredient ids, step positions from the AI, the title from the AI and the photo from the page, servings fallback, recomputed unmatched names, and the line text |
+| `tests/pipeline/complete.rs` | Loopback AI server: not called for a complete draft, called for an unmatched line (its request carries the title and lines) and merged, called for another page language, an AI 500 keeps the reading with `ai_error`, and no AI config returns the reading |
+| `tests/pipeline/server.rs` | The loopback server that records raw requests and answers with a canned status and body |
 
 ## crates/crabbage-store
 
@@ -139,7 +153,7 @@ Migrations are embedded at compile time by `sqlx::migrate!()`. To add one, creat
 
 ## crates/crabbage
 
-A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rendered router. The `hydrate` feature builds the WASM library that hydrates the page in the browser. The two features are independent and are never enabled together by the build.
+A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rendered router, and depends on `crabbage-store` and on `crabbage-import` (the `recipes/import.rs` mapping of its pipeline). The `hydrate` feature builds the WASM library that hydrates the page in the browser. The two features are independent and are never enabled together by the build.
 
 | Module | Responsibility |
 | --- | --- |
@@ -247,6 +261,7 @@ Form encoding: the recipe form sends one hidden field, `draft`, holding the whol
 | `rating_text.rs` | `rating_text(average, count)`: `★ 4.5 (2 ratings)` with the singular and plural keys, or `No ratings yet`. The decimal separator comes from the locale |
 | `rights.rs` (`ssr`) | `Rights::of` and `permit` (the rule per change), `load` (the recipe or the missing-item error) |
 | `convert.rs` (`ssr`) | Store records to the page records. A step's line ids become positions in the recipe's lines |
+| `import.rs` (`ssr`) | `recipe_input(imported, default_servings)`: an `Imported` recipe (from a web page) to the store's `RecipeInput`. Lines keep their metric amount and domain unit, names go to the store (an unknown name is created pending review), and step positions outside the lines are dropped. Not yet wired to a page, so unused outside its tests. Its tests are in the module, since `recipes` is private to the app and they open a temporary store |
 | `draft.rs` (`ssr`) | `parse`: JSON to `RecipeInput`, with the validation. A step's `line_positions` follow their lines past blank rows, which are not stored, and links to missing lines are dropped: a non-empty title, servings of at least 1, amounts finite and not negative, a unit that is a `Unit` symbol, step text and whole minutes of at least 1 |
 | `servings.rs` | `shown_servings(requested, original)`: the `servings` value of the address when it is 1 to 99, else the recipe's own count. `scale_lines(lines, from, to)`: each line's amount scaled with `crabbage_domain::scaling::scale` (an amount without a unit counts in pieces; a line without an amount or with a unit that is not a measure, such as `to taste`, is kept) |
 | `duration.rs` | `duration_text(seconds)`: a step's duration as whole minutes rounded up, with the `unit.minutes` word. Shared by the recipe page and the cook page |

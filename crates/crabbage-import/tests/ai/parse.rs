@@ -77,8 +77,8 @@ fn invalid_drafts_are_refused_with_the_reason() {
         (edited(|v| v["lines"] = json!([])), "no ingredient lines"),
         (edited(|v| v["steps"] = json!([])), "the draft has no steps"),
         (
-            edited(|v| v["lines"][0]["unit"] = json!("cup")),
-            "unknown unit: cup",
+            edited(|v| v["lines"][0]["unit"] = json!("handful")),
+            "unknown unit: handful",
         ),
         (
             edited(|v| v["lines"][0]["amount"] = json!(-2)),
@@ -102,5 +102,13 @@ fn invalid_drafts_are_refused_with_the_reason() {
             Err(AiError::Invalid(text)) => assert!(text.contains(reason), "{text} ({reason})"),
             other => panic!("{content}: {other:?}"),
         }
+    }
+}
+
+#[test]
+fn units_the_line_parser_knows_are_accepted() {
+    for unit in ["cup", "Cups", "oz", "fl oz", "tbsp", "el", "dl"] {
+        let content = edited(|v| v["lines"][0]["unit"] = json!(unit));
+        assert!(parse(&content).is_ok(), "{unit}");
     }
 }
