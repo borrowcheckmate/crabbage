@@ -25,7 +25,7 @@ pub fn App() -> impl IntoView {
             <a class="skip-link" href="#main-content">{t("app.skip")}</a>
             <div class="app-frame">
                 <header class="topbar">
-                    <a class="brand" href="/">{t("app.title")}</a>
+                    <a class="brand" href="/"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8zM14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>{t("app.title")}</a>
                     <AccountMenu/>
                 </header>
                 <div class="shell-layout">
@@ -69,9 +69,9 @@ fn AccountMenu() -> impl IntoView {
 fn account_view(user: Option<crate::user::SignedInUser>) -> impl IntoView {
     view! {
         <div class="account-area">
-            {user.as_ref().and_then(|u| u.active_household.as_ref()).map(|name| view! { <span class="household-name">{name.clone()}</span> })}
+            {user.as_ref().and_then(|u| u.active_household.as_ref()).map(|name| view! { <span class="household"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="household-name">{name.clone()}</span></span> })}
             <details class="account-menu">
-                <summary>{user.as_ref().map_or_else(|| t("app.account").to_owned(), |u| u.name.clone())}</summary>
+                <summary aria-label=user.as_ref().map_or_else(|| t("app.account").to_owned(), |u| u.name.clone())><span class="avatar" aria-hidden="true">{user.as_ref().and_then(|u| u.name.chars().next()).map_or_else(String::new, |c| c.to_uppercase().collect())}</span></summary>
                 {user.map(|u| view! { <div class="account-panel">
                     <HouseholdSwitcher user=u.clone()/>
                     <AdminLinks is_admin=u.is_admin/>
@@ -125,10 +125,10 @@ fn navigation(class: &'static str) -> impl IntoView {
     let location = use_location();
     view! {
         <nav class=class aria-label=t("app.navigation")>
-            <a href="/" aria-current=move || (location.pathname.get() == "/").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg>{t("home.nav")}</a>
-            <a href="/recipes" aria-current=move || location.pathname.get().starts_with("/recipes").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4m8-4v4M4 10h16"/></svg>{t("recipes.nav")}</a>
-            <a href="/plan" aria-current=move || location.pathname.get().starts_with("/plan").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4m8-4v4M3 9h18m-13 4h2m4 0h2m-8 4h2m4 0h2"/></svg>{t("plan.nav")}</a>
-            <a href="/shopping" aria-current=move || location.pathname.get().starts_with("/shopping").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16l-1.5 15h-13zM9 9V7a3 3 0 0 1 6 0v2"/></svg>{t("shopping.nav")}</a>
+            <a href="/" aria-current=move || (location.pathname.get() == "/").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg><span>{t("home.nav")}</span></a>
+            <a href="/recipes" aria-current=move || location.pathname.get().starts_with("/recipes").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg><span>{t("recipes.nav")}</span></a>
+            <a href="/plan" aria-current=move || location.pathname.get().starts_with("/plan").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4m8-4v4M3 9h18m-13 4h2m4 0h2m-8 4h2m4 0h2"/></svg><span>{t("plan.nav")}</span></a>
+            <a href="/shopping" aria-current=move || location.pathname.get().starts_with("/shopping").then_some("page")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 11-1 9m5-9-4-7M2 11h20m-18.5 0 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4M4.5 15.5h15M5 11l4-7m0 7 1 9"/></svg><span>{t("shopping.nav")}</span></a>
         </nav>
     }
 }

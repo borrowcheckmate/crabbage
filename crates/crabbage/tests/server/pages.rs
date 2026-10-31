@@ -69,7 +69,7 @@ async fn shared_navigation_has_labels_current_route_and_household_help() {
         ("/", "Today"),
         ("/recipes", "Recipes"),
         ("/plan", "Plan"),
-        ("/shopping", "Shopping list"),
+        ("/shopping", "Shopping"),
     ] {
         assert!(body.contains(&format!("href=\"{href}\"")), "{href}: {body}");
         assert!(body.contains(label), "{label}: {body}");
