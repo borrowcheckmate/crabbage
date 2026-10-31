@@ -23,16 +23,21 @@ pub(crate) fn TimerTray(timers: RwSignal<Vec<Timer>>, now: RwSignal<f64>) -> imp
     #[cfg(feature = "hydrate")]
     super::tray_client::attach(timers, now);
     view! {
-        <section class="timer-tray" aria-live="polite" aria-label=t("timer.tray")>
-            <ul class="timer-list">
-                {move || {
-                    soonest_first(&timers.get())
+        <details class="timer-tray">
+            <summary class="timer-summary">
+                {move || t_with("timer.tray.count", &[("count", &timers.with(|list| list.len().to_string()))])}
+            </summary>
+            <section class="timer-panel" aria-label=t("timer.tray")>
+                <ul class="timer-list">
+                    {move || {
+                        soonest_first(&timers.get())
                         .into_iter()
                         .map(|timer| row(timer, now, timers))
                         .collect_view()
-                }}
-            </ul>
-        </section>
+                    }}
+                </ul>
+            </section>
+        </details>
     }
 }
 
@@ -41,7 +46,8 @@ pub(crate) fn start_button(timers: RwSignal<Vec<Timer>>, step: usize, seconds: u
     let number = step.to_string();
     let label = t_with("timer.label", &[("step", &number)]);
     let started = label.clone();
-    let time = clock(f64::from(seconds) * 1000.0);
+    let minutes = seconds.div_ceil(60).to_string();
+    let time = t_with("timer.duration.minutes", &[("minutes", &minutes)]);
     let aria = t_with("timer.start.step", &[("step", &number)]);
     view! {
         <button
@@ -52,6 +58,7 @@ pub(crate) fn start_button(timers: RwSignal<Vec<Timer>>, step: usize, seconds: u
             aria-label=aria
             on:click=move |_| start_timer(timers, started.clone(), seconds)
         >
+            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2h6m-3 0v3"/></svg>
             {t_with("timer.start", &[("time", &time)])}
         </button>
     }

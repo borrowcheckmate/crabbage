@@ -70,7 +70,7 @@ pub(crate) fn swipe_card(
         }
     };
     view! {
-        <div class="cook-card" data-prev=previous data-next=next on:touchstart=touch_start on:touchend=touch_end>
+        <div class="cook-instruction" data-prev=previous data-next=next on:touchstart=touch_start on:touchend=touch_end>
             {content}
         </div>
     }

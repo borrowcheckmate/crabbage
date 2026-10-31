@@ -1085,3 +1085,74 @@ button.danger, button.destructive { color:var(--on-danger); }
   .import-progress li { gap:.2rem; }
   .import-progress li span { width:20px; height:20px; }
 }
+/* cook mode */
+.shell-layout:has(.cook-mode) > .primary-nav,
+.app-frame:has(.cook-mode) > .mobile-nav { display:none; }
+.shell-layout:has(.cook-mode) { display:block; }
+main:has(.cook-mode) { padding-bottom:32px; }
+.cook-mode { width:100%; max-width:880px; margin-inline:auto; }
+.cook-return { display:inline-flex; align-items:center; gap:.55rem; min-height:44px; margin-bottom:1.5rem; color:var(--text); text-decoration:none; font-size:.9rem; }
+.cook-return svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.cook-recipe-name { margin:0 0 .35rem; color:var(--muted); font-size:.72rem; font-weight:700; letter-spacing:.14em; line-height:1.4; text-transform:uppercase; }
+.cook-title { margin:0 0 .7rem; color:var(--text); font:34px/1.16 Georgia,serif; }
+.cook-progress { display:grid; gap:.65rem; margin-bottom:1.6rem; }
+.cook-progress p { margin:0; color:var(--text); font-size:.9rem; }
+.cook-progress progress { display:block; width:100%; height:5px; border:0; border-radius:999px; appearance:none; background:var(--border); }
+.cook-progress progress::-webkit-progress-bar { border-radius:999px; background:var(--border); }
+.cook-progress progress::-webkit-progress-value { border-radius:999px; background:var(--accent); }
+.cook-progress progress::-moz-progress-bar { border-radius:999px; background:var(--accent); }
+.cook-layout { display:grid; gap:1.6rem; align-items:start; }
+.cook-instruction { display:grid; gap:1.35rem; min-width:0; margin:0; padding:0; border:0; background:transparent; touch-action:pan-y; }
+.cook-step { max-width:none; margin:0; color:var(--text); font:27px/1.52 Georgia,serif; overflow-wrap:anywhere; }
+.cook-done { margin:0; color:var(--accent); font-weight:600; }
+.timer-starts { display:flex; flex-wrap:wrap; gap:.65rem; }
+.timer-starts:empty { display:none; }
+button.timer-start { display:inline-flex; align-items:center; justify-content:center; gap:.55rem; min-height:46px; width:auto; padding:.55rem .85rem; border-color:var(--border); border-radius:var(--radius-control); background:var(--surface); color:var(--text); font-size:.9rem; font-weight:500; }
+.timer-start svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.cook-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; }
+.cook-nav > a { display:flex; align-items:center; justify-content:center; gap:.5rem; min-height:48px; margin:0; padding:.65rem .75rem; border-radius:var(--radius-control); font-size:.95rem; }
+.cook-nav > a svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.cook-nav > a.button + a.button { margin-top:0; }
+.cook-toggle { display:inline-block; margin-top:1rem; justify-self:start; color:var(--muted); font-size:.85rem; }
+.cook-needs { min-width:0; padding:1.2rem; border-radius:var(--radius-panel); background:var(--soft); }
+.cook-needs h2 { margin:0 0 .75rem; color:var(--muted); font:700 .72rem/1.4 system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase; }
+.cook-needs ul { display:grid; gap:.65rem; margin:0; padding:0; list-style:none; }
+.cook-needs li { max-width:none; color:var(--text); font-size:.95rem; overflow-wrap:anywhere; }
+.cook-mode > nav { overflow-x:auto; overflow-y:auto; overscroll-behavior-inline:contain; margin-top:1.2rem; padding:7px 5px 10px; scrollbar-width:thin; }
+.cook-dots { display:flex; flex-wrap:nowrap; width:max-content; max-width:none; gap:.4rem; margin:0; padding:0; list-style:none; }
+.cook-dot { display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; border:1px solid var(--border); border-radius:999px; background:var(--surface); color:var(--text); font-weight:600; text-decoration:none; }
+.cook-dot.done { border-color:var(--accent); background:var(--accent); color:var(--on-accent); }
+.cook-dot[aria-current="step"] { outline:3px solid var(--focus); outline-offset:2px; }
+.timer-tray { position:static; margin:1rem 0 0; padding:0; border:1px solid var(--border); border-radius:var(--radius-panel); background:var(--surface); }
+.timer-tray:not(:has(.timer-row)) { display:none; }
+.timer-summary { display:flex; align-items:center; min-height:48px; padding:.5rem 1rem; color:var(--text); cursor:pointer; font-weight:650; }
+.timer-panel { max-height:min(45dvh,24rem); overflow:auto; padding:0 1rem 1rem; }
+.timer-list { display:grid; gap:.65rem; margin:0; padding:0; list-style:none; }
+.timer-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:.5rem; padding:.65rem 0; border-top:1px solid var(--border); }
+.timer-label { font-weight:600; }
+.timer-time { font-size:1.1rem; font-variant-numeric:tabular-nums; }
+.timer-row.finished .timer-label,.timer-row.finished .timer-time { color:var(--accent); }
+.timer-row button { min-width:44px; min-height:44px; }
+@container main-workspace (min-width:560px) {
+  .cook-layout { grid-template-columns:minmax(0,1.1fr) minmax(15rem,.9fr); gap:2rem; }
+  .cook-step { font-size:29px; }
+}
+@media (min-width:900px) {
+  .app-frame:has(.cook-mode) .topbar { padding-inline:36px; }
+  .cook-title { font-size:42px; }
+}
+@media (max-width:360px) {
+  .cook-nav { gap:.4rem; }
+  .cook-nav > a { min-height:52px; padding-inline:.45rem; font-size:.88rem; }
+  .timer-row { grid-template-columns:minmax(0,1fr) auto; }
+  .timer-row button { grid-column:1 / -1; }
+}
+@media (orientation:landscape) and (max-height:500px) {
+  .app-frame:has(.cook-mode) .topbar { min-height:0; padding-block:.4rem; }
+  main:has(.cook-mode) { padding-top:.75rem; }
+  .cook-return { min-height:36px; margin-bottom:.4rem; }
+  .cook-title { display:none; }
+  .cook-progress { margin-bottom:.8rem; }
+  .cook-layout { grid-template-columns:minmax(0,1.2fr) minmax(12rem,.8fr); gap:1.2rem; }
+  .cook-step { font-size:22px; }
+}

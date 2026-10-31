@@ -31,12 +31,21 @@ async fn the_first_step_shows_its_progress_text_and_no_previous() {
 
     let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
     assert!(body.contains("Step 1 of 3"), "{body}");
-    assert!(body.contains("cook-title\">Pancakes</h1>"), "{body}");
+    assert!(
+        body.contains("<h1 class=\"cook-title\">Cook</h1>"),
+        "{body}"
+    );
+    assert!(
+        body.contains("class=\"cook-recipe-name\">Pancakes</p>"),
+        "{body}"
+    );
+    assert!(body.contains("class=\"cook-mode\""), "{body}");
+    assert!(body.contains("class=\"cook-return\""), "{body}");
+    assert!(body.contains(&format!("href=\"/recipes/{id}\"")), "{body}");
     assert!(
         body.contains("class=\"cook-step\">Whisk the eggs"),
         "{body}"
     );
-    assert!(body.contains("<p>2 min</p>"), "{body}");
     assert!(body.contains("value=\"1\" max=\"3\""), "{body}");
     assert!(!body.contains("Previous"), "{body}");
     assert!(!body.contains("Stir in the flour"), "{body}");
@@ -44,7 +53,7 @@ async fn the_first_step_shows_its_progress_text_and_no_previous() {
         body.contains(&format!("href=\"/recipes/{id}/cook?step=2\"")),
         "{body}"
     );
-    assert!(body.contains("Next</a>"), "{body}");
+    assert!(body.contains("Next step"), "{body}");
     assert!(body.contains("aria-current=\"step\""), "{body}");
     assert_eq!(body.matches("aria-current=\"step\"").count(), 1, "{body}");
 }
@@ -65,7 +74,8 @@ async fn a_middle_step_links_to_its_neighbours() {
         body.contains(&format!("href=\"/recipes/{id}/cook?step=3\"")),
         "{body}"
     );
-    assert!(body.contains("Previous</a>"), "{body}");
+    assert!(body.contains(">Back</a>"), "{body}");
+    assert!(body.contains("Next step"), "{body}");
     assert!(body.contains("data-prev=\"/recipes/"), "{body}");
     assert!(body.contains("data-next=\"/recipes/"), "{body}");
 }
@@ -78,7 +88,7 @@ async fn the_last_step_says_done_cooking_and_goes_back_to_the_recipe() {
     let body = page(&harness, &token, &format!("/recipes/{id}/cook?step=3")).await;
     assert!(body.contains("Step 3 of 3"), "{body}");
     assert!(body.contains("Fry until golden"), "{body}");
-    assert!(body.contains("Done cooking</a>"), "{body}");
+    assert!(body.contains("Done cooking"), "{body}");
     assert!(body.contains(&format!("href=\"/recipes/{id}\"")), "{body}");
     assert!(!body.contains("step=4"), "{body}");
     assert!(!body.contains("Next</a>"), "{body}");
@@ -191,17 +201,17 @@ async fn a_step_shows_the_lines_it_uses_scaled_to_the_chosen_servings() {
     let path = format!("/recipes/{id}/cook");
 
     let body = page(&harness, &token, &format!("{path}?step=2")).await;
-    assert!(body.contains("You need</h2>"), "{body}");
-    assert!(body.contains("<li>250 g Flour, sifted</li>"), "{body}");
+    assert!(body.contains("FOR THIS STEP · 4 SERVINGS"), "{body}");
+    assert!(body.contains("<li>Flour · 250 g, sifted</li>"), "{body}");
     assert!(body.contains("<li>Salt, to taste</li>"), "{body}");
     assert!(!body.contains("2 Egg"), "{body}");
 
     let body = page(&harness, &token, &format!("{path}?step=1")).await;
-    assert!(body.contains("<li>2 Egg</li>"), "{body}");
+    assert!(body.contains("<li>Egg · 2</li>"), "{body}");
     assert!(!body.contains("Flour, sifted</li>"), "{body}");
 
     let body = page(&harness, &token, &format!("{path}?step=3")).await;
-    assert!(!body.contains("You need"), "{body}");
+    assert!(!body.contains("FOR THIS STEP"), "{body}");
 }
 
 #[tokio::test]
@@ -211,11 +221,11 @@ async fn the_needed_lines_follow_the_servings_asked_for() {
     let path = format!("/recipes/{id}/cook");
 
     let body = page(&harness, &token, &format!("{path}?step=2&servings=8")).await;
-    assert!(body.contains("<li>500 g Flour, sifted</li>"), "{body}");
+    assert!(body.contains("<li>Flour · 500 g, sifted</li>"), "{body}");
     assert!(body.contains("<li>Salt, to taste</li>"), "{body}");
 
     let body = page(&harness, &token, &format!("{path}?step=1&servings=8")).await;
-    assert!(body.contains("<li>4 Egg</li>"), "{body}");
+    assert!(body.contains("<li>Egg · 4</li>"), "{body}");
 }
 
 #[tokio::test]
@@ -225,7 +235,7 @@ async fn the_swipe_container_carries_the_previous_and_next_addresses() {
     let path = format!("/recipes/{id}/cook");
 
     let body = page(&harness, &token, &format!("{path}?step=2")).await;
-    assert!(body.contains("class=\"cook-card\""), "{body}");
+    assert!(body.contains("class=\"cook-instruction\""), "{body}");
     assert!(
         body.contains(&format!("data-prev=\"{path}?step=1\"")),
         "{body}"
@@ -347,7 +357,7 @@ async fn a_step_that_names_a_duration_offers_a_start_timer_button() {
 
     let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
     assert!(body.contains("data-seconds=\"1500\""), "{body}");
-    assert!(body.contains("Start timer 25:00</button>"), "{body}");
+    assert!(body.contains("Start 25-minute timer</button>"), "{body}");
     assert!(body.contains("data-label=\"Step 1\""), "{body}");
     assert!(
         body.contains("aria-label=\"Start timer for step 1\""),
@@ -364,7 +374,7 @@ async fn a_stored_duration_without_text_offers_a_timer() {
 
     let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
     assert!(body.contains("data-seconds=\"240\""), "{body}");
-    assert!(body.contains("Start timer 04:00</button>"), "{body}");
+    assert!(body.contains("Start 4-minute timer</button>"), "{body}");
 }
 
 #[tokio::test]
@@ -406,8 +416,18 @@ async fn the_timer_tray_is_on_every_step() {
     for query in ["", "?step=2", "?step=3&done=3"] {
         let body = page(&harness, &token, &format!("{path}{query}")).await;
         assert!(body.contains("class=\"timer-tray\""), "{query}: {body}");
-        assert!(body.contains("aria-live=\"polite\""), "{query}: {body}");
+        assert!(body.contains("class=\"timer-summary\""), "{query}: {body}");
+        assert!(!body.contains("timer-tray\" aria-live"), "{query}: {body}");
+        assert!(body.contains("class=\"timer-panel\""), "{query}: {body}");
+        assert!(
+            body.contains("aria-label=\"Running timers\""),
+            "{query}: {body}"
+        );
+        assert!(
+            !body.contains("class=\"timer-panel\" aria-live"),
+            "{query}: {body}"
+        );
     }
     let body = page(&harness, &token, &format!("/recipes/{id}/cook?step=3")).await;
-    assert!(body.contains("Start timer 04:00</button>"), "{body}");
+    assert!(body.contains("Start 4-minute timer</button>"), "{body}");
 }
