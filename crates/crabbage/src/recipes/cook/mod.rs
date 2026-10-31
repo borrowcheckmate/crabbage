@@ -11,6 +11,10 @@ mod timers;
 mod tray;
 #[cfg(feature = "hydrate")]
 mod tray_client;
+#[cfg(any(feature = "hydrate", test))]
+mod wake;
+#[cfg(feature = "hydrate")]
+mod wake_client;
 
 pub(crate) use links::start_href;
 pub(crate) use page::CookPage;
