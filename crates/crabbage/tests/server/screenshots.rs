@@ -102,6 +102,7 @@ async fn write_pages() {
     let ingredient_delete_path = format!("{ingredient_path}?confirm=delete");
     let recipe_delete_path = format!("{recipe_path}?confirm=delete");
     let recipe_servings_path = format!("{recipe_path}?servings=8");
+    let cook_path = format!("{recipe_path}/cook?step=2&done=1");
 
     let pages = [
         ("admin", &["crabbage-admin"][..], "home", "/"),
@@ -173,6 +174,7 @@ async fn write_pages() {
             "recipe-servings",
             recipe_servings_path.as_str(),
         ),
+        ("member", &[][..], "cook", cook_path.as_str()),
     ];
     for (who, groups, name, path) in pages {
         harness.issuer.set_groups(groups);

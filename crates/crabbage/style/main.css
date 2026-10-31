@@ -415,3 +415,88 @@ label > input[type="checkbox"] {
   margin-top: 1.5rem;
   gap: 1.5rem;
 }
+
+.cook-title {
+  margin-bottom: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.cook-card {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  touch-action: pan-y;
+}
+
+.cook-step {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.6;
+}
+
+.cook-done {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.cook-nav {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cook-nav > a {
+  flex: 1 1 0;
+  min-height: 56px;
+}
+
+a.button.secondary {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.cook-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cook-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cook-dot.done {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.cook-dot[aria-current="step"] {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+progress {
+  width: 100%;
+  accent-color: var(--accent);
+}

@@ -11,6 +11,8 @@ use super::rating_section::rating_section;
 use super::stepper::servings_stepper;
 use crate::i18n::{messages, t, t_with};
 use crate::notice::{error_notice, failure, message};
+use crate::recipes::cook::start_href;
+use crate::recipes::duration::duration_text;
 use crate::recipes::line_text::line_text;
 use crate::recipes::read::get_recipe;
 use crate::recipes::servings::{scale_lines, shown_servings};
@@ -89,6 +91,7 @@ fn recipe_view(
     let shown = shown_servings(requested, servings);
     let scaled = scale_lines(&lines, servings, shown);
     let owner = format!("{}: {owner_name}", t("recipe.added_by"));
+    let cook = start_href(id, requested.map(|_| shown));
     view! {
         <h1>{title.clone()}</h1>
         {image.map(|name| view! { <img class="photo" src=format!("/images/{name}") alt=title.clone()/> })}
@@ -98,6 +101,7 @@ fn recipe_view(
             {categories.into_iter().map(|category| view! { <span class="badge">{category.name}</span> }).collect_view()}
         </div>
         {rating_section(id, average, rating_count, my_stars, favourite)}
+        <a class="button" href=cook>{t("recipe.button.start_cooking")}</a>
         <h2>{t("recipe.lines.heading")}</h2>
         <ul>{scaled.iter().map(|line| view! { <li>{line_text(line, messages())}</li> }).collect_view()}</ul>
         <h2>{t("recipe.steps.heading")}</h2>
@@ -135,9 +139,7 @@ fn delete_confirmation(
 }
 
 fn step_item(step: &StepRow) -> impl IntoView {
-    let minutes = step
-        .duration_seconds
-        .map(|seconds| format!("{} {}", (seconds + 59) / 60, t("unit.minutes")));
+    let minutes = step.duration_seconds.map(duration_text);
     view! {
         <li>
             <p>{step.text.clone()}</p>

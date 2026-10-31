@@ -10,6 +10,7 @@ mod catalog;
     reason = "test helpers stop the test on setup failure"
 )]
 mod common;
+mod cook_mode;
 #[expect(
     clippy::expect_used,
     reason = "test helpers stop the test on setup failure"
