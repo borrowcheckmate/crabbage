@@ -33,7 +33,7 @@ base64 = { workspace = true, optional = true }
 crabbage-domain = { version = "0.1.0", path = "../crabbage-domain" }
 crabbage-import = { version = "0.1.0", path = "../crabbage-import", optional = true }
 futures-util = { workspace = true, optional = true }
-fastrand.workspace = true
+fastrand = { workspace = true, features = ["std"] }
 crabbage-store = { version = "0.1.0", path = "../crabbage-store", optional = true }
 getrandom = { workspace = true, optional = true }
 leptos.workspace = true
