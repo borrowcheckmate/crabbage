@@ -11,9 +11,14 @@ use crate::i18n::{messages, t};
 use crate::recipes::types::{LineDraft, StepDraft};
 use crate::recipes::units::unit_text;
 
-/// The fields of the recipe form. The names fill the suggestions of the ingredient fields.
+/// The fields of the recipe form. The names fill the suggestions of the ingredient fields. A row
+/// whose ingredient is in `unresolved` carries the class `unresolved` while it keeps that name.
 #[component]
-pub(crate) fn DraftFields(draft: Draft, names: Vec<String>) -> impl IntoView {
+pub(crate) fn DraftFields(
+    draft: Draft,
+    names: Vec<String>,
+    #[prop(optional)] unresolved: Vec<String>,
+) -> impl IntoView {
     let suggestions = names
         .into_iter()
         .map(|name| view! { <option value=name/> })
@@ -23,7 +28,7 @@ pub(crate) fn DraftFields(draft: Draft, names: Vec<String>) -> impl IntoView {
         <label>{t("recipe.label.servings")} <input type="number" min="1" step="1" value=move || draft.servings.get() on:input=move |ev| draft.servings.set(event_target_value(&ev)) required/></label>
         <h2>{t("recipe.lines.heading")}</h2>
         <div class="rows">
-            <For each=move || draft.lines.get() key=|row| row.key children=move |row| line_row(draft, row)/>
+            <For each=move || draft.lines.get() key=|row| row.key children=move |row| line_row(draft, row, unresolved.clone())/>
         </div>
         <button type="button" class="secondary" on:click=move |_| draft.add_line(LineDraft::default())>
             {t("recipe.button.add_line")}
@@ -60,9 +65,9 @@ fn category_box(draft: Draft, category: CategoryRow) -> impl IntoView {
     }
 }
 
-fn line_row(draft: Draft, line: LineSignals) -> impl IntoView {
+fn line_row(draft: Draft, line: LineSignals, unresolved: Vec<String>) -> impl IntoView {
     view! {
-        <section class="card">
+        <section class="card" class:unresolved=move || unresolved.contains(&line.ingredient.get())>
             <label>{t("recipe.label.amount")} <input type="number" min="0" step="any" value=move || line.amount.get() on:input=move |ev| line.amount.set(event_target_value(&ev))/></label>
             <label>{t("recipe.label.unit")}
                 <select on:change=move |ev| line.unit.set(event_target_value(&ev))>

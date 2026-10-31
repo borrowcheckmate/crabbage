@@ -87,7 +87,7 @@ impl Draft {
         })
     }
 
-    fn from_wire(draft: &RecipeDraft) -> Self {
+    pub(crate) fn from_wire(draft: &RecipeDraft) -> Self {
         let form = Self {
             title: RwSignal::new(draft.title.clone()),
             servings: RwSignal::new(draft.servings.clone()),

@@ -50,8 +50,13 @@ pub(crate) struct Harness {
 }
 
 /// The app configuration for tests, with the provider at `issuer_url`, the data in `data_dir` and
-/// `CRABBAGE_LANGUAGE` set to `language`, or unset when it is `None`.
-pub(crate) fn config(issuer_url: &str, data_dir: &Path, language: Option<&str>) -> Config {
+/// `CRABBAGE_LANGUAGE` set to `language`, or unset when it is `None`. `extra` sets more variables.
+pub(crate) fn config(
+    issuer_url: &str,
+    data_dir: &Path,
+    language: Option<&str>,
+    extra: &[(&str, &str)],
+) -> Config {
     Config::from_lookup(|key| match key {
         "CRABBAGE_DATA_DIR" => Some(data_dir.to_string_lossy().into_owned()),
         "CRABBAGE_PUBLIC_URL" => Some("https://recipes.example.com".to_owned()),
@@ -59,7 +64,10 @@ pub(crate) fn config(issuer_url: &str, data_dir: &Path, language: Option<&str>) 
         "OIDC_CLIENT_ID" => Some("crabbage".to_owned()),
         "OIDC_CLIENT_SECRET" => Some("secret".to_owned()),
         "CRABBAGE_LANGUAGE" => language.map(str::to_owned),
-        _ => None,
+        _ => extra
+            .iter()
+            .find(|(name, _)| *name == key)
+            .map(|(_, value)| (*value).to_owned()),
     })
     .expect("config is valid")
 }
@@ -71,13 +79,22 @@ impl Harness {
 
     /// Starts the app with `CRABBAGE_LANGUAGE` set to `language`, or unset when it is `None`.
     pub(crate) async fn start_with_language(name: &str, language: Option<&str>) -> Self {
+        Self::start_with(name, language, &[]).await
+    }
+
+    /// Starts the app with the variables in `extra` set besides the required ones.
+    pub(crate) async fn start_with(
+        name: &str,
+        language: Option<&str>,
+        extra: &[(&str, &str)],
+    ) -> Self {
         let dir = TempDir::new(name);
         let pool = crabbage_store::open(dir.path())
             .await
             .expect("database opens");
         let issuer = FakeIssuer::start().await;
         let data_dir = dir.path().to_path_buf();
-        let config = config(issuer.url(), &data_dir, language);
+        let config = config(issuer.url(), &data_dir, language, extra);
         let options = LeptosOptions::builder().output_name("crabbage").build();
         let router = crabbage::router(options, &config, pool.clone()).expect("router builds");
         Self {

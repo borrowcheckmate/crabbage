@@ -20,6 +20,7 @@ pub(crate) fn RecipesPage() -> impl IntoView {
     view! {
         <h1>{t("recipes.heading")}</h1>
         <a class="button" href="/recipes/new">{t("recipes.new")}</a>
+        <a class="button secondary" href="/recipes/import">{t("recipes.import")}</a>
         <Suspense fallback=|| ()>
             {move || {
                 let filters = query.with(|map| Filters {

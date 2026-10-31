@@ -48,6 +48,7 @@ pub fn router(
     let language = state.language;
     let context_pool = state.pool.clone();
     let context_data_dir = config.data_dir.clone();
+    let context_config = Arc::clone(&state.config);
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
@@ -63,6 +64,7 @@ pub fn router(
                 provide_context(context_pool.clone());
                 provide_context(language);
                 provide_context(context_data_dir.clone());
+                provide_context(Arc::clone(&context_config));
             },
             move || shell(options.clone()),
         )

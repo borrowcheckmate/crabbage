@@ -1,6 +1,7 @@
 //! Who may use the app: the signed-in user, their role, and the refusals for what they may not do.
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use axum::Extension;
 use axum::http::StatusCode;
@@ -12,6 +13,7 @@ use leptos_axum::{ResponseOptions, extract};
 use sqlx::sqlite::SqlitePool;
 
 use crate::SessionUser;
+use crate::config::Config;
 use crate::i18n::t;
 
 /// The pool and the id of the signed-in user.
@@ -94,6 +96,11 @@ pub(crate) fn ensure_found(found: bool) -> Result<(), ServerFnError> {
 /// The data directory, which the server functions get from the context the API route provides.
 pub(crate) fn data_dir() -> Result<PathBuf, ServerFnError> {
     use_context::<PathBuf>().ok_or_else(|| ServerFnError::new(t("catalog.error.database")))
+}
+
+/// The configuration, which the server functions get from the context the routes provide.
+pub(crate) fn config() -> Result<Arc<Config>, ServerFnError> {
+    use_context::<Arc<Config>>().ok_or_else(|| ServerFnError::new(t("catalog.error.database")))
 }
 
 /// The status for a failure the user cannot act on: 500.

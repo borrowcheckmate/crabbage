@@ -202,6 +202,10 @@ form > p {
   background: var(--surface);
 }
 
+.card.unresolved {
+  border-left: 0.35rem solid var(--accent);
+}
+
 .notice.error {
   border-color: var(--danger);
   color: var(--danger);
@@ -454,6 +458,10 @@ label > input[type="checkbox"] {
 .cook-nav > a {
   flex: 1 1 0;
   min-height: 56px;
+}
+
+a.button + a.button {
+  margin-top: 0.5rem;
 }
 
 a.button.secondary {

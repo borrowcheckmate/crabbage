@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crabbage_import::web::{ImportError, Limits, fetch, import};
+use crabbage_import::web::{ImportError, Limits, fetch, fetch_bytes, import};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -41,6 +41,7 @@ async fn answer(mut stream: TcpStream) {
     let path = text.split_whitespace().nth(1).unwrap_or("/").to_owned();
     let response = match path.as_str() {
         "/ok" => sized(PLAIN),
+        "/typed" => "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: 3\r\nConnection: close\r\n\r\n\x01\x02\x03".to_owned(),
         "/big" => sized(&"x".repeat(4000)),
         "/unsized" => format!(
             "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n{}",
@@ -170,4 +171,22 @@ async fn private_addresses_are_refused_by_default() {
             "{url}"
         );
     }
+}
+
+#[tokio::test]
+async fn bytes_come_back_with_the_declared_content_type_and_follow_the_same_checks() {
+    let base = serve().await;
+    let fetched = fetch_bytes(&format!("{base}/typed"), &open())
+        .await
+        .expect("bytes");
+    assert_eq!(fetched.bytes, vec![1, 2, 3]);
+    assert_eq!(fetched.content_type.as_deref(), Some("image/png"));
+    let untyped = fetch_bytes(&format!("{base}/ok"), &open())
+        .await
+        .expect("page");
+    assert_eq!(untyped.content_type, None);
+    assert_eq!(
+        fetch_bytes(&format!("{base}/ok"), &Limits::default()).await,
+        Err(ImportError::PrivateAddress)
+    );
 }

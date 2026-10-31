@@ -48,6 +48,7 @@ The server reads its settings from environment variables at startup and refuses 
 | `AI_BASE_URL` | with `AI_MODEL` | | `http(s)` base URL of an OpenAI-compatible API. Setting it turns AI on |
 | `AI_MODEL` | with `AI_BASE_URL` | | Model to request. Setting it turns AI on |
 | `AI_API_KEY` | no | | API key for the AI service, if it needs one (never printed) |
+| `CRABBAGE_IMPORT_ALLOW_PRIVATE` | no | `false` | `true` or `false`: allow importing from private network addresses (e.g. a LAN recipe server) |
 
 AI is enabled only when both `AI_BASE_URL` and `AI_MODEL` are set. Setting one without the other is an error. Empty values count as unset.
 

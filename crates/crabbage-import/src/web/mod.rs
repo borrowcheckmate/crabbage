@@ -12,6 +12,6 @@ mod language;
 pub use address::is_public;
 pub use draft::Draft;
 pub use error::ImportError;
-pub use fetch::{Limits, fetch};
+pub use fetch::{Fetched, Limits, fetch, fetch_bytes};
 pub use import::import;
 pub use jsonld::extract;

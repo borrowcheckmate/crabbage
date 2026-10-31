@@ -16,7 +16,7 @@ use crate::images::{Kind, remove, write};
 use crate::state::AppState;
 
 /// The largest upload accepted: the request body, which holds the image and its multipart framing.
-const MAX_UPLOAD_BYTES: usize = 10 * 1024 * 1024;
+pub(super) const MAX_UPLOAD_BYTES: usize = 10 * 1024 * 1024;
 
 pub(crate) fn routes() -> Router<AppState> {
     Router::new()

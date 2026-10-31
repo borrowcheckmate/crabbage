@@ -11,6 +11,9 @@ mod duration;
 mod editors;
 #[cfg(feature = "ssr")]
 mod import;
+mod import_fns;
+#[cfg(feature = "ssr")]
+mod import_photo;
 mod ingredients;
 mod line_text;
 mod list;
@@ -29,7 +32,7 @@ mod units;
 mod write;
 
 pub(crate) use cook::CookPage;
-pub(crate) use pages::{RecipeEditPage, RecipeNewPage, RecipePage, RecipesPage};
+pub(crate) use pages::{RecipeEditPage, RecipeImportPage, RecipeNewPage, RecipePage, RecipesPage};
 #[cfg(feature = "ssr")]
 pub(crate) use photo::routes as photo_routes;
 #[cfg(feature = "ssr")]
