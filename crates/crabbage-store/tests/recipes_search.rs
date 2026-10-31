@@ -10,7 +10,7 @@ mod common;
 use common::database;
 use crabbage_store::catalog::categories::create as create_category;
 use crabbage_store::catalog::ingredients::{add_alias, create as create_ingredient};
-use crabbage_store::recipes::{LineInput, RecipeInput, create, list, set_favourite};
+use crabbage_store::recipes::{LineInput, RecipeInput, create, list, set_favourite, set_image};
 use crabbage_store::users::upsert_user;
 use sqlx::sqlite::SqlitePool;
 
@@ -154,6 +154,25 @@ async fn a_blank_search_is_no_search() {
     assert_eq!(
         titles(&pool, Some("   "), None, false, owner).await,
         ["Pancakes", "Roast"]
+    );
+}
+
+#[tokio::test]
+async fn recipe_summaries_include_the_photo_name_without_a_second_read() {
+    let (_dir, pool) = database("search-images").await;
+    let owner = upsert_user(&pool, "owner", "Owner").await.unwrap();
+    let id = create(&pool, owner, &recipe("Soup", &[], vec![]), 0)
+        .await
+        .unwrap();
+    set_image(&pool, id, Some("0123456789abcdef0123456789abcdef.jpg"))
+        .await
+        .unwrap();
+
+    let rows = list(&pool, None, false, None, owner).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(
+        rows[0].image.as_deref(),
+        Some("0123456789abcdef0123456789abcdef.jpg")
     );
 }
 

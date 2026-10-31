@@ -215,6 +215,7 @@ async fn write_pages() {
         .await;
     let import_path = format!("/recipes/import?url={source}/recipe");
     let recipe_path = format!("/recipes/{recipe}");
+    let recipe_browse_path = format!("{recipe_path}?return=%2Frecipes%3Fcategory%3D{breakfast}");
     let breakfast_path = format!("/recipes?category={breakfast}");
     let recipe_edit_path = format!("/recipes/{recipe}/edit");
     let ingredient_path = format!("/admin/ingredients/{tomato}");
@@ -269,6 +270,12 @@ async fn write_pages() {
             breakfast_path.as_str(),
         ),
         ("member", &[][..], "recipe", recipe_path.as_str()),
+        (
+            "member",
+            &[][..],
+            "recipe-browse-context",
+            recipe_browse_path.as_str(),
+        ),
         ("member", &[][..], "recipe-edit", recipe_edit_path.as_str()),
         (
             "member",

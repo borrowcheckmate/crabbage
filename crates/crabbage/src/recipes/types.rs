@@ -16,6 +16,8 @@ pub(crate) struct RecipeSummaryRow {
     pub(crate) servings: i64,
     /// The name of the owner.
     pub(crate) owner_name: String,
+    /// The file name of the recipe's photo, if it has one.
+    pub(crate) image: Option<String>,
     /// The average of the ratings, if anyone rated the recipe.
     pub(crate) average: Option<f64>,
     /// The number of ratings.

@@ -11,25 +11,36 @@ use crate::i18n::Messages;
 /// A count shows no unit word. A unitless unit follows the ingredient after a comma and replaces
 /// the amount. A unit that is not known shows as it is typed.
 pub(crate) fn line_text(line: &LineRow, messages: &Messages) -> String {
+    let (name, quantity) = ingredient_parts(line, messages);
+    join(&[&quantity, &name], " ")
+}
+
+/// The ingredient name and quantity as separate page labels.
+pub(crate) fn ingredient_parts(line: &LineRow, messages: &Messages) -> (String, String) {
     let symbol = line.unit.as_deref().unwrap_or_default();
     let ingredient = line.ingredient.as_deref().unwrap_or_default();
     let unit = Unit::from_symbol(symbol);
-    let body = if unit.is_some_and(|unit| unit.dimension() == Dimension::Unitless) {
-        join(&[ingredient, &unit_text(messages, symbol)], ", ")
+    let note = line.note.as_deref().unwrap_or_default();
+    if unit.is_some_and(|unit| unit.dimension() == Dimension::Unitless) {
+        return (
+            join(&[ingredient, &unit_text(messages, symbol), note], ", "),
+            String::new(),
+        );
+    }
+    let amount = line
+        .amount
+        .filter(|amount| amount.is_finite())
+        .map(|amount| number_text(amount, messages.get("number.decimal")))
+        .unwrap_or_default();
+    let word = if unit == Some(Unit::Piece) {
+        String::new()
     } else {
-        let amount = line
-            .amount
-            .filter(|amount| amount.is_finite())
-            .map(|amount| number_text(amount, messages.get("number.decimal")))
-            .unwrap_or_default();
-        let word = if unit == Some(Unit::Piece) {
-            String::new()
-        } else {
-            unit_text(messages, symbol)
-        };
-        join(&[&join(&[&amount, &word], " "), ingredient], " ")
+        unit_text(messages, symbol)
     };
-    join(&[&body, line.note.as_deref().unwrap_or_default()], ", ")
+    (
+        join(&[ingredient, note], ", "),
+        join(&[&amount, &word], " "),
+    )
 }
 
 /// `amount` rounded to two decimals, without trailing zeros, with `decimal` for the point.
@@ -52,7 +63,7 @@ fn join(parts: &[&str], separator: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::line_text;
+    use super::{ingredient_parts, line_text};
     use crate::i18n::{Language, Messages};
     use crate::recipes::types::LineRow;
 
@@ -156,6 +167,31 @@ mod tests {
         assert_eq!(
             en(&line(None, Some("to taste"), "Salt", Some("fine"))),
             "Salt, to taste, fine"
+        );
+    }
+
+    #[test]
+    fn ingredient_names_and_quantities_are_separate_page_labels() {
+        assert_eq!(
+            ingredient_parts(
+                &line(Some(250.0), Some("g"), "Flour", Some("sifted")),
+                Messages::for_language(Language::En)
+            ),
+            ("Flour, sifted".to_owned(), "250 g".to_owned())
+        );
+        assert_eq!(
+            ingredient_parts(
+                &line(Some(2.0), Some("piece"), "Egg", None),
+                Messages::for_language(Language::En)
+            ),
+            ("Egg".to_owned(), "2".to_owned())
+        );
+        assert_eq!(
+            ingredient_parts(
+                &line(None, Some("to taste"), "Salt", None),
+                Messages::for_language(Language::En)
+            ),
+            ("Salt, to taste".to_owned(), String::new())
         );
     }
 

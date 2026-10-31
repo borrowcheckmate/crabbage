@@ -18,9 +18,11 @@ use crate::recipes::types::RecipeSummaryRow;
 pub(crate) fn RecipesPage() -> impl IntoView {
     let query = use_query_map();
     view! {
-        <h1>{t("recipes.heading")}</h1>
-        <a class="button" href="/recipes/new">{t("recipes.new")}</a>
-        <a class="button secondary" href="/recipes/import">{t("recipes.import")}</a>
+        <header class="recipe-list-heading">
+            <h1>{t("recipes.heading")}</h1>
+            <div class="row"><a class="button" href="/recipes/new">{t("recipes.new")}</a>
+            <a class="button secondary" href="/recipes/import">{t("recipes.import")}</a></div>
+        </header>
         <Suspense fallback=|| ()>
             {move || {
                 let filters = query.with(|map| Filters {
@@ -68,13 +70,15 @@ async fn recipe_list(filters: Filters) -> AnyView {
         Ok((categories, rows)) => {
             let empty = empty_text(&filters);
             view! {
+                <div class="recipe-list-content">
                 {search_form(&filters)}
                 {filter_links(categories, &filters)}
                 {if rows.is_empty() {
-                    view! { <p>{empty}</p> }.into_any()
+                    view! { <p class="recipe-empty">{empty}</p> }.into_any()
                 } else {
-                    rows.into_iter().map(recipe_card).collect_view().into_any()
+                    view! { <div class="recipe-grid">{rows.into_iter().enumerate().map(|(index, row)| recipe_card(row, &filters, index == 0)).collect_view()}</div> }.into_any()
                 }}
+                </div>
             }
             .into_any()
         }
@@ -119,11 +123,10 @@ fn search_form(filters: &Filters) -> impl IntoView {
         .favourites
         .then(|| view! { <input type="hidden" name="favourites" value="1"/> });
     view! {
-        <form method="get" action="/recipes" role="search">
+        <form class="recipe-search-form" method="get" action="/recipes" role="search">
             {category}
             {favourites}
-            <label>{t("recipes.search.label")} <input type="search" name="q" value=filters.search.clone()/></label>
-            <button>{t("recipes.search.button")}</button>
+            <label class="recipe-search-label"><span class="recipe-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input type="search" name="q" aria-label=t("recipes.search.label") placeholder=t("recipes.search.placeholder") value=filters.search.clone()/></label>
         </form>
     }
 }
@@ -176,17 +179,52 @@ fn encode(text: &str) -> String {
         .collect()
 }
 
-fn recipe_card(row: RecipeSummaryRow) -> impl IntoView {
+fn encode_hex(text: &str) -> String {
+    let mut encoded = String::with_capacity(text.len().saturating_mul(2));
+    for byte in text.bytes() {
+        for digit in [byte >> 4, byte & 0x0f] {
+            if let Some(character) = char::from_digit(u32::from(digit), 16) {
+                encoded.push(character);
+            }
+        }
+    }
+    encoded
+}
+
+fn recipe_card(row: RecipeSummaryRow, filters: &Filters, first: bool) -> impl IntoView {
     let href = format!("/recipes/{}", row.id);
-    let servings = format!("{}: {}", t("recipe.servings"), row.servings);
-    let owner = format!("{}: {}", t("recipe.added_by"), row.owner_name);
-    let rating = rating_text(row.average, row.rating_count);
+    let href = if filters.category.is_some() || filters.favourites || !filters.search.is_empty() {
+        format!("{href}?return={}", encode_hex(&filters.href()))
+    } else {
+        href
+    };
+    let servings_key = if row.servings == 1 {
+        "recipe.servings.one"
+    } else {
+        "recipe.servings.many"
+    };
+    let servings = t_with(servings_key, &[("count", &row.servings.to_string())]);
+    let has_image = row.image.is_some();
+    let loading = if first { "eager" } else { "lazy" };
+    let image = row
+        .image
+        .map(|name| view! { <img src=format!("/images/{name}") alt="" loading=loading/> });
+    let favourite = row.favourite.then(
+        || view! { <span class="recipe-card-favourite">{t("recipe.favourite.badge")}</span> },
+    );
+    let rating = (row.rating_count > 0).then(|| rating_text(row.average, row.rating_count));
     view! {
-        <section class="card">
-            <h2><a href=href>{row.title}</a> {row.favourite.then(|| view! { <span class="badge">{t("recipe.favourite.badge")}</span> })}</h2>
-            <p>{rating}</p>
-            <p>{servings}</p>
-            <p>{owner}</p>
+        <section class="recipe-card">
+            <a class="recipe-card-photo" href=href.clone() aria-label=row.title.clone()>
+                {image}
+                {(!has_image).then(|| view! { <span class="recipe-photo-fallback" aria-hidden="true"></span> })}
+            </a>
+            <div class="recipe-card-copy">
+                <div class="recipe-card-meta">{favourite}</div>
+                <h2><a href=href>{row.title}</a></h2>
+                <p>{servings}</p>
+                {rating.map(|text| view! { <p class="recipe-card-rating">{text}</p> })}
+            </div>
         </section>
     }
 }

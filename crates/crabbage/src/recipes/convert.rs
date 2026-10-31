@@ -14,6 +14,7 @@ impl From<RecipeSummary> for RecipeSummaryRow {
             title: summary.title,
             servings: summary.servings,
             owner_name: summary.owner_name,
+            image: summary.image,
             average: summary.average,
             rating_count: summary.rating_count,
             favourite: summary.favourite,
