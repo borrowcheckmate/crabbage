@@ -538,6 +538,10 @@ name = "crabbage-import"
 version = "0.1.0"
 dependencies = [
  "crabbage-domain",
+ "reqwest",
+ "serde_json",
+ "tokio",
+ "url",
 ]
 
 [[package]]

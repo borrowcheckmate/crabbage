@@ -46,11 +46,11 @@ Their responsibilities:
 
 ## crates/crabbage-import
 
-Parses free-text ingredient lines and matches their names to catalogue ingredients. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`.
+Parses free-text ingredient lines, matches their names to catalogue ingredients and reads recipes from web pages. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version and TLS stack as `openidconnect`). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser.
 
 | Module | Responsibility |
 | --- | --- |
-| `src/lib.rs` | Crate doc and the `lines` and `matching` modules |
+| `src/lib.rs` | Crate doc and the `lines`, `matching` and `web` modules |
 | `src/lines/mod.rs` | Declares the line modules and re-exports `parse_line` and `ParsedLine` |
 | `src/lines/line.rs` | `parse_line(text)`: collapses whitespace, reads the amount, unit, name and note. `ParsedLine` (`amount`, `amount_max`, `unit`, `name`, `note`, `original`, `parsed`). A line is parsed when its name has a letter or digit; otherwise it keeps its collapsed text, with no amount, unit or note. A comma or parenthesis starts the note |
 | `src/lines/numbers.rs` | Amounts: integers, decimals with a comma or dot, `1/2`, `1 1/2`, unicode fractions (`½ ¼ ¾ ⅓ ⅔ ⅛`, also glued as `1½`), and ranges with `-`, `–`, `tot`, `to`, `à` |
@@ -59,6 +59,20 @@ Parses free-text ingredient lines and matches their names to catalogue ingredien
 | `tests/lines/main.rs`, `tests/lines/table.rs` | Table tests for amounts, units, names and notes in both languages, unparsed lines and whitespace |
 | `src/matching.rs` | `normalise` (lowercase, trimmed, whitespace collapsed, Latin-1 diacritics folded to ASCII), `Candidate` (id, name, aliases), `match_ingredient` (first normalised name match, then first alias match, empty input matches nothing), `match_all` (`Matches`: one link per input in order, and the original spellings of unmatched names, once per normalised name, in first-seen order) |
 | `tests/matching.rs` | Case, whitespace and diacritics, exact name and alias matches, names beating aliases, no partial matches, empty input, unmatched names in order and once |
+| `src/web/mod.rs` | Declares the web submodules and re-exports `import`, `extract`, `fetch`, `Limits`, `Draft`, `ImportError` and `is_public` |
+| `src/web/draft.rs` | `Draft`: title, servings, image, ingredient lines, steps, and the prep, cook and total times as `Duration` |
+| `src/web/error.rs` | `ImportError` (`NotHttp`, `PrivateAddress`, `Timeout`, `TooLarge`, `Status(u16)`, `Network(text)`, `NoRecipe`) with English messages and `std::error::Error` |
+| `src/web/jsonld.rs` | `extract(html)`: the first schema.org `Recipe` in the `application/ld+json` scripts, searched in top-level objects and arrays and in `@graph`. Scripts that are not JSON are skipped and a recipe needs a name. Servings are the first integer of the yield, ingredients are trimmed non-empty lines, steps come from text, name, string lines or `HowToSection` `itemListElement`s flattened in order |
+| `src/web/duration.rs` | `parse`: ISO 8601 durations of days, hours, minutes and whole seconds (`PT1H30M`, `P0DT20M`, `PT90S`); anything else is `None` |
+| `src/web/fetch.rs` | `Limits` (timeout 10 s, 5 MiB, `allow_private` false by default) and `fetch(url, limits)`: http and https only, every resolved address checked with `address::is_public`, the connection pinned to the checked address, no proxy, redirects followed by hand (at most five) with the same checks, body size checked by `Content-Length` and while reading, non-success status as `Status` |
+| `src/web/address.rs` | `is_public(ip)`: false for loopback, unspecified, private, link-local, CGNAT, broadcast, documentation, multicast and unique-local addresses, and for IPv4 mapped into IPv6 |
+| `src/web/import.rs` | `import(url, limits)`: `fetch` then `extract` |
+| `tests/web/main.rs` | Declares the web test modules |
+| `tests/web/extract.rs` | Recipe fields from the fixtures, `@graph`, type lists, sections, string instructions, yield, image and duration forms, invalid scripts, and pages without a recipe |
+| `tests/web/fetch.rs` | Loopback server: body, redirect, declared and streamed size limits, timeout, 404, `import`, refused schemes and private addresses |
+| `tests/web/address.rs` | Public addresses allowed and private, special and mapped addresses refused |
+| `tests/web/errors.rs` | Display text of every `ImportError` variant |
+| `tests/fixtures/web/*.html` | Small invented pages: plain, `@graph`, type list, sections, string instructions, article only, invalid script before a recipe, and no JSON-LD |
 
 ## crates/crabbage-store
 
