@@ -2,10 +2,12 @@
 
 mod categories;
 mod ingredients;
+pub(crate) mod mealie;
 mod review;
 mod sections;
 
 pub(crate) use categories::CategoriesPage;
 pub(crate) use ingredients::{IngredientPage, IngredientsPage};
+pub(crate) use mealie::MealiePage;
 pub(crate) use review::ReviewPage;
 pub(crate) use sections::SectionsPage;

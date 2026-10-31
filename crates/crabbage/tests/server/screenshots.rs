@@ -200,6 +200,10 @@ async fn write_pages() {
     let recipe_servings_path = format!("{recipe_path}?servings=8");
     let cook_path = format!("{recipe_path}/cook?step=2&done=1");
     let cook_timer_path = format!("{recipe_path}/cook?step=3");
+    let mealie_admin = sign_in_as(&harness, "screenshot-mealie-admin", &["crabbage-admin"]).await;
+    let mealie = crate::mealie::mealie_server(false).await;
+    crate::mealie::start(&harness, &mealie_admin, &mealie, "fixture-token").await;
+    crate::mealie::page_until(&harness, &mealie_admin, "Failed: 1").await;
 
     let pages = [
         ("admin", &["crabbage-admin"][..], "home", "/"),
@@ -222,6 +226,7 @@ async fn write_pages() {
             "categories",
             "/admin/categories",
         ),
+        ("admin", &["crabbage-admin"][..], "mealie", "/admin/mealie"),
         (
             "admin",
             &["crabbage-admin"][..],

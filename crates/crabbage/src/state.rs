@@ -1,6 +1,7 @@
 //! The state shared by every request handler.
 
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use axum::extract::FromRef;
 use leptos::config::LeptosOptions;
@@ -8,6 +9,7 @@ use openidconnect::reqwest;
 use sqlx::sqlite::SqlitePool;
 use tokio::sync::OnceCell;
 
+use crate::admin::mealie::RunState;
 use crate::auth::{AuthError, Oidc};
 use crate::config::Config;
 use crate::i18n::Language;
@@ -26,6 +28,7 @@ pub(crate) struct AppState {
     pub(crate) language: Language,
     pub(crate) photo_drafts: Arc<PhotoDrafts>,
     pub(crate) shopping: ShoppingHub,
+    pub(crate) mealie_migration: Arc<Mutex<Option<RunState>>>,
 }
 
 impl AppState {

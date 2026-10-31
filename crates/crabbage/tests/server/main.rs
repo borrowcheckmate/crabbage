@@ -33,6 +33,11 @@ mod ingredient_pages;
 mod login;
 #[expect(
     clippy::expect_used,
+    reason = "the Mealie fixture server must bind for integration tests"
+)]
+mod mealie;
+#[expect(
+    clippy::expect_used,
     reason = "test helpers stop the test on setup failure"
 )]
 mod pages;

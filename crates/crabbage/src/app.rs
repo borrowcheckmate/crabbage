@@ -3,7 +3,9 @@ use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::components::{Route, Router, Routes};
 use leptos_router::path;
 
-use crate::admin::{CategoriesPage, IngredientPage, IngredientsPage, ReviewPage, SectionsPage};
+use crate::admin::{
+    CategoriesPage, IngredientPage, IngredientsPage, MealiePage, ReviewPage, SectionsPage,
+};
 use crate::i18n::{current_language, t};
 use crate::plan_page::PlanPage;
 use crate::recipes::{
@@ -27,6 +29,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/admin/sections") view=SectionsPage/>
                     <Route path=path!("/admin/categories") view=CategoriesPage/>
                     <Route path=path!("/admin/review") view=ReviewPage/>
+                    <Route path=path!("/admin/mealie") view=MealiePage/>
                     <Route path=path!("/recipes") view=RecipesPage/>
                     <Route path=path!("/recipes/new") view=RecipeNewPage/>
                     <Route path=path!("/recipes/import") view=RecipeImportPage/>
@@ -62,6 +65,7 @@ fn Home() -> impl IntoView {
                             <a href="/admin/sections">{t("admin.nav.sections")}</a>
                             <a href="/admin/categories">{t("admin.nav.categories")}</a>
                             <a href="/admin/review">{t("admin.nav.review")}</a>
+                            <a href="/admin/mealie">{t("admin.nav.mealie")}</a>
                         })}
                     </nav>
                 }

@@ -81,6 +81,50 @@ pub async fn create(pool: &SqlitePool, name: &str) -> Result<i64, StoreError> {
     Ok(id)
 }
 
+/// Creates a pending ingredient and any aliases that are not already catalogue names or aliases.
+///
+/// # Errors
+///
+/// Returns an error if the ingredient name is already in use or a database query fails.
+pub async fn create_pending_with_aliases(
+    pool: &SqlitePool,
+    name: &str,
+    aliases: &[String],
+) -> Result<i64, StoreError> {
+    let mut tx = crate::begin_write(pool).await?;
+    ensure_not_an_alias(&mut tx, name).await?;
+    let id = sqlx::query_scalar(
+        "INSERT INTO ingredients (name, pending_review) VALUES (?, 1) RETURNING id",
+    )
+    .bind(name)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(unique_or_database(name))?;
+    for alias in aliases
+        .iter()
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|alias| !alias.is_empty())
+    {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM ingredients WHERE name = ? COLLATE NOCASE) OR EXISTS (SELECT 1 FROM ingredient_aliases WHERE alias = ? COLLATE NOCASE)",
+        )
+        .bind(alias)
+        .bind(alias)
+        .fetch_one(&mut *tx)
+        .await?;
+        if !exists {
+            sqlx::query("INSERT INTO ingredient_aliases (alias, ingredient_id) VALUES (?, ?)")
+                .bind(alias)
+                .bind(id)
+                .execute(&mut *tx)
+                .await?;
+        }
+    }
+    tx.commit().await?;
+    Ok(id)
+}
+
 /// Renames the ingredient `id` to `name`. Returns `false` when there is no such ingredient.
 ///
 /// # Errors
