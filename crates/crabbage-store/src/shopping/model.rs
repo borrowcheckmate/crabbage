@@ -1,9 +1,10 @@
 //! The shopping item record as the store returns it.
 
+use serde::Serialize;
 use sqlx::FromRow;
 
 /// An item on a household's shopping list.
-#[derive(Clone, Debug, PartialEq, FromRow)]
+#[derive(Clone, Debug, PartialEq, FromRow, Serialize)]
 pub struct ShoppingItem {
     /// The item's id.
     pub id: i64,

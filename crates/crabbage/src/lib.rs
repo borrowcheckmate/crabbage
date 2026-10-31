@@ -66,6 +66,8 @@ mod server;
 pub use server::router;
 
 #[cfg(feature = "ssr")]
+mod shopping;
+#[cfg(feature = "ssr")]
 mod state;
 
 #[cfg(feature = "hydrate")]
