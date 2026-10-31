@@ -3,7 +3,7 @@
 //! `file://` view loads them.
 //! Ignored by default: run with `cargo test --features crabbage/ssr --test server -- --ignored`.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use axum::http::StatusCode;
 use crabbage_store::catalog::{categories, ingredients, sections};
@@ -137,7 +137,7 @@ async fn write_pages() {
         &harness.pool,
         household,
         &PlanEntry {
-            date: today,
+            date: today.clone(),
             recipe_id: Some(recipe),
             servings: 4,
         },
@@ -168,6 +168,7 @@ async fn write_pages() {
         .await
         .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
     std::fs::write(dir.join("member-today.html"), today_body).expect("page is written");
+    write_today_review_pages(&dir, &harness, household, &today, recipe, &shopping_token).await;
     let plan_body = body_text(
         harness
             .get("/plan?week=2024-02-26", Some(&shopping_token))
@@ -320,6 +321,58 @@ async fn write_pages() {
         .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
     std::fs::write(dir.join("member-recipe-import-photo-review.html"), body)
         .expect("page is written");
+}
+
+#[expect(
+    clippy::expect_used,
+    reason = "the screenshot writer stops when a page or fixture cannot be written"
+)]
+async fn write_today_review_pages(
+    dir: &Path,
+    harness: &Harness,
+    household: i64,
+    today: &str,
+    recipe: i64,
+    shopping_token: &str,
+) {
+    sqlx::query("DELETE FROM plan_entries WHERE household_id = ? AND date = ?")
+        .bind(household)
+        .bind(today)
+        .execute(&harness.pool)
+        .await
+        .expect("today entry is cleared");
+    let empty_today = body_text(harness.get("/", Some(shopping_token)).await)
+        .await
+        .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+    std::fs::write(dir.join("member-today-empty.html"), empty_today)
+        .expect("empty Today page is written");
+    set_entry(
+        &harness.pool,
+        household,
+        &PlanEntry {
+            date: today.to_owned(),
+            recipe_id: Some(recipe),
+            servings: 4,
+        },
+    )
+    .await
+    .expect("today entry is restored");
+    let dutch = Harness::start_with_language("screenshots-nl", Some("nl")).await;
+    let dutch_token = sign_in_as(
+        &dutch,
+        "dutch-member",
+        &["crabbage-household-screenshot-nl"],
+    )
+    .await;
+    for (name, path) in [
+        ("member-today-nl.html", "/"),
+        ("member-shopping-nl.html", "/shopping"),
+    ] {
+        let body = body_text(dutch.get(path, Some(&dutch_token)).await)
+            .await
+            .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+        std::fs::write(dir.join(name), body).expect("Dutch page is written");
+    }
 }
 
 const PHOTO_NAME: &str = "5a0c1e2f3b4d5e6f7a8b9c0d1e2f3a4b.png";

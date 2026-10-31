@@ -15,6 +15,7 @@
   --danger: #b42318;
   --on-danger: #ffffff;
   --focus: #285442;
+  --shadow: #0002;
   --radius-control: 10px;
   --radius-panel: 18px;
 }
@@ -34,6 +35,7 @@
     --danger: #ff8a80;
     --on-danger: #1f0b09;
     --focus: #b9d4b4;
+    --shadow: #0005;
   }
 }
 
@@ -664,7 +666,7 @@ body { max-width: none; padding: 0; font-family: Inter, -apple-system, BlinkMacS
 .account-menu { position:relative; }
 .account-menu summary { display:flex; align-items:center; min-height:44px; cursor:pointer; list-style:none; }
 .account-menu summary::-webkit-details-marker { display:none; }
-.account-panel { position:absolute; z-index:5; right:0; top:100%; width:min(320px, calc(100vw - 34px)); padding:1rem; border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:0 8px 24px #0002; }
+.account-panel { position:absolute; z-index:5; right:0; top:100%; width:min(320px, calc(100vw - 34px)); padding:1rem; border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:0 8px 24px var(--shadow); }
 .account-panel nav { display:grid; }
 .account-panel a { display:flex; align-items:center; min-height:44px; }
 .account-panel form { margin-top:.5rem; }
@@ -684,7 +686,8 @@ button.danger, button.destructive { color:var(--on-danger); }
 .skip-link:focus { transform:translateY(0); }
 .primary-nav,.mobile-nav { display:none; }
 .mobile-nav { position:fixed; z-index:4; left:0; right:0; bottom:0; display:grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:8px 7px calc(10px + env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:var(--surface); }
-.mobile-nav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; min-height:48px; padding:7px 3px; border-radius:12px; color:var(--muted); text-decoration:none; font-size:11px; }
+.mobile-nav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; min-height:48px; min-width:0; padding:7px 3px; border-radius:12px; color:var(--muted); text-decoration:none; font-size:11px; overflow-wrap:normal; word-break:normal; hyphens:manual; }
+.mobile-nav a span { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mobile-nav a[aria-current="page"] { color:var(--accent); background:var(--soft); font-weight:600; }
 .primary-nav svg,.mobile-nav svg { width:19px; height:19px; flex:none; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 :focus-visible { outline:3px solid var(--focus); outline-offset:3px; }
@@ -695,9 +698,9 @@ button.danger, button.destructive { color:var(--on-danger); }
 }
 @media (min-width:900px) {
   .topbar { padding:19px 27px; }
-  .shell-layout { display:grid; grid-template-columns:172px minmax(0,1fr); }
-  .primary-nav { display:flex; flex-direction:column; gap:7px; min-height:calc(100dvh - 64px); padding:28px 14px; border-right:1px solid var(--border); background:var(--surface); }
-  .primary-nav a { display:flex; align-items:center; gap:10px; min-height:44px; padding:0 12px; color:var(--muted); text-decoration:none; border-radius:10px; }
+  .shell-layout { display:grid; grid-template-columns:190px minmax(0,1fr); }
+  .primary-nav { display:flex; flex-direction:column; gap:7px; min-height:calc(100dvh - 64px); padding:28px 12px; border-right:1px solid var(--border); background:var(--surface); }
+  .primary-nav a { display:flex; align-items:center; gap:10px; min-height:44px; padding:0 12px; color:var(--muted); text-decoration:none; border-radius:10px; overflow-wrap:normal; word-break:normal; hyphens:manual; white-space:nowrap; }
   .primary-nav a[aria-current="page"] { color:var(--accent); background:var(--soft); font-weight:600; }
   main { width:100%; padding:36px 36px 48px; }
   .mobile-nav { display:none; }
@@ -860,6 +863,7 @@ button.danger, button.destructive { color:var(--on-danger); }
 @container main-workspace (min-width: 560px) {
   .today-heading h1, .plan-heading h1 { font-size: 2.625rem; }
   .today-layout { grid-template-columns: minmax(0, 1.2fr) minmax(17rem, 1fr); align-items: start; gap: 1.6rem; }
+  .today-side .today-section-heading { margin-top: 0; }
   .today-feature > img, .today-photo-fallback { height: 14.4rem; }
   .plan-layout { grid-template-columns: minmax(17rem, 1fr) minmax(17rem, .95fr); align-items: start; gap: 1.25rem; }
   .plan-editor { position: sticky; top: 1rem; }
