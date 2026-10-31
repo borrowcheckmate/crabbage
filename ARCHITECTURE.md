@@ -55,7 +55,7 @@ Parses free-text ingredient lines, matches their names to catalogue ingredients,
 
 | Module | Responsibility |
 | --- | --- |
-| `src/lib.rs` | Crate doc and the `ai`, `lines`, `matching`, `pipeline` and `web` modules |
+| `src/lib.rs` | Crate doc and the `ai`, `lines`, `matching`, `mealie`, `pipeline` and `web` modules |
 | `src/lines/mod.rs` | Declares the line modules, re-exports `parse_line` and `ParsedLine`, and re-exports `measure_of` for the crate |
 | `src/lines/line.rs` | `parse_line(text)`: collapses whitespace, reads the amount, unit, name and note. `ParsedLine` (`amount`, `amount_max`, `unit`, `name`, `note`, `original`, `parsed`). A line is parsed when its name has a letter or digit; otherwise it keeps its collapsed text, with no amount, unit or note. A comma or parenthesis starts the note |
 | `src/lines/numbers.rs` | Amounts: integers, decimals with a comma or dot, `1/2`, `1 1/2`, unicode fractions (`½ ¼ ¾ ⅓ ⅔ ⅛`, also glued as `1½`), and ranges with `-`, `–`, `tot`, `to`, `à` |
@@ -79,6 +79,12 @@ Parses free-text ingredient lines, matches their names to catalogue ingredients,
 | `tests/web/address.rs` | Public addresses allowed and private, special and mapped addresses refused |
 | `tests/web/errors.rs` | Display text of every `ImportError` variant |
 | `tests/web/language.rs` | The language from `inLanguage`, from the `html` `lang` (quotes, case, other attributes, `xml:lang` ignored), and none when neither is given |
+| `src/mealie/mod.rs` | Declares and re-exports the Mealie client, errors and API models |
+| `src/mealie/client.rs` | `MealieClient` validates an HTTP(S) base URL, sends the API token as a bearer token, reads paginated recipe summaries, foods, units, categories and tags, fetches a recipe by slug, and downloads its original image up to 5 MiB |
+| `src/mealie/model.rs` | Serde models for Mealie recipe summaries, recipes, ingredients, foods, units, categories, tags and instructions; optional fields default when absent or null |
+| `src/mealie/error.rs` | `MealieError` reports invalid URLs, refused tokens, missing resources, non-Mealie responses, timeouts, network failures, other statuses and oversized images without exposing the token |
+| `tests/mealie/main.rs`, `tests/mealie/client.rs` | Loopback API server: pagination for every collection, bearer token, recipe model, image download, refused token, invalid URL and non-Mealie responses |
+| `tests/fixtures/mealie/recipe.json` | Invented Mealie v1 recipe response used to test deserialization |
 | `tests/fixtures/web/*.html` | Small invented pages: plain, `@graph`, type list, sections, string instructions, article only, invalid script before a recipe, and no JSON-LD |
 | `src/ai/mod.rs` | Declares the AI submodules and re-exports `AiClient`, `AiDraft`, `AiLine`, `AiStep`, `parse`, `AiError`, `Image` and `Prompt` |
 | `src/ai/client.rs` | `AiClient` (base URL, optional API key, model, timeout 60 s; `with_timeout`). `complete(prompt)` posts to `{base}/chat/completions` with bearer auth only when a key is set, and reads `choices[0].message.content` through `parse`. Timeouts, non-success statuses, connection failures and answers without a message map to `AiError`. `Debug` prints the key as `<redacted>` |

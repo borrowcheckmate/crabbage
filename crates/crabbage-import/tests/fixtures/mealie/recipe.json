@@ -1,0 +1,22 @@
+{
+  "id": "recipe-42",
+  "slug": "citrus-cakes",
+  "name": "Citrus Cakes",
+  "recipeServings": 4,
+  "recipeYield": "8 small cakes",
+  "recipeIngredient": [
+    {
+      "quantity": 200,
+      "unit": {"id": "unit-g", "name": "gram", "abbreviation": "g"},
+      "food": {"id": "food-flour", "name": "flour"},
+      "note": "sifted",
+      "display": "200 g flour, sifted",
+      "originalText": "200 g flour, sifted"
+    }
+  ],
+  "recipeInstructions": [{"title": "Mix", "text": "Stir the ingredients."}],
+  "recipeCategory": [{"id": "cat-baking", "name": "Baking", "slug": "baking"}],
+  "tags": [{"id": "tag-citrus", "name": "Citrus", "slug": "citrus"}],
+  "rating": 4.5,
+  "image": "citrus-cakes.webp"
+}
