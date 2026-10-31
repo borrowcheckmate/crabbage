@@ -28,11 +28,18 @@ async fn set_image_returns_the_replaced_name_and_reads_back() {
 
     assert_eq!(set_image(&pool, id, Some("a.jpg")).await.unwrap(), None);
     assert_eq!(
-        get(&pool, id).await.unwrap().unwrap().image.as_deref(),
+        get(&pool, id, owner)
+            .await
+            .unwrap()
+            .unwrap()
+            .image
+            .as_deref(),
         Some("a.jpg")
     );
     assert_eq!(
-        list(&pool, None).await.unwrap()[0].image.as_deref(),
+        list(&pool, None, false, owner).await.unwrap()[0]
+            .image
+            .as_deref(),
         Some("a.jpg")
     );
 
@@ -47,12 +54,13 @@ async fn set_image_returns_the_replaced_name_and_reads_back() {
         set_image(&pool, id, None).await.unwrap().as_deref(),
         Some("b.png")
     );
-    assert_eq!(get(&pool, id).await.unwrap().unwrap().image, None);
+    assert_eq!(get(&pool, id, owner).await.unwrap().unwrap().image, None);
 }
 
 #[tokio::test]
 async fn set_image_of_a_missing_recipe_changes_nothing() {
     let (_dir, pool) = database("recipes-images-missing").await;
+    let owner = upsert_user(&pool, "owner", "Owner").await.unwrap();
     assert_eq!(set_image(&pool, 9, Some("a.jpg")).await.unwrap(), None);
-    assert_eq!(get(&pool, 9).await.unwrap(), None);
+    assert_eq!(get(&pool, 9, owner).await.unwrap(), None);
 }

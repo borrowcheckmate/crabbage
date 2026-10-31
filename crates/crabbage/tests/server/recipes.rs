@@ -356,7 +356,13 @@ async fn every_member_sees_the_list_and_the_names_of_users_and_ingredients() {
     create(&harness, &owner, "Bread").await;
     let other = sign_in_as(&harness, OTHER, &[]).await;
 
-    let (status, body) = call(&harness, &other, "list_recipes", &[]).await;
+    let (status, body) = call(
+        &harness,
+        &other,
+        "list_recipes",
+        &[("favourites_only", "false")],
+    )
+    .await;
     assert_eq!(status, StatusCode::OK, "{body}");
     let titles: Vec<String> = serde_json::from_str::<Vec<Value>>(&body)
         .expect("a list")

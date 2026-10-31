@@ -20,7 +20,7 @@ pub(crate) async fn get_recipe(id: i64) -> Result<RecipeDetail, ServerFnError> {
     use crate::recipes::rights::{Rights, load};
     let (pool, user) = crate::access::signed_in().await?;
     let role = crate::access::role(&pool, user).await?;
-    let recipe = load(&pool, id).await?;
+    let recipe = load(&pool, user, id).await?;
     let rights = Rights::of(role, user, &recipe);
     Ok(detail(recipe, rights))
 }

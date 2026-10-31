@@ -27,8 +27,8 @@ fn recipe(title: &str, category_ids: Vec<i64>) -> RecipeInput {
     clippy::expect_used,
     reason = "test helpers stop the test on setup failure"
 )]
-async fn titles(pool: &SqlitePool, category: Option<i64>) -> Vec<String> {
-    list(pool, category)
+async fn titles(pool: &SqlitePool, viewer: i64, category: Option<i64>) -> Vec<String> {
+    list(pool, category, false, viewer)
         .await
         .expect("list reads")
         .into_iter()
@@ -52,7 +52,10 @@ async fn a_recipe_stores_its_categories_by_name_and_ignores_unknown_ids() {
     .await
     .unwrap();
 
-    let stored = get(&pool, id).await.unwrap().expect("the recipe exists");
+    let stored = get(&pool, id, owner)
+        .await
+        .unwrap()
+        .expect("the recipe exists");
     assert_eq!(
         stored.categories,
         [
@@ -83,7 +86,7 @@ async fn update_replaces_the_categories() {
             .await
             .unwrap()
     );
-    let ids: Vec<i64> = get(&pool, id)
+    let ids: Vec<i64> = get(&pool, id, owner)
         .await
         .unwrap()
         .expect("the recipe exists")
@@ -99,7 +102,11 @@ async fn update_replaces_the_categories() {
             .unwrap()
     );
     assert_eq!(
-        get(&pool, id).await.unwrap().expect("exists").categories,
+        get(&pool, id, owner)
+            .await
+            .unwrap()
+            .expect("exists")
+            .categories,
         Vec::new()
     );
 }
@@ -120,8 +127,14 @@ async fn the_list_filters_by_category_and_shows_all_without_one() {
         .await
         .unwrap();
 
-    assert_eq!(titles(&pool, Some(breakfast)).await, ["Pancakes", "Roast"]);
-    assert_eq!(titles(&pool, Some(dinner)).await, ["Roast"]);
-    assert_eq!(titles(&pool, Some(999)).await, Vec::<String>::new());
-    assert_eq!(titles(&pool, None).await, ["Pancakes", "Roast", "Toast"]);
+    assert_eq!(
+        titles(&pool, owner, Some(breakfast)).await,
+        ["Pancakes", "Roast"]
+    );
+    assert_eq!(titles(&pool, owner, Some(dinner)).await, ["Roast"]);
+    assert_eq!(titles(&pool, owner, Some(999)).await, Vec::<String>::new());
+    assert_eq!(
+        titles(&pool, owner, None).await,
+        ["Pancakes", "Roast", "Toast"]
+    );
 }

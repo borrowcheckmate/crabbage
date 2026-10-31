@@ -62,7 +62,10 @@ async fn a_recipe_round_trips_with_lines_steps_and_links() {
 
     let id = create(&pool, owner, &input, 1_000).await.unwrap();
 
-    let recipe = get(&pool, id).await.unwrap().expect("the recipe exists");
+    let recipe = get(&pool, id, owner)
+        .await
+        .unwrap()
+        .expect("the recipe exists");
     assert_eq!(recipe.title, "Pancakes");
     assert_eq!(recipe.servings, 4);
     assert_eq!(recipe.owner_id, owner);
@@ -113,7 +116,10 @@ async fn names_and_aliases_resolve_case_insensitively() {
     );
     let id = create(&pool, owner, &input, 0).await.unwrap();
 
-    let recipe = get(&pool, id).await.unwrap().expect("the recipe exists");
+    let recipe = get(&pool, id, owner)
+        .await
+        .unwrap()
+        .expect("the recipe exists");
     let names: Vec<Option<&str>> = recipe
         .lines
         .iter()
@@ -130,7 +136,8 @@ async fn names_and_aliases_resolve_case_insensitively() {
 #[tokio::test]
 async fn a_missing_recipe_is_none() {
     let (_dir, pool) = database("recipes-missing").await;
-    assert!(get(&pool, 42).await.unwrap().is_none());
+    let owner = upsert_user(&pool, "cook", "Cook").await.unwrap();
+    assert!(get(&pool, 42, owner).await.unwrap().is_none());
 }
 
 #[tokio::test]
@@ -142,7 +149,7 @@ async fn the_list_is_ordered_by_title() {
         input.title = title.to_owned();
         create(&pool, owner, &input, 0).await.unwrap();
     }
-    let titles: Vec<String> = list(&pool, None)
+    let titles: Vec<String> = list(&pool, None, false, owner)
         .await
         .unwrap()
         .into_iter()
@@ -168,5 +175,5 @@ async fn a_step_linking_a_missing_line_is_refused_and_nothing_is_saved() {
         result,
         Err(crabbage_store::StoreError::UnknownLine)
     ));
-    assert_eq!(list(&pool, None).await.unwrap().len(), 0);
+    assert_eq!(list(&pool, None, false, owner).await.unwrap().len(), 0);
 }

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::catalog::CategoryRow;
 
 /// A recipe as the list shows it.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct RecipeSummaryRow {
     /// The recipe's id.
     pub(crate) id: i64,
@@ -16,10 +16,20 @@ pub(crate) struct RecipeSummaryRow {
     pub(crate) servings: i64,
     /// The name of the owner.
     pub(crate) owner_name: String,
+    /// The average of the ratings, if anyone rated the recipe.
+    pub(crate) average: Option<f64>,
+    /// The number of ratings.
+    pub(crate) rating_count: i64,
+    /// Whether the signed-in user has the recipe as a favourite.
+    pub(crate) favourite: bool,
 }
 
 /// A recipe as its page shows it, with what the signed-in user may do to it.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "the record carries independent flags: three rights and the viewer's favourite"
+)]
 pub(crate) struct RecipeDetail {
     /// The recipe's id.
     pub(crate) id: i64,
@@ -45,6 +55,14 @@ pub(crate) struct RecipeDetail {
     pub(crate) can_delete: bool,
     /// Whether the signed-in user may add and remove editors.
     pub(crate) can_manage_editors: bool,
+    /// The average of the ratings, if anyone rated the recipe.
+    pub(crate) average: Option<f64>,
+    /// The number of ratings.
+    pub(crate) rating_count: i64,
+    /// The signed-in user's own rating, if they rated the recipe.
+    pub(crate) my_stars: Option<i64>,
+    /// Whether the signed-in user has the recipe as a favourite.
+    pub(crate) favourite: bool,
 }
 
 /// An ingredient line as its page shows it.

@@ -60,7 +60,10 @@ async fn update_replaces_the_title_lines_and_steps() {
     };
     assert!(update(&pool, id, &second).await.unwrap());
 
-    let recipe = get(&pool, id).await.unwrap().expect("the recipe exists");
+    let recipe = get(&pool, id, owner)
+        .await
+        .unwrap()
+        .expect("the recipe exists");
     assert_eq!(recipe.title, "Better soup");
     assert_eq!(recipe.servings, 6);
     let lines: Vec<Option<&str>> = recipe
@@ -121,7 +124,10 @@ async fn a_bad_step_link_on_update_keeps_the_recipe_as_it_was() {
         Err(StoreError::UnknownLine)
     ));
 
-    let recipe = get(&pool, id).await.unwrap().expect("the recipe exists");
+    let recipe = get(&pool, id, owner)
+        .await
+        .unwrap()
+        .expect("the recipe exists");
     assert_eq!(recipe.title, "Soup");
     assert_eq!(recipe.lines.len(), 1);
 }

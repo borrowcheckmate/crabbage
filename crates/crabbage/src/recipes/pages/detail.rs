@@ -7,6 +7,7 @@ use leptos::prelude::*;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_query_map};
 
+use super::rating_section::rating_section;
 use crate::i18n::{messages, t, t_with};
 use crate::notice::{error_notice, failure, message};
 use crate::recipes::line_text::line_text;
@@ -70,6 +71,10 @@ fn recipe_view(
         image,
         can_edit,
         can_delete,
+        average,
+        rating_count,
+        my_stars,
+        favourite,
         ..
     } = recipe;
     let edit_href = format!("/recipes/{id}/edit");
@@ -86,6 +91,7 @@ fn recipe_view(
         <div class="row">
             {categories.into_iter().map(|category| view! { <span class="badge">{category.name}</span> }).collect_view()}
         </div>
+        {rating_section(id, average, rating_count, my_stars, favourite)}
         <h2>{t("recipe.lines.heading")}</h2>
         <ul>{lines.iter().map(|line| view! { <li>{line_text(line, messages())}</li> }).collect_view()}</ul>
         <h2>{t("recipe.steps.heading")}</h2>

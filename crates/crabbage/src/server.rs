@@ -16,7 +16,7 @@ use crate::auth;
 use crate::config::Config;
 use crate::household;
 use crate::images;
-use crate::recipes::photo_routes;
+use crate::recipes::{photo_routes, rating_routes};
 use crate::state::AppState;
 
 /// Builds the router for the app.
@@ -55,6 +55,7 @@ pub fn router(
         .merge(api::routes())
         .merge(images::routes())
         .merge(photo_routes())
+        .merge(rating_routes())
         .leptos_routes_with_context(
             &state,
             routes,

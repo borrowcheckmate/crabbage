@@ -67,6 +67,7 @@ pub(crate) fn store_failure(error: &StoreError) -> ServerFnError {
         StoreError::Conflict(_) => ServerFnError::new(t("catalog.error.taken")),
         StoreError::InUse => ServerFnError::new(t("catalog.error.in_use")),
         StoreError::UnknownLine => ServerFnError::new(t("recipe.error.line")),
+        StoreError::InvalidStars => ServerFnError::new(t("recipe.error.stars")),
         StoreError::Io(_) | StoreError::Database(_) | StoreError::Migrate(_) => {
             ServerFnError::new(t("catalog.error.database"))
         }

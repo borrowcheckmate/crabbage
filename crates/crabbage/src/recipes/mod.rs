@@ -13,6 +13,9 @@ mod list;
 mod pages;
 #[cfg(feature = "ssr")]
 mod photo;
+#[cfg(feature = "ssr")]
+mod rating;
+mod rating_text;
 mod read;
 #[cfg(feature = "ssr")]
 mod rights;
@@ -23,3 +26,5 @@ mod write;
 pub(crate) use pages::{RecipeEditPage, RecipeNewPage, RecipePage, RecipesPage};
 #[cfg(feature = "ssr")]
 pub(crate) use photo::routes as photo_routes;
+#[cfg(feature = "ssr")]
+pub(crate) use rating::routes as rating_routes;

@@ -60,7 +60,7 @@ async fn delete_removes_everything_that_belongs_to_the_recipe() {
 
     assert!(delete(&pool, id).await.unwrap());
 
-    assert!(get(&pool, id).await.unwrap().is_none());
+    assert!(get(&pool, id, owner).await.unwrap().is_none());
     for sql in [
         "SELECT COUNT(*) FROM recipes",
         "SELECT COUNT(*) FROM recipe_lines",

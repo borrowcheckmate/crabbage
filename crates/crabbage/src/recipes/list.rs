@@ -13,14 +13,16 @@ use leptos::server;
 
 use super::types::RecipeSummaryRow;
 
-/// Every recipe ordered by title, or only those in `category` when it is given.
+/// Every recipe ordered by title, as the signed-in user sees it. `category` keeps only the recipes in
+/// that category, and `favourites_only` only the user's favourites.
 #[server(prefix = "/api", endpoint = "list_recipes")]
 pub(crate) async fn list_recipes(
     category: Option<i64>,
+    favourites_only: bool,
 ) -> Result<Vec<RecipeSummaryRow>, ServerFnError> {
     use crabbage_store::recipes::list;
-    let (pool, _user) = crate::access::signed_in().await?;
-    let rows = list(&pool, category)
+    let (pool, user) = crate::access::signed_in().await?;
+    let rows = list(&pool, category, favourites_only, user)
         .await
         .map_err(|error| crate::access::store_failure(&error))?;
     Ok(rows.into_iter().map(RecipeSummaryRow::from).collect())
