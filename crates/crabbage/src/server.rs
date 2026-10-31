@@ -17,6 +17,7 @@ use crate::config::Config;
 use crate::household;
 use crate::images;
 use crate::recipes::{PhotoDrafts, import_photo_routes, photo_routes, rating_routes};
+use crate::shopping::routes as shopping_routes;
 use crate::state::AppState;
 
 /// Builds the router for the app.
@@ -45,6 +46,7 @@ pub fn router(
         household_group_prefix: config.household_group_prefix.clone(),
         language: config.language,
         photo_drafts: Arc::new(PhotoDrafts::default()),
+        shopping: crate::shopping::ShoppingHub::default(),
     };
     let language = state.language;
     let context_pool = state.pool.clone();
@@ -60,6 +62,7 @@ pub fn router(
         .merge(photo_routes())
         .merge(import_photo_routes())
         .merge(rating_routes())
+        .merge(shopping_routes())
         .leptos_routes_with_context(
             &state,
             routes,

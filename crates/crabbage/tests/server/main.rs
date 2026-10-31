@@ -62,6 +62,11 @@ mod recipe_step_lines;
 mod recipes;
 mod screenshots;
 mod session;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+mod shopping_live;
 
 use axum::http::StatusCode;
 use common::{Harness, body_text, session_token};

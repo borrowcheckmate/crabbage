@@ -12,6 +12,7 @@ use crate::auth::{AuthError, Oidc};
 use crate::config::Config;
 use crate::i18n::Language;
 use crate::recipes::PhotoDrafts;
+use crate::shopping::ShoppingHub;
 
 #[derive(Clone)]
 pub(crate) struct AppState {
@@ -24,6 +25,7 @@ pub(crate) struct AppState {
     pub(crate) household_group_prefix: String,
     pub(crate) language: Language,
     pub(crate) photo_drafts: Arc<PhotoDrafts>,
+    pub(crate) shopping: ShoppingHub,
 }
 
 impl AppState {

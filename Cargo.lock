@@ -512,6 +512,7 @@ dependencies = [
  "crabbage-domain",
  "crabbage-import",
  "crabbage-store",
+ "futures-util",
  "getrandom 0.4.3",
  "http-body-util",
  "leptos",
@@ -552,6 +553,7 @@ name = "crabbage-store"
 version = "0.1.0"
 dependencies = [
  "crabbage-domain",
+ "serde",
  "sha2 0.10.9",
  "sqlx",
  "tokio",
