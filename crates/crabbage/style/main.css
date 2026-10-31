@@ -565,3 +565,44 @@ progress {
 .timer-row button {
   min-width: 44px;
 }
+.shopping-add {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+
+.shopping-add label {
+  grid-column: 1 / -1;
+}
+
+.shopping-row {
+  margin: 0;
+}
+
+.shopping-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+}
+
+.shopping-row.checked .shopping-item {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.shopping-check {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid currentColor;
+  border-radius: 0.2rem;
+}
+
+.shopping-group h2 {
+  margin-block: 1.25rem 0.4rem;
+}
