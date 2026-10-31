@@ -7,7 +7,9 @@ use std::path::PathBuf;
 
 use axum::http::StatusCode;
 use crabbage_store::catalog::{categories, ingredients, sections};
+use crabbage_store::households::households_of;
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create, set_image};
+use crabbage_store::shopping::add_text;
 
 use crate::common::{Harness, body_text, session_token, sign_in_as};
 use crate::recipe_import::serve_with;
@@ -35,16 +37,19 @@ async fn write_pages() {
     let produce = sections::create(&harness.pool, "Produce")
         .await
         .expect("section");
-    sections::create(&harness.pool, "Dairy")
+    let dairy = sections::create(&harness.pool, "Dairy")
         .await
         .expect("section");
     let tomato = ingredients::create(&harness.pool, "Tomato")
         .await
         .expect("ingredient");
-    ingredients::create(&harness.pool, "Onion")
+    let onion = ingredients::create(&harness.pool, "Onion")
         .await
         .expect("ingredient");
     ingredients::set_section(&harness.pool, tomato, Some(produce))
+        .await
+        .expect("section set");
+    ingredients::set_section(&harness.pool, onion, Some(dairy))
         .await
         .expect("section set");
     ingredients::add_alias(&harness.pool, tomato, "Pomodoro")
@@ -58,6 +63,18 @@ async fn write_pages() {
     harness.issuer.set_groups(&[]);
     harness.issuer.set_name(Some("Sam Baker"));
     let member = session_token(&harness.sign_in().await).expect("sign-in sets a session");
+    let shopping_token =
+        sign_in_as(&harness, "shopper", &["crabbage-household-screenshot-home"]).await;
+    let shopper: i64 = sqlx::query_scalar("SELECT id FROM users WHERE subject = 'shopper'")
+        .fetch_one(&harness.pool)
+        .await
+        .expect("shopper exists");
+    let household = households_of(&harness.pool, shopper)
+        .await
+        .expect("households")
+        .first()
+        .expect("household")
+        .id;
     let owner = harness.user_id().await;
     let breakfast = categories::create(&harness.pool, "Breakfast")
         .await
@@ -68,6 +85,26 @@ async fn write_pages() {
     let recipe = create(&harness.pool, owner, &sample_recipe(breakfast), 0)
         .await
         .expect("recipe");
+    for ingredient in [tomato, onion] {
+        sqlx::query("INSERT INTO shopping_items (household_id, ingredient_id) VALUES (?, ?)")
+            .bind(household)
+            .bind(ingredient)
+            .execute(&harness.pool)
+            .await
+            .expect("section item");
+    }
+    add_text(&harness.pool, household, "Paper towels")
+        .await
+        .expect("manual item");
+    sqlx::query("UPDATE shopping_items SET checked = 1 WHERE ingredient_id = ?")
+        .bind(tomato)
+        .execute(&harness.pool)
+        .await
+        .expect("checked item");
+    let shopping_body = body_text(harness.get("/shopping", Some(&shopping_token)).await)
+        .await
+        .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+    std::fs::write(dir.join("member-shopping.html"), shopping_body).expect("page is written");
     std::fs::create_dir_all(harness.images_dir()).expect("images directory is created");
     std::fs::write(harness.images_dir().join(PHOTO_NAME), PHOTO).expect("photo is written");
     set_image(&harness.pool, recipe, Some(PHOTO_NAME))

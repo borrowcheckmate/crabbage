@@ -37,6 +37,13 @@ mod recipes;
 
 mod user;
 
+#[expect(
+    unreachable_pub,
+    clippy::same_name_method,
+    reason = "the #[component] props builder adds pub methods to a private type, and a builder method named like the trait method"
+)]
+mod shopping_page;
+
 #[cfg(feature = "ssr")]
 mod config;
 

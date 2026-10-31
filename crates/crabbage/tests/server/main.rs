@@ -67,6 +67,11 @@ mod session;
     reason = "test helpers stop the test on setup failure"
 )]
 mod shopping_live;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+mod shopping_pages;
 
 use axum::http::StatusCode;
 use common::{Harness, body_text, session_token};

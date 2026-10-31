@@ -8,6 +8,7 @@ use crate::i18n::{current_language, t};
 use crate::recipes::{
     CookPage, RecipeEditPage, RecipeImportPage, RecipeNewPage, RecipePage, RecipesPage,
 };
+use crate::shopping_page::ShoppingPage;
 use crate::user::current_user;
 
 /// The root component of the app: the routes and the sign-out button.
@@ -31,6 +32,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/recipes/:id") view=RecipePage/>
                     <Route path=path!("/recipes/:id/cook") view=CookPage/>
                     <Route path=path!("/recipes/:id/edit") view=RecipeEditPage/>
+                    <Route path=path!("/shopping") view=ShoppingPage/>
                 </Routes>
                 <form method="post" action="/auth/logout">
                     <button class="secondary">{t("app.sign_out")}</button>
@@ -51,6 +53,7 @@ fn Home() -> impl IntoView {
                 view! {
                     <nav class="nav">
                         <a href="/recipes">{t("recipes.nav")}</a>
+                        <a href="/shopping">{t("shopping.nav")}</a>
                         {is_admin.then(|| view! {
                             <a href="/admin/ingredients">{t("admin.nav.ingredients")}</a>
                             <a href="/admin/sections">{t("admin.nav.sections")}</a>
