@@ -126,6 +126,24 @@ async fn write_pages() {
         .await
         .expect("plan entry");
     }
+    let today = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("clock is after the epoch")
+        .as_secs()
+        / 86_400;
+    let today = crabbage_domain::dates::format_iso_date(i64::try_from(today).expect("date fits"))
+        .expect("date is valid");
+    set_entry(
+        &harness.pool,
+        household,
+        &PlanEntry {
+            date: today,
+            recipe_id: Some(recipe),
+            servings: 4,
+        },
+    )
+    .await
+    .expect("today entry");
     for ingredient in [tomato, onion] {
         sqlx::query("INSERT INTO shopping_items (household_id, ingredient_id) VALUES (?, ?)")
             .bind(household)
@@ -146,6 +164,10 @@ async fn write_pages() {
         .await
         .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
     std::fs::write(dir.join("member-shopping.html"), shopping_body).expect("page is written");
+    let today_body = body_text(harness.get("/", Some(&shopping_token)).await)
+        .await
+        .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+    std::fs::write(dir.join("member-today.html"), today_body).expect("page is written");
     let plan_body = body_text(
         harness
             .get("/plan?week=2024-02-26", Some(&shopping_token))

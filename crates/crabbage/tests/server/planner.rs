@@ -174,7 +174,7 @@ async fn settings_round_trip(harness: &Harness, token: &str, home: i64) {
         None
     );
     let planned = body_text(harness.get("/plan?week=2024-03-04", Some(token)).await).await;
-    assert!(planned.contains("<p>Rest day</p>"), "{planned}");
+    assert!(planned.contains("<strong>Rest day</strong>"), "{planned}");
 }
 
 #[tokio::test]
@@ -242,6 +242,10 @@ async fn plan_page_adds_the_week_to_shopping_once() {
     .expect("entry saved");
     let page = body_text(harness.get("/plan?week=2024-02-26", Some(&token)).await).await;
     assert!(page.contains("Add week to shopping list"), "{page}");
+    assert!(
+        page.contains(r#"aria-label="Increase servings">+</button>"#),
+        "{page}"
+    );
     assert_eq!(
         post(&harness, &token, "/plan/shopping", "week=2024-02-26").await,
         StatusCode::SEE_OTHER

@@ -54,6 +54,23 @@ fn navigation_and_layout_follow_the_visual_contract() {
 }
 
 #[test]
+fn today_and_week_plan_reflow_from_phone_to_paired_panes() {
+    let css = stylesheet();
+    for contract in [
+        ".today-layout { display: grid",
+        ".plan-layout { display: grid",
+        "@container main-workspace (min-width: 560px)",
+        "grid-template-columns: minmax(0, 1.2fr) minmax(17rem, 1fr)",
+        "@container main-workspace (min-width: 900px)",
+    ] {
+        assert!(
+            css.contains(contract),
+            "missing Today or Plan layout rule {contract}"
+        );
+    }
+}
+
+#[test]
 fn focus_remains_visible() {
     let css = stylesheet();
     assert!(css.contains(":focus-visible"));

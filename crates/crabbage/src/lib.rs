@@ -1,11 +1,20 @@
 //! The crabbage web app: a Leptos shell rendered on the server and hydrated in the browser.
 
+#![recursion_limit = "256"]
+
 #[expect(
     unreachable_pub,
     clippy::same_name_method,
     reason = "the #[component] props builder adds pub methods to a private type, and a builder method named like the trait method"
 )]
 mod app;
+
+#[expect(
+    unreachable_pub,
+    clippy::same_name_method,
+    reason = "the component props builder adds pub methods"
+)]
+mod today_page;
 
 pub use app::{App, shell};
 
