@@ -9,7 +9,8 @@ mod common;
 use common::database;
 use crabbage_store::StoreError;
 use crabbage_store::planner::{
-    PlanEntry, PlannerSettings, entries, history, remove_entry, save_settings, set_entry, settings,
+    PlanEntry, PlannerSettings, categories_exist, entries, history, recipe_exists,
+    recipes_in_categories, remove_entry, save_settings, set_entry, settings,
 };
 use crabbage_store::users::upsert_user;
 use sqlx::sqlite::SqlitePool;
@@ -199,4 +200,42 @@ async fn invalid_settings_servings_and_dates_are_rejected() {
         entries(&pool, home, "2026-02-30", "2026-03-01").await,
         Err(StoreError::InvalidDate)
     ));
+}
+
+#[tokio::test]
+async fn planner_recipe_lookups_cover_candidates_and_existence() {
+    let (_dir, pool) = database("planner-lookups").await;
+    let first = recipe(&pool).await;
+    let second = recipe(&pool).await;
+    sqlx::query("INSERT INTO categories (id, name) VALUES (1, 'Breakfast'), (2, 'Dinner')")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO recipe_categories (recipe_id, category_id) VALUES (?, 2), (?, 1)")
+        .bind(second)
+        .bind(first)
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        recipes_in_categories(&pool, &[2, 1]).await.unwrap(),
+        [(1, first), (2, second)]
+    );
+    assert_eq!(recipes_in_categories(&pool, &[]).await.unwrap(), []);
+    assert!(recipe_exists(&pool, first).await.unwrap());
+    assert!(!recipe_exists(&pool, i64::MAX).await.unwrap());
+    assert!(
+        categories_exist(&pool, &[Some(1), Some(2), None, None, None, None, None])
+            .await
+            .unwrap()
+    );
+    assert!(
+        !categories_exist(
+            &pool,
+            &[Some(1), Some(i64::MAX), None, None, None, None, None]
+        )
+        .await
+        .unwrap()
+    );
+    assert!(categories_exist(&pool, &[None; 7]).await.unwrap());
 }

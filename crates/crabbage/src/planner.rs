@@ -121,8 +121,8 @@ async fn fill_week(state: &AppState, user: &SessionUser, week: &str) -> Result<(
             parse_iso_date(&day).map(|day| HistoryEntry { recipe_id, day })
         })
         .collect::<Vec<_>>();
-    let candidates = candidates(&state.pool, &settings).await?;
-    let mut rng = fastrand::Rng::with_seed(random_seed());
+    let candidates = candidates(state, &settings).await?;
+    let mut rng = fastrand::Rng::new();
     let picks = crabbage_domain::planner::plan(
         &days,
         &candidates,
@@ -149,6 +149,29 @@ async fn fill_week(state: &AppState, user: &SessionUser, week: &str) -> Result<(
     Ok(())
 }
 
+async fn candidates(
+    state: &AppState,
+    settings: &PlannerSettings,
+) -> Result<Vec<Candidate>, StatusCode> {
+    Ok(planner::recipes_in_categories(
+        &state.pool,
+        &settings
+            .weekdays
+            .iter()
+            .flatten()
+            .copied()
+            .collect::<Vec<_>>(),
+    )
+    .await
+    .map_err(internal_error)?
+    .into_iter()
+    .map(|(category_id, recipe_id)| Candidate {
+        category_id,
+        recipe_id,
+    })
+    .collect())
+}
+
 fn planned_days(
     start: i64,
     existing: &[PlanEntry],
@@ -173,27 +196,6 @@ fn planned_days(
         .collect()
 }
 
-async fn candidates(
-    pool: &sqlx::SqlitePool,
-    settings: &PlannerSettings,
-) -> Result<Vec<Candidate>, StatusCode> {
-    let mut candidates = Vec::new();
-    for category in settings.weekdays.iter().flatten() {
-        let ids: Vec<i64> = sqlx::query_scalar(
-            "SELECT recipe_id FROM recipe_categories WHERE category_id = ? ORDER BY recipe_id",
-        )
-        .bind(category)
-        .fetch_all(pool)
-        .await
-        .map_err(internal_error)?;
-        candidates.extend(ids.into_iter().map(|recipe_id| Candidate {
-            recipe_id,
-            category_id: *category,
-        }));
-    }
-    Ok(candidates)
-}
-
 async fn reroll(
     State(state): State<AppState>,
     Extension(user): Extension<SessionUser>,
@@ -214,14 +216,14 @@ async fn reroll(
         .await
         .map_err(internal_error)?;
     let current = existing.first().and_then(|entry| entry.recipe_id);
-    let ids: Vec<i64> = sqlx::query_scalar(
-        "SELECT recipe_id FROM recipe_categories WHERE category_id = ? ORDER BY recipe_id",
-    )
-    .bind(category)
-    .fetch_all(&state.pool)
-    .await
-    .map_err(internal_error)?;
-    let mut choices: Vec<_> = ids.into_iter().filter(|id| Some(*id) != current).collect();
+    let ids = planner::recipes_in_categories(&state.pool, &[category])
+        .await
+        .map_err(internal_error)?;
+    let mut choices: Vec<_> = ids
+        .into_iter()
+        .map(|(_, id)| id)
+        .filter(|id| Some(*id) != current)
+        .collect();
     if choices.is_empty() {
         choices = existing
             .first()
@@ -232,7 +234,7 @@ async fn reroll(
     if choices.is_empty() {
         return Err(StatusCode::NOT_FOUND);
     }
-    let mut rng = fastrand::Rng::with_seed(random_seed());
+    let mut rng = fastrand::Rng::new();
     let id = choices
         .get(rng.usize(..choices.len()))
         .copied()
@@ -271,15 +273,12 @@ async fn recipe(
                 .map_err(|_error| StatusCode::BAD_REQUEST)?,
         )
     };
-    if let Some(id) = recipe_id {
-        let row: Option<i64> = sqlx::query_scalar("SELECT id FROM recipes WHERE id = ?")
-            .bind(id)
-            .fetch_optional(&state.pool)
+    if let Some(id) = recipe_id
+        && !planner::recipe_exists(&state.pool, id)
             .await
-            .map_err(internal_error)?;
-        if row.is_none() {
-            return Err(StatusCode::BAD_REQUEST);
-        }
+            .map_err(internal_error)?
+    {
+        return Err(StatusCode::BAD_REQUEST);
     }
     let settings = planner::settings(&state.pool, household)
         .await
@@ -371,15 +370,11 @@ async fn settings(
     let weekdays: [Option<i64>; 7] = weekdays
         .try_into()
         .map_err(|_values| StatusCode::BAD_REQUEST)?;
-    for category in weekdays.iter().flatten() {
-        let exists: Option<i64> = sqlx::query_scalar("SELECT id FROM categories WHERE id = ?")
-            .bind(category)
-            .fetch_optional(&state.pool)
-            .await
-            .map_err(internal_error)?;
-        if exists.is_none() {
-            return Err(StatusCode::BAD_REQUEST);
-        }
+    let category_exists = planner::categories_exist(&state.pool, &weekdays)
+        .await
+        .map_err(internal_error)?;
+    if !category_exists {
+        return Err(StatusCode::BAD_REQUEST);
     }
     let household = household(&state, &user).await?;
     planner::save_settings(
@@ -401,12 +396,4 @@ fn date(day: i64) -> Result<String, StatusCode> {
 }
 fn weekday(day: i64) -> usize {
     usize::try_from((day + 3).rem_euclid(7)).unwrap_or(0)
-}
-
-fn random_seed() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |duration| {
-            u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
-        })
 }
