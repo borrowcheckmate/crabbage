@@ -1,12 +1,12 @@
 use std::error::Error;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use axum::Router;
 use axum::middleware::from_fn_with_state;
 use axum::routing::get;
 use leptos::config::LeptosOptions;
 use leptos::prelude::provide_context;
-use leptos_axum::{LeptosRoutes, generate_route_list};
+use leptos_axum::{AxumRouteListing, LeptosRoutes, generate_route_list};
 use sqlx::sqlite::SqlitePool;
 use tokio::sync::OnceCell;
 
@@ -21,6 +21,15 @@ use crate::planner::routes as planner_routes;
 use crate::recipes::{PhotoDrafts, import_photo_routes, photo_routes, rating_routes};
 use crate::shopping::routes as shopping_routes;
 use crate::state::AppState;
+
+/// The page routes, generated once per process.
+///
+/// Generating them suppresses resource loading process-wide, so a page rendered at the same time
+/// waits forever (leptos-rs/leptos#4773). Every router shares the first list instead.
+fn route_list() -> Vec<AxumRouteListing> {
+    static ROUTES: OnceLock<Vec<AxumRouteListing>> = OnceLock::new();
+    ROUTES.get_or_init(|| generate_route_list(App)).clone()
+}
 
 /// Builds the router for the app.
 ///
@@ -37,7 +46,7 @@ pub fn router(
     pool: SqlitePool,
 ) -> Result<Router, Box<dyn Error>> {
     let http = auth::http_client()?;
-    let routes = generate_route_list(App);
+    let routes = route_list();
     let state = AppState {
         options: options.clone(),
         pool,
