@@ -66,6 +66,8 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "/crabbage", "--healthcheck"]
     environment:
       CRABBAGE_PUBLIC_URL: https://recipes.example.com
       OIDC_ISSUER_URL: https://id.example.com
