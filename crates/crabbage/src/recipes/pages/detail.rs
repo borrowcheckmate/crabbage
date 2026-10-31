@@ -8,10 +8,12 @@ use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_query_map};
 
 use super::rating_section::rating_section;
+use super::stepper::servings_stepper;
 use crate::i18n::{messages, t, t_with};
 use crate::notice::{error_notice, failure, message};
 use crate::recipes::line_text::line_text;
 use crate::recipes::read::get_recipe;
+use crate::recipes::servings::{scale_lines, shown_servings};
 use crate::recipes::types::{RecipeDetail, StepRow};
 use crate::recipes::write::DeleteRecipe;
 use crate::route::route_id;
@@ -35,7 +37,8 @@ pub(crate) fn RecipePage() -> impl IntoView {
             {move || {
                 let id = id();
                 let confirm = query.with(|map| map.get("confirm"));
-                Suspend::new(async move { detail(id, confirm, delete).await })
+                let servings = query.with(|map| map.get("servings"));
+                Suspend::new(async move { detail(id, confirm, servings, delete).await })
             }}
         </Suspense>
     }
@@ -44,13 +47,14 @@ pub(crate) fn RecipePage() -> impl IntoView {
 async fn detail(
     id: Option<i64>,
     confirm: Option<String>,
+    servings: Option<String>,
     delete: ServerAction<DeleteRecipe>,
 ) -> AnyView {
     let Some(id) = id else {
         return error_notice(t("catalog.error.missing"));
     };
     match get_recipe(id).await {
-        Ok(recipe) => recipe_view(recipe, confirm.as_deref(), delete),
+        Ok(recipe) => recipe_view(recipe, confirm.as_deref(), servings.as_deref(), delete),
         Err(error) => error_notice(&message(&error)),
     }
 }
@@ -58,6 +62,7 @@ async fn detail(
 fn recipe_view(
     recipe: RecipeDetail,
     confirm: Option<&str>,
+    requested: Option<&str>,
     delete: ServerAction<DeleteRecipe>,
 ) -> AnyView {
     let RecipeDetail {
@@ -81,19 +86,20 @@ fn recipe_view(
     let detail_href = format!("/recipes/{id}");
     let delete_href = format!("{detail_href}?confirm=delete");
     let confirming = can_delete && confirm == Some("delete");
-    let servings = format!("{}: {servings}", t("recipe.servings"));
+    let shown = shown_servings(requested, servings);
+    let scaled = scale_lines(&lines, servings, shown);
     let owner = format!("{}: {owner_name}", t("recipe.added_by"));
     view! {
         <h1>{title.clone()}</h1>
         {image.map(|name| view! { <img class="photo" src=format!("/images/{name}") alt=title.clone()/> })}
-        <p>{servings}</p>
+        {servings_stepper(id, shown, servings)}
         <p>{owner}</p>
         <div class="row">
             {categories.into_iter().map(|category| view! { <span class="badge">{category.name}</span> }).collect_view()}
         </div>
         {rating_section(id, average, rating_count, my_stars, favourite)}
         <h2>{t("recipe.lines.heading")}</h2>
-        <ul>{lines.iter().map(|line| view! { <li>{line_text(line, messages())}</li> }).collect_view()}</ul>
+        <ul>{scaled.iter().map(|line| view! { <li>{line_text(line, messages())}</li> }).collect_view()}</ul>
         <h2>{t("recipe.steps.heading")}</h2>
         <ol>{steps.iter().map(step_item).collect_view()}</ol>
         <div class="row">

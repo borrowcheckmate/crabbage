@@ -149,7 +149,7 @@ async fn the_list_is_ordered_by_title() {
         input.title = title.to_owned();
         create(&pool, owner, &input, 0).await.unwrap();
     }
-    let titles: Vec<String> = list(&pool, None, false, owner)
+    let titles: Vec<String> = list(&pool, None, false, None, owner)
         .await
         .unwrap()
         .into_iter()
@@ -175,5 +175,8 @@ async fn a_step_linking_a_missing_line_is_refused_and_nothing_is_saved() {
         result,
         Err(crabbage_store::StoreError::UnknownLine)
     ));
-    assert_eq!(list(&pool, None, false, owner).await.unwrap().len(), 0);
+    assert_eq!(
+        list(&pool, None, false, None, owner).await.unwrap().len(),
+        0
+    );
 }

@@ -60,3 +60,52 @@ fn body_has_a_maximum_width() {
         "body must limit its width so text stays readable on large screens"
     );
 }
+
+/// The declarations of the first rule whose selector list names `selector`.
+fn declarations_of<'a>(css: &'a str, selector: &str) -> Option<&'a str> {
+    css.split('}').find_map(|block| {
+        let (selectors, declarations) = block.split_once('{')?;
+        selectors
+            .split(',')
+            .map(str::trim)
+            .any(|listed| listed == selector)
+            .then_some(declarations)
+    })
+}
+
+#[test]
+fn body_text_wraps_long_words_inside_the_screen() {
+    let css = stylesheet();
+    let body = declarations_of(&css, "body").unwrap_or_default();
+    assert!(
+        body.contains("overflow-wrap: anywhere"),
+        "long words must wrap instead of overflowing a phone screen"
+    );
+}
+
+#[test]
+fn images_scale_down_to_their_container() {
+    let css = stylesheet();
+    let image = declarations_of(&css, "img").unwrap_or_default();
+    assert!(
+        image.contains("max-width: 100%"),
+        "images must not be wider than their container"
+    );
+}
+
+#[test]
+fn no_fixed_width_is_wider_than_a_phone_screen() {
+    let css = stylesheet();
+    for declaration in css.split([';', '{', '}']).map(str::trim) {
+        let Some(value) = declaration.strip_prefix("width:") else {
+            continue;
+        };
+        if let Some(pixels) = value.trim().strip_suffix("px") {
+            let pixels: Option<f64> = pixels.trim().parse().ok();
+            assert!(
+                pixels.is_some_and(|px| px <= 360.0),
+                "a fixed width wider than 360px overflows a phone: {declaration}"
+            );
+        }
+    }
+}

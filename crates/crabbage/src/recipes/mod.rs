@@ -19,6 +19,7 @@ mod rating_text;
 mod read;
 #[cfg(feature = "ssr")]
 mod rights;
+mod servings;
 mod types;
 mod units;
 mod write;

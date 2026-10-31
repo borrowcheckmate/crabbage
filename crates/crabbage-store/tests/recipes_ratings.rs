@@ -106,7 +106,7 @@ async fn the_average_and_count_cover_every_user() {
             .my_stars,
         Some(5)
     );
-    let summaries = list(&pool, None, false, guest).await.unwrap();
+    let summaries = list(&pool, None, false, None, guest).await.unwrap();
     let rated = summaries.iter().find(|row| row.id == id).expect("listed");
     assert_eq!((rated.average, rated.rating_count), (Some(4.5), 2));
     let empty = summaries

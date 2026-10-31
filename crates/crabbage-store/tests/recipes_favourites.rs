@@ -32,7 +32,7 @@ async fn titles(
     favourites_only: bool,
     viewer: i64,
 ) -> Vec<String> {
-    list(pool, category, favourites_only, viewer)
+    list(pool, category, favourites_only, None, viewer)
         .await
         .expect("list reads")
         .into_iter()
