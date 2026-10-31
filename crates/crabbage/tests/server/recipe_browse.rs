@@ -3,7 +3,9 @@
 
 use axum::http::StatusCode;
 use crabbage_store::catalog::categories;
-use crabbage_store::recipes::{LineInput, RecipeInput, create as create_recipe, set_favourite};
+use crabbage_store::recipes::{
+    LineInput, RecipeInput, create as create_recipe, set_favourite, set_image,
+};
 
 use crate::common::{Harness, body_text, sign_in_as};
 use crate::recipes::create;
@@ -165,25 +167,91 @@ async fn a_search_text_is_encoded_in_the_filter_links() {
 }
 
 #[tokio::test]
+async fn recipe_detail_keeps_filtered_browse_context_when_scaling_servings() {
+    let harness = Harness::start("browse-return-context").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    let id = stored(&harness, "Brown rice bowl", &["Rice"], vec![]).await;
+    let list_body = page(&harness, &member, "/recipes?q=brown%20rice").await;
+    let return_context = "2f726563697065733f713d62726f776e25323072696365";
+    let detail_path = format!("/recipes/{id}?return={return_context}");
+    assert!(
+        list_body.contains(&format!("href=\"{detail_path}\"")),
+        "{list_body}"
+    );
+
+    let body = page(&harness, &member, &detail_path).await;
+    assert!(body.contains("href=\"/recipes?q=brown%20rice\""), "{body}");
+    assert!(body.contains("Your recipes</a>"), "{body}");
+    assert!(
+        body.contains(&format!(
+            "href=\"/recipes/{id}?servings=5&amp;return={return_context}\""
+        )),
+        "{body}"
+    );
+}
+
+#[tokio::test]
+async fn recipe_cards_use_the_image_from_the_list_read_model() {
+    let harness = Harness::start("browse-photo-card").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    let id = stored(&harness, "Tomato soup", &["Tomato"], vec![]).await;
+    let image = "0123456789abcdef0123456789abcdef.jpg";
+    let later = stored(&harness, "Zucchini soup", &["Zucchini"], vec![]).await;
+    set_image(&harness.pool, id, Some(image))
+        .await
+        .expect("recipe image is set");
+    set_image(&harness.pool, later, Some(image))
+        .await
+        .expect("later recipe image is set");
+
+    let body = page(&harness, &member, "/recipes").await;
+    assert!(body.contains(&format!("src=\"/images/{image}\"")), "{body}");
+    assert!(body.contains("loading=\"eager\""), "{body}");
+    assert!(body.contains("loading=\"lazy\""), "{body}");
+}
+
+#[tokio::test]
 async fn the_servings_value_rescales_the_amounts() {
     let harness = Harness::start("browse-servings").await;
     let owner = sign_in_as(&harness, OWNER, &[]).await;
     let id = create(&harness, &owner, "Pancakes").await;
 
     let body = page(&harness, &owner, &format!("/recipes/{id}")).await;
-    assert!(body.contains("<li>250 g Flour, sifted</li>"), "{body}");
+    assert!(body.contains("Flour, sifted</span>"), "{body}");
+    assert!(
+        body.contains("class=\"recipe-ingredient-quantity\">250 g</span>"),
+        "{body}"
+    );
     assert!(body.contains("4 servings"), "{body}");
     assert!(!body.contains(">Reset</a>"), "{body}");
 
     let body = page(&harness, &owner, &format!("/recipes/{id}?servings=8")).await;
-    assert!(body.contains("<li>500 g Flour, sifted</li>"), "{body}");
-    assert!(body.contains("<li>4 Egg</li>"), "{body}");
-    assert!(body.contains("<li>Salt, to taste</li>"), "{body}");
-    assert!(body.contains("8 servings"), "{body}");
     assert!(
-        body.contains(&format!("href=\"/recipes/{id}\">Reset</a>")),
+        body.contains("class=\"recipe-ingredient-quantity\">500 g</span>"),
         "{body}"
     );
+    assert!(body.contains("<span>Egg</span>"), "{body}");
+    assert!(
+        body.contains("class=\"recipe-ingredient-quantity\">4</span>"),
+        "{body}"
+    );
+    assert!(body.contains("<span>Salt, to taste</span>"), "{body}");
+    assert!(body.contains("8 servings"), "{body}");
+    assert!(
+        reset_link(&body).is_some_and(|link| {
+            link.contains("recipe-stepper-reset")
+                && link.contains(&format!("href=\"/recipes/{id}\""))
+                && link.contains(">Reset")
+        }),
+        "{body}"
+    );
+}
+
+fn reset_link(body: &str) -> Option<&str> {
+    body.split("<a ").find_map(|fragment| {
+        let (anchor, _) = fragment.split_once("</a>")?;
+        anchor.contains("recipe-stepper-reset").then_some(anchor)
+    })
 }
 
 #[tokio::test]
@@ -195,7 +263,7 @@ async fn invalid_servings_values_fall_back_to_the_recipes_own() {
     for query in ["0", "abc", "1000", "-3", ""] {
         let body = page(&harness, &owner, &format!("/recipes/{id}?servings={query}")).await;
         assert!(
-            body.contains("<li>250 g Flour, sifted</li>"),
+            body.contains("class=\"recipe-ingredient-quantity\">250 g</span>"),
             "{query}: {body}"
         );
         assert!(body.contains("4 servings"), "{query}: {body}");

@@ -30,6 +30,14 @@ async fn the_list_links_each_recipe_and_offers_a_new_one() {
     assert!(body.contains(&format!("href=\"/recipes/{id}\"")), "{body}");
     assert!(body.contains("Pancakes"), "{body}");
     assert!(body.contains("New recipe"), "{body}");
+    assert!(body.contains("class=\"recipe-grid\""), "{body}");
+    assert!(body.contains("class=\"recipe-photo-fallback\""), "{body}");
+    assert!(body.contains("Find a recipe..."), "{body}");
+    assert_eq!(
+        body.matches("class=\"recipe-search-icon\"").count(),
+        1,
+        "{body}"
+    );
 }
 
 #[tokio::test]
@@ -50,13 +58,21 @@ async fn a_recipe_page_shows_its_lines_and_numbered_steps() {
     let body = page(&harness, &owner, &format!("/recipes/{id}")).await;
     assert!(body.contains("Pancakes</h1>"), "{body}");
     for expected in [
-        "250 g Flour, sifted",
-        "<li>2 Egg</li>",
-        "<li>Salt, to taste</li>",
+        "Flour, sifted</span>",
+        "class=\"recipe-ingredient-quantity\">250 g</span>",
+        "<span>Egg</span>",
+        "class=\"recipe-ingredient-quantity\">2</span>",
+        "<span>Salt, to taste</span>",
+        "recipe-back",
+        "viewBox=\"0 0 24 24\"",
         "<ol>",
         "Whisk the eggs",
         "2 min",
         "Fry until golden",
+        "class=\"recipe-detail-columns\"",
+        "class=\"recipe-photo-fallback\"",
+        "Start cooking",
+        "Method",
     ] {
         assert!(body.contains(expected), "{expected}: {body}");
     }
@@ -101,10 +117,13 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
 
     let body = page(&harness, &owner, &format!("/recipes/{id}")).await;
     for expected in [
-        "1,25 el Suiker",
-        "0,5 tl Vanille",
-        "2 Ei",
-        "Zout, naar smaak",
+        "<span>Suiker</span>",
+        "class=\"recipe-ingredient-quantity\">1,25 el</span>",
+        "<span>Vanille</span>",
+        "class=\"recipe-ingredient-quantity\">0,5 tl</span>",
+        "<span>Ei</span>",
+        "class=\"recipe-ingredient-quantity\">2</span>",
+        "<span>Zout, naar smaak</span>",
     ] {
         assert!(body.contains(expected), "{expected}: {body}");
     }
@@ -293,7 +312,7 @@ async fn an_unknown_category_shows_the_empty_text() {
 }
 
 #[tokio::test]
-async fn a_recipe_page_shows_its_categories_as_badges() {
+async fn a_recipe_page_shows_its_categories_in_the_header() {
     let harness = Harness::start("recipe-pages-badges").await;
     let member = sign_in_as(&harness, OWNER, &[]).await;
     let breakfast = categories::create(&harness.pool, "Breakfast")
@@ -304,7 +323,7 @@ async fn a_recipe_page_shows_its_categories_as_badges() {
 
     let body = page(&harness, &member, &format!("/recipes/{id}")).await;
     assert!(
-        body.contains("<span class=\"badge\">Breakfast</span>"),
+        body.contains("class=\"recipe-detail-categories\"><span>Breakfast</span>"),
         "{body}"
     );
     assert!(!body.contains("Dinner"), "{body}");
