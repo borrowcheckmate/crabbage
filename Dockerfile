@@ -56,3 +56,4 @@ EXPOSE 3000
 VOLUME /data
 USER 65532:65532
 ENTRYPOINT ["/crabbage"]
+HEALTHCHECK CMD ["/crabbage", "--healthcheck"]

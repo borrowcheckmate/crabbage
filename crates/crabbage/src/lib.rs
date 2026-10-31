@@ -77,7 +77,13 @@ mod images;
 mod server;
 
 #[cfg(feature = "ssr")]
+mod healthcheck;
+
+#[cfg(feature = "ssr")]
 pub use server::router;
+
+#[cfg(feature = "ssr")]
+pub use healthcheck::healthcheck;
 
 #[cfg(feature = "ssr")]
 mod planner;

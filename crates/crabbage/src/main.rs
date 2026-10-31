@@ -3,6 +3,9 @@
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().nth(1).as_deref() == Some("--healthcheck") {
+        std::process::exit(i32::from(!crabbage::healthcheck()));
+    }
     let config = crabbage::Config::from_env()?;
     let pool = crabbage_store::open(&config.data_dir).await?;
     let options = leptos::config::get_configuration(None)?.leptos_options;
