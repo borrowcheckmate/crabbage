@@ -36,6 +36,7 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
             test(),
             deny(),
             wasm(),
+            frontend(),
         ],
         Command::Hooks => vec![Action::Run(Step::new(
             "git",
@@ -108,6 +109,16 @@ fn deny() -> Action {
     Action::Run(Step::cargo(&["deny", "--locked", "check"]))
 }
 
+fn frontend() -> Action {
+    Action::Run(Step::cargo(&[
+        "leptos",
+        "build",
+        "--release",
+        "--frontend-only",
+        "--cargo-locked",
+    ]))
+}
+
 fn wasm() -> Action {
     Action::Run(Step::cargo(&[
         "clippy",
@@ -177,7 +188,7 @@ mod tests {
     #[test]
     fn ci_covers_format_policy_lint_docs_tests_and_dependencies() {
         let lines = shell_lines(&Command::Ci);
-        assert_eq!(lines.len(), 7);
+        assert_eq!(lines.len(), 8);
         assert!(lines.contains(&"Policy".to_owned()));
         for needle in [
             "fmt",
@@ -186,6 +197,7 @@ mod tests {
             "cargo test",
             "cargo deny",
             "wasm32",
+            "leptos build --release --frontend-only",
         ] {
             assert!(lines.iter().any(|line| line.contains(needle)), "{needle}");
         }

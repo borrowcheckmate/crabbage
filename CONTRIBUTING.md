@@ -35,7 +35,7 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 | `cargo xtask identity` | Anonymous git identity |
 | `cargo xtask wasm` | Clippy on the WASM (hydrate) build, warnings denied |
 | `cargo xtask docker` | Build the container image and smoke-test `/healthz` (needs Docker) |
-| `cargo xtask ci` | Everything CI runs except coverage and docker |
+| `cargo xtask ci` | Everything CI runs except coverage and docker, plus the release frontend build (about 2 extra minutes on a cold cache) |
 
 ## Commits
 
