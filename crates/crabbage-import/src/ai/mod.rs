@@ -7,6 +7,6 @@ mod error;
 mod request;
 
 pub use client::AiClient;
-pub use draft::{AiDraft, AiLine, AiStep, parse};
+pub use draft::{AiDraft, AiLine, AiPhoto, AiStep, parse};
 pub use error::AiError;
 pub use request::{Image, Prompt};

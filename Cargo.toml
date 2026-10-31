@@ -17,6 +17,7 @@ futures-util = { version = "0.3.32", default-features = false, features = ["std"
 fastrand = { version = "2.5.0", default-features = false }
 getrandom = { version = "0.4.3", default-features = false }
 http-body-util = { version = "0.1.5", default-features = false }
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
 leptos = { version = "0.8.22", default-features = false }
 leptos_axum = { version = "0.8.10", default-features = false, features = ["default"] } # file serving is gated behind the default feature
 leptos_meta = { version = "0.8.7", default-features = false }

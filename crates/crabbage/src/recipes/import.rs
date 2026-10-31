@@ -91,6 +91,7 @@ pub(crate) fn preview(imported: &Imported, source: &str, ai_enabled: bool) -> Im
         source: source.to_owned(),
         unresolved,
         ai_error,
+        photo_preview: None,
     }
 }
 
@@ -172,6 +173,7 @@ mod tests {
             title: "Okra soup".to_owned(),
             servings: None,
             image: Some("https://example.com/okra.png".to_owned()),
+            photo: None,
             lines,
             steps,
             unmatched: Vec::new(),

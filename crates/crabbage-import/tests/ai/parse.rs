@@ -37,6 +37,7 @@ fn a_valid_draft_is_read_in_full() {
         }],
         prep_minutes: Some(5),
         cook_minutes: Some(10),
+        photo: None,
     };
     assert_eq!(parse(VALID), Ok(expected));
 }
@@ -63,6 +64,26 @@ fn missing_optional_fields_are_empty() {
     assert_eq!(draft.lines[0].amount, None);
     assert_eq!(draft.lines[0].unit, None);
     assert_eq!(draft.steps[0].lines, Vec::<usize>::new());
+    assert_eq!(draft.photo, None);
+}
+
+#[test]
+fn photo_crop_is_parsed_and_null_is_empty() {
+    let content = edited(|value| {
+        value["photo"] = json!({"page":1,"left":0.1,"top":0.2,"width":0.3,"height":0.4});
+    });
+    assert_eq!(
+        parse(&content).expect("crop").photo,
+        Some(crabbage_import::ai::AiPhoto {
+            page: 1,
+            left: 0.1,
+            top: 0.2,
+            width: 0.3,
+            height: 0.4
+        })
+    );
+    let content = edited(|value| value["photo"] = Value::Null);
+    assert_eq!(parse(&content).expect("null photo").photo, None);
 }
 
 #[test]
@@ -76,6 +97,12 @@ fn invalid_drafts_are_refused_with_the_reason() {
         (edited(|v| v["title"] = json!("  ")), "the title is blank"),
         (edited(|v| v["lines"] = json!([])), "no ingredient lines"),
         (edited(|v| v["steps"] = json!([])), "the draft has no steps"),
+        (
+            edited(|v| {
+                v["photo"] = json!({"page":0,"left":-0.1,"top":0.0,"width":0.5,"height":0.5});
+            }),
+            "photo crop is outside",
+        ),
         (
             edited(|v| v["lines"][0]["unit"] = json!("handful")),
             "unknown unit: handful",

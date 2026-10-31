@@ -35,6 +35,7 @@ pub fn merge(ai: &AiDraft, base: &Imported, candidates: &[Candidate<'_>]) -> Imp
         title: ai.title.clone(),
         servings: ai.servings.or(base.servings),
         image: base.image.clone(),
+        photo: ai.photo,
         unmatched: match_all(&names, candidates).unmatched,
         lines,
         steps,

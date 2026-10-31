@@ -49,15 +49,23 @@ async fn upload(
     let ingredients = list(&state.pool).await.map_err(internal_error)?;
     let client = AiClient::new(ai.base_url.clone(), ai.api_key.clone(), ai.model.clone());
     let language = state.config.language.code();
-    let Ok(imported) = from_photos(images, &candidates(&ingredients), &client, language).await
+    let Ok(imported) =
+        from_photos(images.clone(), &candidates(&ingredients), &client, language).await
     else {
         return Ok(back("photo_error=ai"));
+    };
+    let photo = match imported.photo {
+        Some(bounds) => tokio::task::spawn_blocking(move || crate::images::crop(&images, bounds))
+            .await
+            .ok()
+            .flatten(),
+        None => None,
     };
     let source = t_with("import.photos_count", &[("count", &count)]);
     let now = Instant::now();
     let token = state
         .photo_drafts
-        .insert(user.0, preview(&imported, &source, true), now)
+        .insert(user.0, preview(&imported, &source, true), photo, now)
         .map_err(internal_error)?;
     Ok(back(&format!("photos={token}")))
 }

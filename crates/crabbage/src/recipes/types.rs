@@ -154,4 +154,6 @@ pub(crate) struct ImportPreview {
     pub(crate) unresolved: Vec<String>,
     /// The line to show about the AI: why it did not complete the recipe, or that it is off.
     pub(crate) ai_error: Option<String>,
+    /// The cropped dish photo for a photo import, as a preview data URL.
+    pub(crate) photo_preview: Option<String>,
 }

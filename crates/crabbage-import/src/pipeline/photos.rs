@@ -4,8 +4,8 @@ use crate::matching::Candidate;
 use super::run::instructions;
 use super::{Imported, merge};
 
-/// Reads a recipe from photos of a cookbook page or recipe card with the AI. The result has no
-/// photo of its own.
+/// Reads a recipe from photos of a cookbook page or recipe card with the AI. The imported recipe
+/// has no image address; `photo` carries a normalized crop when the AI found a finished-dish photo.
 ///
 /// # Errors
 ///
@@ -18,7 +18,7 @@ pub async fn from_photos(
 ) -> Result<Imported, AiError> {
     let prompt = Prompt {
         instructions: format!(
-            "{} Read the recipe from the photos.",
+            "{} Read the recipe from the photos. Choose a clear finished-dish photo when present, +             prefer it over step photos, and return null rather than selecting the whole page. +             Return null for text-only pages, ads, or pages without a finished-dish photo.",
             instructions(instance_language)
         ),
         text: String::new(),
@@ -29,6 +29,7 @@ pub async fn from_photos(
         title: String::new(),
         servings: None,
         image: None,
+        photo: None,
         lines: Vec::new(),
         steps: Vec::new(),
         unmatched: Vec::new(),

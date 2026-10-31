@@ -24,6 +24,24 @@ pub struct AiDraft {
     /// The cooking time in minutes.
     #[serde(default)]
     pub cook_minutes: Option<u32>,
+    /// The finished dish photo bounds in the submitted page, when present.
+    #[serde(default)]
+    pub photo: Option<AiPhoto>,
+}
+
+/// A normalized crop box on one submitted page.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct AiPhoto {
+    /// The zero-based submitted page.
+    pub page: usize,
+    /// The normalized left edge.
+    pub left: f64,
+    /// The normalized top edge.
+    pub top: f64,
+    /// The normalized width.
+    pub width: f64,
+    /// The normalized height.
+    pub height: f64,
 }
 
 /// One ingredient line of a draft.
@@ -84,6 +102,13 @@ fn validate(draft: &AiDraft) -> Result<(), AiError> {
     }
     if draft.steps.is_empty() {
         return Err(invalid("the draft has no steps".to_owned()));
+    }
+    if draft.photo.is_some_and(|photo| {
+        [photo.left, photo.top, photo.width, photo.height]
+            .iter()
+            .any(|value| !value.is_finite() || !(0.0..=1.0).contains(value))
+    }) {
+        return Err(invalid("the photo crop is outside the page".to_owned()));
     }
     for (index, line) in draft.lines.iter().enumerate() {
         validate_line(index + 1, line)?;

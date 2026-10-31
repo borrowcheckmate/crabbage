@@ -31,6 +31,7 @@ multiple-versions = "deny"
 wildcards = "deny"
 allow-wildcard-paths = false
 skip = [
+    { crate = "miniz_oxide@0.8.9", reason = "png 0.18 directly uses miniz_oxide 0.8 and its flate2 dependency uses miniz_oxide 0.9" },
     { crate = "convert_case@0.6.0", reason = "config 0.15 (via leptos_config) needs convert_case 0.6; leptos_macro uses 0.11" },
     { crate = "syn@2.0.119", reason = "gloo-net and server_fn tooling use syn 2; leptos (tachys, async-trait) uses syn 3" },
     { crate = "syn@3.0.9", reason = "tachys and async-trait from leptos use syn 3; gloo-net and server_fn tooling use syn 2" },
