@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use reqwest::header::LOCATION;
+use reqwest::header::{CONTENT_TYPE, LOCATION};
 use reqwest::redirect::Policy;
 use reqwest::{Client, Response};
 use tokio::net::lookup_host;
@@ -33,6 +33,15 @@ impl Default for Limits {
     }
 }
 
+/// A fetched body and the content type the server declared for it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Fetched {
+    /// The body.
+    pub bytes: Vec<u8>,
+    /// The `Content-Type` header, when the server sent one.
+    pub content_type: Option<String>,
+}
+
 /// Fetches the page at `url` as UTF-8 text. Each hop is checked for scheme and address, and
 /// connects to the address that was checked.
 ///
@@ -42,6 +51,17 @@ impl Default for Limits {
 /// hosts, [`ImportError::Timeout`], [`ImportError::TooLarge`], [`ImportError::Status`] for a
 /// non-success answer and [`ImportError::Network`] for other failures.
 pub async fn fetch(url: &str, limits: &Limits) -> Result<String, ImportError> {
+    let fetched = fetch_bytes(url, limits).await?;
+    Ok(String::from_utf8_lossy(&fetched.bytes).into_owned())
+}
+
+/// Fetches `url` like [`fetch`], with the same checks and errors, and returns the raw body with its
+/// content type.
+///
+/// # Errors
+///
+/// The same as [`fetch`].
+pub async fn fetch_bytes(url: &str, limits: &Limits) -> Result<Fetched, ImportError> {
     let mut target = parse(url)?;
     let mut redirects = 0;
     loop {
@@ -130,7 +150,7 @@ fn redirect_location(response: &Response) -> Option<String> {
         .map(str::to_owned)
 }
 
-async fn body(mut response: Response, max_bytes: usize) -> Result<String, ImportError> {
+async fn body(mut response: Response, max_bytes: usize) -> Result<Fetched, ImportError> {
     if !response.status().is_success() {
         return Err(ImportError::Status(response.status().as_u16()));
     }
@@ -141,6 +161,11 @@ async fn body(mut response: Response, max_bytes: usize) -> Result<String, Import
     {
         return Err(ImportError::TooLarge);
     }
+    let content_type = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned);
     let mut bytes = Vec::new();
     while let Some(chunk) = response.chunk().await.map_err(|error| failure(&error))? {
         if bytes.len().saturating_add(chunk.len()) > max_bytes {
@@ -148,7 +173,10 @@ async fn body(mut response: Response, max_bytes: usize) -> Result<String, Import
         }
         bytes.extend_from_slice(&chunk);
     }
-    Ok(String::from_utf8_lossy(&bytes).into_owned())
+    Ok(Fetched {
+        bytes,
+        content_type,
+    })
 }
 
 fn failure(error: &reqwest::Error) -> ImportError {

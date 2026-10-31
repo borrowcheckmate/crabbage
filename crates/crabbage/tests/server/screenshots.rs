@@ -9,6 +9,7 @@ use crabbage_store::catalog::{categories, ingredients, sections};
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create, set_image};
 
 use crate::common::{Harness, body_text, session_token, sign_in_as};
+use crate::recipe_import::serve_with;
 
 #[tokio::test]
 #[expect(
@@ -22,7 +23,13 @@ async fn write_pages() {
     let css = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/style/main.css"))
         .expect("stylesheet is read");
     std::fs::write(dir.join("crabbage.css"), css).expect("stylesheet is written");
-    let harness = Harness::start("screenshots").await;
+    let harness = Harness::start_with(
+        "screenshots",
+        None,
+        &[("CRABBAGE_IMPORT_ALLOW_PRIVATE", "true")],
+    )
+    .await;
+    let source = serve_with(imported_page).await;
     let produce = sections::create(&harness.pool, "Produce")
         .await
         .expect("section");
@@ -95,6 +102,7 @@ async fn write_pages() {
             "on=true",
         )
         .await;
+    let import_path = format!("/recipes/import?url={source}/recipe");
     let recipe_path = format!("/recipes/{recipe}");
     let breakfast_path = format!("/recipes?category={breakfast}");
     let recipe_edit_path = format!("/recipes/{recipe}/edit");
@@ -168,6 +176,13 @@ async fn write_pages() {
             recipe_delete_path.as_str(),
         ),
         ("member", &[][..], "recipe-new", "/recipes/new"),
+        ("member", &[][..], "recipe-import", "/recipes/import"),
+        (
+            "member",
+            &[][..],
+            "recipe-import-preview",
+            import_path.as_str(),
+        ),
         ("member", &[][..], "recipes-search", "/recipes?q=flour"),
         (
             "member",
@@ -184,7 +199,11 @@ async fn write_pages() {
         let body = body_text(harness.get(path, Some(&token)).await)
             .await
             .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"")
-            .replace("src=\"/images/", "src=\"images/");
+            .replace("src=\"/images/", "src=\"images/")
+            .replace(
+                &format!("{source}/photo.png"),
+                &format!("images/{PHOTO_NAME}"),
+            );
         std::fs::write(dir.join(format!("{who}-{name}.html")), body).expect("page is written");
     }
 }
@@ -238,4 +257,24 @@ fn sample_recipe(category: i64) -> RecipeInput {
         ],
         category_ids: vec![category],
     }
+}
+
+/// A recipe page to import: one ingredient line is not in the catalogue. The photo is served from
+/// `base`.
+fn imported_page(base: &str) -> String {
+    let recipe = serde_json::json!({
+        "@context": "https://schema.org",
+        "@type": "Recipe",
+        "name": "Lemon ricotta pancakes",
+        "image": format!("{base}/photo.png"),
+        "recipeYield": "4 servings",
+        "recipeIngredient": ["250 g Flour", "2 Egg", "1 tsp Vanilla extract", "200 g Ricotta, drained"],
+        "recipeInstructions": [
+            {"@type": "HowToStep", "text": "Mix the flour, eggs and ricotta into a thick batter."},
+            {"@type": "HowToStep", "text": "Fry spoonfuls of batter until golden on both sides."}
+        ]
+    });
+    format!(
+        "<html lang=\"en\"><head><script type=\"application/ld+json\">{recipe}</script></head></html>"
+    )
 }

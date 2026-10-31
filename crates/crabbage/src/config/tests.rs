@@ -62,6 +62,25 @@ fn defaults_apply_when_optional_vars_are_unset() {
     assert_eq!(config.oidc_client_id, "crabbage");
     assert_eq!(config.oidc_client_secret, "secret");
     assert!(config.ai.is_none());
+    assert!(!config.import_allow_private);
+}
+
+#[test]
+fn import_allow_private_reads_true_and_false() {
+    for (value, expected) in [("true", true), ("false", false)] {
+        let pairs = with_required(&[("CRABBAGE_IMPORT_ALLOW_PRIVATE", value)]);
+        let config = Config::from_lookup(lookup(&pairs)).unwrap();
+        assert_eq!(config.import_allow_private, expected);
+    }
+}
+
+#[test]
+fn import_allow_private_rejects_other_values() {
+    let text = error_text(&with_required(&[("CRABBAGE_IMPORT_ALLOW_PRIVATE", "yes")]));
+    assert!(
+        text.contains("CRABBAGE_IMPORT_ALLOW_PRIVATE is invalid: expected true or false, not yes"),
+        "{text}"
+    );
 }
 
 #[test]

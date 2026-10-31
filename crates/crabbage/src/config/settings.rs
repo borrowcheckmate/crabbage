@@ -51,6 +51,9 @@ pub struct Config {
     pub household_group_prefix: String,
     /// AI settings, or `None` when AI features are disabled.
     pub ai: Option<AiConfig>,
+    /// Whether recipe imports may fetch private network addresses, from
+    /// `CRABBAGE_IMPORT_ALLOW_PRIVATE` (default `false`).
+    pub import_allow_private: bool,
 }
 
 impl Debug for Config {
@@ -65,6 +68,7 @@ impl Debug for Config {
             .field("admin_group", &self.admin_group)
             .field("household_group_prefix", &self.household_group_prefix)
             .field("ai", &self.ai)
+            .field("import_allow_private", &self.import_allow_private)
             .finish()
     }
 }
@@ -103,6 +107,7 @@ impl Config {
             .get("CRABBAGE_HOUSEHOLD_GROUP_PREFIX")
             .unwrap_or_else(|| "crabbage-household-".to_owned());
         let ai = vars.ai();
+        let import_allow_private = vars.flag("CRABBAGE_IMPORT_ALLOW_PRIVATE");
         match (
             language,
             public_url,
@@ -126,6 +131,7 @@ impl Config {
                 admin_group,
                 household_group_prefix,
                 ai,
+                import_allow_private,
             }),
             _ => Err(ConfigError::new(vars.problems)),
         }

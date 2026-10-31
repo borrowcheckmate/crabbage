@@ -1,0 +1,48 @@
+//! Reading a recipe from a web page and saving the reviewed result. Any signed-in user may import.
+
+#![cfg_attr(
+    not(feature = "ssr"),
+    expect(
+        clippy::unused_async_trait_impl,
+        reason = "the client build replaces each server function body with a stub that does not await"
+    )
+)]
+
+use leptos::prelude::ServerFnError;
+use leptos::server;
+
+use super::types::ImportPreview;
+
+/// Reads the recipe at `url` and completes it against the catalogue. Page and fetch failures come
+/// back as translated messages.
+#[server(prefix = "/api", endpoint = "import_recipe")]
+pub(crate) async fn import_recipe(url: String) -> Result<ImportPreview, ServerFnError> {
+    let (pool, _user) = crate::access::signed_in().await?;
+    let config = crate::access::config()?;
+    crate::recipes::import::read_page(&pool, &config, &url).await
+}
+
+/// Creates a recipe from the reviewed JSON draft like `create_recipe` does, then downloads the
+/// photo at `image`, if any, and attaches it. A photo that cannot be downloaded or stored does not
+/// fail the save.
+#[server(prefix = "/api", endpoint = "save_import")]
+pub(crate) async fn save_import(
+    draft: String,
+    image: Option<String>,
+) -> Result<i64, ServerFnError> {
+    use crabbage_store::recipes::create;
+    let (pool, user) = crate::access::signed_in().await?;
+    let config = crate::access::config()?;
+    let input = crate::recipes::draft::parse(&draft)?;
+    let id = create(&pool, user, &input, crate::auth::now())
+        .await
+        .map_err(|error| crate::access::store_failure(&error))?;
+    if let Some(url) = image
+        .as_deref()
+        .map(str::trim)
+        .filter(|url| !url.is_empty())
+    {
+        crate::recipes::import_photo::attach(&pool, &config, id, url).await;
+    }
+    Ok(id)
+}

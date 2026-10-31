@@ -44,6 +44,21 @@ impl<F: Fn(&str) -> Option<String>> Vars<F> {
         None
     }
 
+    /// A `true` or `false` setting, `false` when unset.
+    pub(super) fn flag(&mut self, name: &'static str) -> bool {
+        match self.get(name).as_deref() {
+            None | Some("false") => false,
+            Some("true") => true,
+            Some(other) => {
+                self.problems.push(Problem::Invalid {
+                    name,
+                    reason: format!("expected true or false, not {other}"),
+                });
+                false
+            }
+        }
+    }
+
     pub(super) fn language(&mut self) -> Option<Language> {
         let Some(code) = self.get("CRABBAGE_LANGUAGE") else {
             return Some(Language::En);

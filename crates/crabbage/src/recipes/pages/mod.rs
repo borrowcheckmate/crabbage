@@ -3,6 +3,7 @@
 mod detail;
 mod editor_list;
 mod form;
+mod import;
 mod list;
 mod photo_card;
 mod rating_section;
@@ -10,4 +11,5 @@ mod stepper;
 
 pub(crate) use detail::RecipePage;
 pub(crate) use form::{RecipeEditPage, RecipeNewPage};
+pub(crate) use import::RecipeImportPage;
 pub(crate) use list::RecipesPage;

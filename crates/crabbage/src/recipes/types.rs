@@ -139,3 +139,19 @@ pub(crate) struct StepDraft {
     /// The positions, in the form's lines, of the lines this step uses.
     pub(crate) line_positions: Vec<usize>,
 }
+
+/// A recipe read from a web page, ready to review: the form to fill, the photo to download on
+/// save, and what could not be resolved.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct ImportPreview {
+    /// The recipe as the form shows it.
+    pub(crate) draft: RecipeDraft,
+    /// The address of the recipe photo, if the page has one.
+    pub(crate) image: Option<String>,
+    /// The address the recipe was read from.
+    pub(crate) source: String,
+    /// The ingredient names that match no catalogue ingredient.
+    pub(crate) unresolved: Vec<String>,
+    /// The line to show about the AI: why it did not complete the recipe, or that it is off.
+    pub(crate) ai_error: Option<String>,
+}
