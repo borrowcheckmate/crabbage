@@ -255,12 +255,12 @@ pub(crate) fn header(response: &Response<Body>, name: axum::http::HeaderName) ->
         .map(str::to_owned)
 }
 
-/// Reads the response body as text.
+/// Reads the response body as text and fails the test when it does not finish within a minute.
 pub(crate) async fn body_text(response: Response<Body>) -> String {
-    let bytes = response
-        .into_body()
-        .collect()
+    let bytes = tokio::time::timeout(REQUEST_TIMEOUT, response.into_body().collect())
         .await
+        .map_err(|_elapsed| "the response body did not finish within a minute")
+        .expect("the body finishes")
         .expect("body reads")
         .to_bytes();
     String::from_utf8_lossy(&bytes).into_owned()
