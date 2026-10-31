@@ -5,3 +5,4 @@ pub mod membership;
 pub mod permissions;
 pub mod quantity;
 pub mod scaling;
+pub mod shopping;
