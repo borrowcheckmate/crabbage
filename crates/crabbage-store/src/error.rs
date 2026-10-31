@@ -19,6 +19,8 @@ pub enum StoreError {
     UnknownLine,
     /// A rating is not from 1 to 5 stars.
     InvalidStars,
+    /// The text is blank after trimming whitespace.
+    Empty,
 }
 
 impl Display for StoreError {
@@ -31,6 +33,7 @@ impl Display for StoreError {
             Self::InUse => write!(f, "the ingredient is used by recipes"),
             Self::UnknownLine => write!(f, "a step links to a line the recipe does not have"),
             Self::InvalidStars => write!(f, "a rating must be from 1 to 5 stars"),
+            Self::Empty => write!(f, "the text is empty"),
         }
     }
 }
@@ -41,7 +44,11 @@ impl Error for StoreError {
             Self::Io(error) => Some(error),
             Self::Database(error) => Some(error),
             Self::Migrate(error) => Some(error),
-            Self::Conflict(_) | Self::InUse | Self::UnknownLine | Self::InvalidStars => None,
+            Self::Conflict(_)
+            | Self::InUse
+            | Self::UnknownLine
+            | Self::InvalidStars
+            | Self::Empty => None,
         }
     }
 }

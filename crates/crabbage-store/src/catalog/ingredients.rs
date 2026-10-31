@@ -188,8 +188,8 @@ pub async fn approve(pool: &SqlitePool, id: i64) -> Result<bool, StoreError> {
     Ok(result.rows_affected() > 0)
 }
 
-/// Merges the ingredient `from` into `into`: recipe lines and aliases move to `into`, the name of
-/// `from` becomes an alias of `into`, and `from` is deleted.
+/// Merges the ingredient `from` into `into`: recipe lines, shopping items and aliases move to
+/// `into`, the name of `from` becomes an alias of `into`, and `from` is deleted.
 ///
 /// Returns `false`, and changes nothing, when either ingredient is missing or both are the same.
 ///
@@ -224,6 +224,11 @@ pub async fn merge(pool: &SqlitePool, from: i64, into: i64) -> Result<bool, Stor
         .execute(&mut *tx)
         .await?;
     sqlx::query("UPDATE recipe_lines SET ingredient_id = ? WHERE ingredient_id = ?")
+        .bind(into)
+        .bind(from)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query("UPDATE shopping_items SET ingredient_id = ? WHERE ingredient_id = ?")
         .bind(into)
         .bind(from)
         .execute(&mut *tx)
