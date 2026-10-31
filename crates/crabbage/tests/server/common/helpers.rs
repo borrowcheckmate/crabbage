@@ -9,6 +9,8 @@ use http_body_util::BodyExt;
 use leptos::config::LeptosOptions;
 use sqlx::sqlite::SqlitePool;
 use tower::ServiceExt;
+
+const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_mins(1);
 use url::Url;
 
 use super::FakeIssuer;
@@ -128,11 +130,13 @@ impl Harness {
         self.send(request).await
     }
 
+    /// Sends `request` to the app and fails the test when no answer comes within a minute.
     pub(crate) async fn send(&self, request: Request<Body>) -> Response<Body> {
-        self.router
-            .clone()
-            .oneshot(request)
+        let target = format!("{} {}", request.method(), request.uri());
+        tokio::time::timeout(REQUEST_TIMEOUT, self.router.clone().oneshot(request))
             .await
+            .map_err(|_elapsed| format!("{target} did not answer within a minute"))
+            .expect("the app answers")
             .expect("router is infallible")
     }
 
