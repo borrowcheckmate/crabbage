@@ -111,7 +111,7 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports |
 | `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR`; `begin_write` |
-| `src/error.rs` | `StoreError`: io, database and migration failures, `Conflict(text)` when a name or alias is taken or would equal a name or alias, `InUse` when recipe lines use an ingredient, `UnknownLine` when a step links to a line the recipe does not have, `InvalidStars` when a rating is not from 1 to 5, and `Empty` when a shopping text is blank |
+| `src/error.rs` | `StoreError`: io, database and migration failures, `Conflict(text)` when a name or alias is taken or would equal a name or alias, `InUse` when recipe lines use an ingredient, `UnknownLine` when a step links to a line the recipe does not have, `InvalidStars` when a rating is not from 1 to 5, `Empty` when a shopping text is blank, and planner date or setting validation errors |
 | `src/users.rs` | `upsert_user`: one row per OIDC subject, returns the user id. `find`: the name and admin flag of a user (`User`) |
 | `src/sessions.rs` | `create`, `find_user`, `delete`. Takes the raw token and stores only its SHA-256 hash |
 | `src/login_attempts.rs` | `create` and `take` for pending logins. `take` deletes the row; attempts expire after 10 minutes |
@@ -125,6 +125,10 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `src/shopping/model.rs` | `ShoppingItem`: ingredient id and name, text, amount, unit, `checked`, recipe id, and the ingredient's store section id and position |
 | `src/shopping/read.rs` | `list(pool, household)`: the household's items, unchecked first, then by id. Joins ingredients and store sections |
 | `src/shopping/write.rs` | `add_recipe(pool, household, recipe, servings)` (`false` for a missing recipe; one `begin_write`). Amounts scale from the recipe's servings through `Unit::from_symbol` and `scale`, unitless counts as pieces. Lines with an ingredient become ingredient items, note-only lines text items, others are skipped. `add_text` and `edit_text` trim and refuse blank text (`Empty`); edit only changes manual items. `remove`, `set_checked` (one `begin_write`, returns the rows changed) and `clear_checked`. Every query filters by household |
+| `src/planner/mod.rs` | Declares the planner model, read and write modules and re-exports `PlannerSettings`, `PlanEntry`, and planner operations |
+| `src/planner/model.rs` | `PlannerSettings` (lookback weeks, default servings, seven Monday-first optional category ids; `None` is rest) and `PlanEntry` (ISO date, optional recipe id, servings) |
+| `src/planner/read.rs` | `settings` returns household settings or defaults (one lookback week, four servings, rest every day); `entries` returns the inclusive date range ordered by date; `history` returns non-rest recipe ids and dates in an inclusive range. Every query filters by household |
+| `src/planner/write.rs` | `save_settings` atomically replaces settings and all weekday choices; `set_entry` upserts by household and date; `remove_entry` returns whether a row was removed. Dates are validated calendar dates in `YYYY-MM-DD` form, servings must be positive, and lookback cannot be negative |
 | `src/recipes/mod.rs` | Declares `model`, `write`, `read`, `editors`, `image` and `standing`, and re-exports the public functions and records |
 | `src/recipes/model.rs` | `RecipeInput` (title, servings, `LineInput`s, `StepInput`s with `line_positions`, `category_ids`) and what the store returns: `Recipe` (lines and steps in order, owner, editors, `categories`, `image`), `RecipeLine`, `RecipeStep` (`line_ids`), `RecipeSummary` (with `image`), `Person`. Both recipe records carry the viewer's view of ratings: `average` (one decimal, `None` without ratings), `rating_count`, `my_stars` and `favourite` |
 | `src/recipes/write.rs` | `create(pool, owner, input, now)`, `update(pool, id, input)` and `delete`. Create and update run in one transaction and replace categories, lines and steps wholesale. Unknown category ids are ignored. An ingredient name matches a name or alias case-insensitively, and an unknown name creates an ingredient with `pending_review`. Blank names become no ingredient |
@@ -132,13 +136,14 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `src/recipes/standing.rs` | `rate(pool, recipe, user, stars)` (upsert; `InvalidStars` for anything outside 1 to 5 before the database is touched; `false` for a missing recipe), and `set_favourite(pool, recipe, user, bool)` (`false` for a missing recipe). Both writes run in `begin_write` |
 | `src/recipes/image.rs` | `set_image(pool, id, Option<&str>)`: sets or clears the file name of the recipe's photo (the `image` column of `recipes`, from migration 0004) and returns the name it replaced, `None` when there was none or the recipe is missing |
 | `src/recipes/editors.rs` | `add_editor` (false for a missing recipe or user; adding twice changes nothing) and `remove_editor` |
-| `migrations/` | SQL migrations, applied in file-name order |
+| `migrations/` | SQL migrations, applied in file-name order. `0008_planner.sql` stores household planner settings and weekday categories, and dated recipe or rest entries; deleting a household cascades, deleting a category clears weekday choices, and deleting a recipe turns its plan entry into rest |
 | `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
 | `tests/concurrent_writes.rs` | Many concurrent creates and renames all succeed |
 | `tests/recipes_images.rs` | `set_image` returns the replaced name, clears it, reads back through `get` and `list`, and does nothing for a missing recipe |
 | `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs`, `tests/households.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
 | `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines and shopping items inserted with SQL, both re-pointed), section ordering and renumbering |
 | `tests/catalog_categories.rs` | Category order by name, unique names regardless of case, rename, and delete taking the category off its recipes |
+| `tests/planner.rs` | Settings defaults and per-household round trips; recipe and rest entry upserts, inclusive ordered ranges, recipe history and household isolation; invalid dates and servings |
 | `tests/recipes_categories.rs` | Categories stored by name with unknown ids ignored, replaced on update, the list filtered by category |
 | `tests/recipes_round_trip.rs` | Lines and steps round-trip in order with step-line links, unknown ingredients created pending, alias and case-insensitive resolution, list order, `UnknownLine` |
 | `tests/recipes_update.rs` | Update replaces lines and steps, a missing recipe is unchanged, a bad link changes nothing |

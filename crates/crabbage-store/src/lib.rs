@@ -4,6 +4,7 @@ pub mod catalog;
 mod error;
 pub mod households;
 pub mod login_attempts;
+pub mod planner;
 mod pool;
 pub mod recipes;
 pub mod sessions;

@@ -21,6 +21,10 @@ pub enum StoreError {
     InvalidStars,
     /// The text is blank after trimming whitespace.
     Empty,
+    /// A planner date is not a valid calendar date in `YYYY-MM-DD` form.
+    InvalidDate,
+    /// Planner settings or entry servings are outside their allowed range.
+    InvalidPlannerSettings,
 }
 
 impl Display for StoreError {
@@ -34,6 +38,8 @@ impl Display for StoreError {
             Self::UnknownLine => write!(f, "a step links to a line the recipe does not have"),
             Self::InvalidStars => write!(f, "a rating must be from 1 to 5 stars"),
             Self::Empty => write!(f, "the text is empty"),
+            Self::InvalidDate => write!(f, "the date must be a valid YYYY-MM-DD date"),
+            Self::InvalidPlannerSettings => write!(f, "planner settings are invalid"),
         }
     }
 }
@@ -48,7 +54,9 @@ impl Error for StoreError {
             | Self::InUse
             | Self::UnknownLine
             | Self::InvalidStars
-            | Self::Empty => None,
+            | Self::Empty
+            | Self::InvalidDate
+            | Self::InvalidPlannerSettings => None,
         }
     }
 }
