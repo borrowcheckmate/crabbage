@@ -101,7 +101,7 @@ pub(crate) async fn page_until(harness: &Harness, session: &str, expected: &str)
 #[tokio::test]
 async fn migration_imports_reports_failure_and_skips_imported_recipes_on_the_next_run() {
     let harness = Harness::start("mealie-migration").await;
-    let session = sign_in_as(&harness, "mealie-admin", &["crabbage-admin"]).await;
+    let session = sign_in_as(&harness, "mealie-admin", &["admin"]).await;
     let base = mealie_server(false).await;
     assert_eq!(
         start(&harness, &session, &base, "fixture-token").await,
@@ -150,7 +150,7 @@ async fn migration_imports_reports_failure_and_skips_imported_recipes_on_the_nex
 #[tokio::test]
 async fn a_bad_mealie_token_is_reported_in_the_status() {
     let harness = Harness::start("mealie-unauthorized").await;
-    let session = sign_in_as(&harness, "mealie-admin", &["crabbage-admin"]).await;
+    let session = sign_in_as(&harness, "mealie-admin", &["admin"]).await;
     let base = mealie_server(true).await;
     assert_eq!(
         start(&harness, &session, &base, "never-return-this-token").await,

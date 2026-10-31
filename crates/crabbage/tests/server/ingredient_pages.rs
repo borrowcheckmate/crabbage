@@ -8,7 +8,7 @@ use crabbage_store::catalog::{ingredients, sections};
 use crate::common::{Harness, body_text, session_token};
 
 async fn admin_token(harness: &Harness) -> String {
-    harness.issuer.set_groups(&["crabbage-admin"]);
+    harness.issuer.set_groups(&["admin"]);
     session_token(&harness.sign_in().await).expect("sign-in sets a session")
 }
 

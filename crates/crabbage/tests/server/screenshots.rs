@@ -200,48 +200,33 @@ async fn write_pages() {
     let recipe_servings_path = format!("{recipe_path}?servings=8");
     let cook_path = format!("{recipe_path}/cook?step=2&done=1");
     let cook_timer_path = format!("{recipe_path}/cook?step=3");
-    let mealie_admin = sign_in_as(&harness, "screenshot-mealie-admin", &["crabbage-admin"]).await;
+    let mealie_admin = sign_in_as(&harness, "screenshot-mealie-admin", &["admin"]).await;
     let mealie = crate::mealie::mealie_server(false).await;
     crate::mealie::start(&harness, &mealie_admin, &mealie, "fixture-token").await;
     crate::mealie::page_until(&harness, &mealie_admin, "Failed: 1").await;
 
     let pages = [
-        ("admin", &["crabbage-admin"][..], "home", "/"),
+        ("admin", &["admin"][..], "home", "/"),
+        ("admin", &["admin"][..], "ingredients", "/admin/ingredients"),
+        ("admin", &["admin"][..], "sections", "/admin/sections"),
+        ("admin", &["admin"][..], "review", "/admin/review"),
+        ("admin", &["admin"][..], "categories", "/admin/categories"),
+        ("admin", &["admin"][..], "mealie", "/admin/mealie"),
         (
             "admin",
-            &["crabbage-admin"][..],
-            "ingredients",
-            "/admin/ingredients",
-        ),
-        (
-            "admin",
-            &["crabbage-admin"][..],
-            "sections",
-            "/admin/sections",
-        ),
-        ("admin", &["crabbage-admin"][..], "review", "/admin/review"),
-        (
-            "admin",
-            &["crabbage-admin"][..],
-            "categories",
-            "/admin/categories",
-        ),
-        ("admin", &["crabbage-admin"][..], "mealie", "/admin/mealie"),
-        (
-            "admin",
-            &["crabbage-admin"][..],
+            &["admin"][..],
             "ingredient",
             ingredient_path.as_str(),
         ),
         (
             "admin",
-            &["crabbage-admin"][..],
+            &["admin"][..],
             "ingredient-delete",
             ingredient_delete_path.as_str(),
         ),
         (
             "admin",
-            &["crabbage-admin"][..],
+            &["admin"][..],
             "ingredients-search",
             "/admin/ingredients?q=pom",
         ),

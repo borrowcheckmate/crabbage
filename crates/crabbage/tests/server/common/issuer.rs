@@ -44,6 +44,8 @@ struct Expectations {
     subject: String,
     name: Option<String>,
     preferred_username: Option<String>,
+    role: Option<String>,
+    household: Option<serde_json::Value>,
 }
 
 /// A running fake provider. Its ID tokens carry the nonce set with [`FakeIssuer::expect_nonce`].
@@ -75,6 +77,8 @@ impl FakeIssuer {
                 subject: DEFAULT_SUBJECT.to_owned(),
                 name: None,
                 preferred_username: None,
+                role: None,
+                household: None,
             })),
         };
         let router = Router::new()
@@ -104,6 +108,14 @@ impl FakeIssuer {
             groups.iter().map(|group| (*group).to_owned()).collect();
     }
 
+    pub(crate) fn set_role(&self, role: Option<&str>) {
+        self.expectations.lock().expect("not poisoned").role = role.map(str::to_owned);
+    }
+
+    pub(crate) fn set_household(&self, household: Option<serde_json::Value>) {
+        self.expectations.lock().expect("not poisoned").household = household;
+    }
+
     /// Makes the next ID tokens belong to the user with `subject`, a user of their own.
     pub(crate) fn set_subject(&self, subject: &str) {
         subject.clone_into(&mut self.expectations.lock().expect("not poisoned").subject);
@@ -123,7 +135,7 @@ impl FakeIssuer {
     }
 
     fn id_token(&self) -> String {
-        let (nonce, groups, subject, name, preferred_username) = {
+        let (nonce, groups, subject, name, preferred_username, role, household) = {
             let expectations = self.expectations.lock().expect("not poisoned");
             (
                 expectations.nonce.clone(),
@@ -131,6 +143,8 @@ impl FakeIssuer {
                 expectations.subject.clone(),
                 expectations.name.clone(),
                 expectations.preferred_username.clone(),
+                expectations.role.clone(),
+                expectations.household.clone(),
             )
         };
         let now = 1_900_000_000_u64;
@@ -145,6 +159,8 @@ impl FakeIssuer {
             "name": name,
             "preferred_username": preferred_username,
             "groups": groups,
+            "crabbage_role": role,
+            "crabbage_household": household,
         });
         let signing_input = format!(
             "{}.{}",

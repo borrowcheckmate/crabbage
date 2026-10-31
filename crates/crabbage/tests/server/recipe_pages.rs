@@ -128,7 +128,7 @@ async fn edit_and_delete_show_only_to_those_who_may_use_them() {
     assert!(!body.contains(&edit_link), "{body}");
     assert!(!body.contains(&delete_link), "{body}");
 
-    let admin = sign_in_as(&harness, "admin", &["crabbage-admin"]).await;
+    let admin = sign_in_as(&harness, "admin", &["admin"]).await;
     let body = page(&harness, &admin, &format!("/recipes/{id}")).await;
     assert!(body.contains(&edit_link), "{body}");
     assert!(body.contains(&delete_link), "{body}");
