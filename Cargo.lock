@@ -527,6 +527,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "base64 0.23.1",
+ "crabbage-dev",
  "crabbage-domain",
  "crabbage-import",
  "crabbage-store",
@@ -549,6 +550,23 @@ dependencies = [
  "url",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "crabbage-dev"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "base64 0.23.1",
+ "crabbage-domain",
+ "crabbage-store",
+ "image",
+ "openidconnect",
+ "rsa",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "url",
 ]
 
 [[package]]
@@ -4470,6 +4488,8 @@ name = "xtask"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "crabbage-dev",
+ "tokio",
 ]
 
 [[package]]

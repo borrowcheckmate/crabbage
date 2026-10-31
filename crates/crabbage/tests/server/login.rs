@@ -230,3 +230,42 @@ async fn a_changed_name_is_stored_on_the_next_login() {
     harness.sign_in().await;
     assert_eq!(stored_name(&harness).await, "Ada King");
 }
+
+#[tokio::test]
+async fn the_fake_issuer_signs_in_each_demo_identity_with_its_fixed_membership() {
+    let harness = Harness::start("auth-demo-users").await;
+    for (user, subject, expected_admin, expected_households) in [
+        ("admin", "demo-admin", true, 2),
+        ("member", "demo-member", false, 1),
+        ("solo", "demo-solo", false, 0),
+    ] {
+        let login = harness.get("/auth/login", None).await;
+        let (state, nonce) = authorization_params(&login);
+        let cookies = cookie_pair(&login, LOGIN_COOKIE).expect("login cookie is set");
+        assert!(harness.issuer.set_demo_user(user, &nonce));
+        let callback = harness
+            .get_with_cookies(
+                &format!("/auth/callback?code={user}&state={state}"),
+                &cookies,
+            )
+            .await;
+        assert_eq!(callback.status(), StatusCode::SEE_OTHER);
+        let user_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")
+            .bind(subject)
+            .fetch_one(&harness.pool)
+            .await
+            .expect("demo user is stored");
+        let profile = users::find(&harness.pool, user_id)
+            .await
+            .expect("profile reads")
+            .expect("profile exists");
+        assert_eq!(profile.is_admin, expected_admin);
+        assert_eq!(
+            crabbage_store::households::households_of(&harness.pool, user_id)
+                .await
+                .expect("memberships read")
+                .len(),
+            expected_households
+        );
+    }
+}

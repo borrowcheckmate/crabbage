@@ -5,4 +5,4 @@ allow-unwrap-in-tests = true
 avoid-breaking-exported-api = false
 cognitive-complexity-threshold = 15
 too-many-lines-threshold = 60
-allowed-duplicate-crates = ["base64", "block-buffer", "convert_case", "cpufeatures", "crypto-common", "digest", "getrandom", "hashbrown", "miniz_oxide", "sha2", "syn", "thiserror", "thiserror-impl", "windows-sys"]
+allowed-duplicate-crates = ["base64", "bitflags", "block-buffer", "convert_case", "cpufeatures", "crypto-common", "digest", "getrandom", "hashbrown", "hkdf", "hmac", "indexmap", "miniz_oxide", "rand", "rand_core", "schemars", "sha2", "syn", "thiserror", "thiserror-impl", "windows-sys"]

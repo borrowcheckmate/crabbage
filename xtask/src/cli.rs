@@ -48,6 +48,17 @@ pub(crate) enum Command {
     Ci,
     /// Use the tracked hooks in .githooks for this clone.
     Hooks,
+    /// Build and serve the app with generated demo data.
+    Demo {
+        #[arg(long, default_value_t = 3000)]
+        port: u16,
+        #[arg(long)]
+        keep: bool,
+        #[arg(long, default_value = "en")]
+        language: String,
+        #[arg(long)]
+        ai: Option<String>,
+    },
 }
 
 #[cfg(test)]
@@ -70,6 +81,27 @@ mod tests {
             cli.command,
             Command::Identity {
                 range: Some("a..b".to_owned())
+            }
+        );
+        let cli = Cli::try_parse_from([
+            "xtask",
+            "demo",
+            "--port",
+            "3200",
+            "--keep",
+            "--language",
+            "nl",
+            "--ai",
+            "http://127.0.0.1:8080/v1",
+        ])
+        .unwrap();
+        assert_eq!(
+            cli.command,
+            Command::Demo {
+                port: 3200,
+                keep: true,
+                language: "nl".to_owned(),
+                ai: Some("http://127.0.0.1:8080/v1".to_owned()),
             }
         );
     }
