@@ -41,8 +41,39 @@ async fn member_sees_the_not_allowed_message_on_admin_pages() {
             body.contains("You are not allowed to manage the catalog."),
             "{path}: {body}"
         );
+        assert!(body.contains("role=\"alert\""), "{path}: {body}");
         assert!(!body.contains("Ingredients</h1>"), "{path}: {body}");
     }
+}
+
+#[tokio::test]
+async fn unknown_page_has_a_localized_recovery_state() {
+    let harness = Harness::start("pages-not-found").await;
+    let token = token_for(&harness, &[]).await;
+    let response = harness.get("/somewhere-else", Some(&token)).await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let body = body_text(response).await;
+    assert!(body.contains("Page not found"), "{body}");
+    assert!(
+        body.contains("This page is unavailable or may have been moved."),
+        "{body}"
+    );
+    assert!(body.contains("href=\"/\""), "{body}");
+    assert!(body.contains("role=\"status\""), "{body}");
+}
+
+#[tokio::test]
+async fn account_menu_exposes_sign_out_and_household_switching() {
+    let harness = Harness::start("pages-account-menu").await;
+    let token = token_for(
+        &harness,
+        &["crabbage-household-one", "crabbage-household-two"],
+    )
+    .await;
+    let body = body_text(harness.get("/", Some(&token)).await).await;
+    assert!(body.contains("class=\"account-menu\""), "{body}");
+    assert!(body.contains("action=\"/auth/logout\""), "{body}");
+    assert!(body.contains("action=\"/household\""), "{body}");
 }
 
 #[tokio::test]
@@ -147,6 +178,22 @@ async fn ingredients_page_lists_sections_alias_counts_and_pending_ingredients() 
     }
     assert!(!body.contains("Pomodoro"), "{body}");
     assert!(!body.contains("Merge into"), "{body}");
+}
+
+#[tokio::test]
+async fn ingredient_admin_keeps_long_catalogs_searchable_and_complete() {
+    let harness = Harness::start("pages-ingredients-long").await;
+    let token = token_for(&harness, &["admin"]).await;
+    for number in 0..80 {
+        ingredients::create(&harness.pool, &format!("Ingredient {number}"))
+            .await
+            .unwrap();
+    }
+
+    let body = body_text(harness.get("/admin/ingredients", Some(&token)).await).await;
+    assert!(body.contains("Ingredient 0"), "{body}");
+    assert!(body.contains("Ingredient 79"), "{body}");
+    assert!(body.contains("name=\"q\""), "{body}");
 }
 
 #[tokio::test]

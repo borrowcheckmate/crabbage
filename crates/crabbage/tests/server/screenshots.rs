@@ -262,6 +262,7 @@ async fn write_pages() {
             import_path.as_str(),
         ),
         ("member", &[][..], "recipes-search", "/recipes?q=flour"),
+        ("member", &[][..], "not-found", "/not-a-page"),
         (
             "member",
             &[][..],

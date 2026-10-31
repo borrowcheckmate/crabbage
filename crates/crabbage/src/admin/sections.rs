@@ -22,7 +22,7 @@ pub(crate) fn SectionsPage() -> impl IntoView {
     let delete = ServerAction::<DeleteSection>::new();
     let move_section = ServerAction::<MoveSection>::new();
     view! {
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
                 let _versions = (
                     create.version().get(),
@@ -46,16 +46,18 @@ async fn section_page(
         Ok(user) if user.is_admin => {
             let sections = list_sections().await;
             view! {
+                <section class="admin-page">
                 <h1>{t("admin.sections.heading")}</h1>
-                <ActionForm action=create>
+                <section class="admin-card admin-create"><ActionForm action=create>
                     <label>{t("admin.label.name")} <input name="name" required/></label>
                     <button>{t("admin.button.add")}</button>
-                </ActionForm>
+                </ActionForm></section>
                 {move || create.value().with(|value| failure(value.as_ref()))}
                 {move || rename.value().with(|value| failure(value.as_ref()))}
                 {move || delete.value().with(|value| failure(value.as_ref()))}
                 {move || move_section.value().with(|value| failure(value.as_ref()))}
                 {section_rows(Some(sections), rename, delete, move_section)}
+                </section>
             }
             .into_any()
         }
@@ -74,11 +76,15 @@ fn section_rows(
         Some(Ok(rows)) if rows.is_empty() => {
             view! { <p>{t("admin.sections.empty")}</p> }.into_any()
         }
-        Some(Ok(rows)) => rows
-            .into_iter()
-            .map(|row| view! { <SectionRow_ row=row rename=rename delete=delete move_section=move_section/> })
-            .collect_view()
-            .into_any(),
+        Some(Ok(rows)) => view! {
+            <div class="admin-list">
+                {rows
+                    .into_iter()
+                    .map(|row| view! { <SectionRow_ row=row rename=rename delete=delete move_section=move_section/> })
+                    .collect_view()}
+            </div>
+        }
+        .into_any(),
         Some(Err(error)) => error_notice(&message(&error)),
         None => ().into_any(),
     }
@@ -95,13 +101,14 @@ fn SectionRow_(
     let up = (row.position - 1).to_string();
     let down = (row.position + 1).to_string();
     view! {
-        <section class="card">
+        <section class="admin-row">
+            <strong class="admin-row-title">{row.name.clone()}</strong>
             <ActionForm action=rename>
                 <input type="hidden" name="id" value=id/>
                 <label>{t("admin.label.name")} <input name="name" value=row.name.clone() required/></label>
                 <button>{t("admin.button.rename")}</button>
             </ActionForm>
-            <div class="row">
+            <div class="row admin-row-actions">
                 <ActionForm action=move_section>
                     <input type="hidden" name="id" value=id/>
                     <input type="hidden" name="position" value=up/>

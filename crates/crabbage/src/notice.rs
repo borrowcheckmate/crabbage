@@ -12,7 +12,7 @@ pub(crate) fn failure<T>(value: Option<&Result<T, ServerFnError>>) -> Option<Any
 
 /// A failure notice with the shared error style.
 pub(crate) fn error_notice(text: &str) -> AnyView {
-    view! { <p class="notice error">{text.to_owned()}</p> }.into_any()
+    view! { <p class="notice error" role="alert">{text.to_owned()}</p> }.into_any()
 }
 
 /// The text the server sent with a failure.

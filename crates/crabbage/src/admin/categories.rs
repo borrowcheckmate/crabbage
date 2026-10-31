@@ -17,7 +17,7 @@ pub(crate) fn CategoriesPage() -> impl IntoView {
     let rename = ServerAction::<RenameCategory>::new();
     let delete = ServerAction::<DeleteCategory>::new();
     view! {
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
                 let _versions = (create.version().get(), rename.version().get(), delete.version().get());
                 Suspend::new(async move { category_page(create, rename, delete).await })
@@ -35,15 +35,17 @@ async fn category_page(
         Ok(user) if user.is_admin => {
             let rows = list_categories().await;
             view! {
+                <section class="admin-page">
                 <h1>{t("admin.categories.heading")}</h1>
-                <ActionForm action=create>
+                <section class="admin-card admin-create"><ActionForm action=create>
                     <label>{t("admin.label.name")} <input name="name" required/></label>
                     <button>{t("admin.button.add")}</button>
-                </ActionForm>
+                </ActionForm></section>
                 {move || create.value().with(|value| failure(value.as_ref()))}
                 {move || rename.value().with(|value| failure(value.as_ref()))}
                 {move || delete.value().with(|value| failure(value.as_ref()))}
                 {category_rows(rows, rename, delete)}
+                </section>
             }
             .into_any()
         }
@@ -59,11 +61,15 @@ fn category_rows(
 ) -> AnyView {
     match rows {
         Ok(rows) if rows.is_empty() => view! { <p>{t("admin.categories.empty")}</p> }.into_any(),
-        Ok(rows) => rows
-            .into_iter()
-            .map(|row| category_card(row, rename, delete))
-            .collect_view()
-            .into_any(),
+        Ok(rows) => view! {
+            <div class="admin-list">
+                {rows
+                    .into_iter()
+                    .map(|row| category_card(row, rename, delete))
+                    .collect_view()}
+            </div>
+        }
+        .into_any(),
         Err(error) => error_notice(&message(&error)),
     }
 }
@@ -75,7 +81,8 @@ fn category_card(
 ) -> impl IntoView {
     let id = row.id;
     view! {
-        <section class="card">
+        <section class="admin-row">
+            <strong class="admin-row-title">{row.name.clone()}</strong>
             <ActionForm action=rename>
                 <input type="hidden" name="id" value=id/>
                 <label>{t("admin.label.name")} <input name="name" value=row.name required/></label>
