@@ -103,6 +103,7 @@ async fn write_pages() {
     let recipe_delete_path = format!("{recipe_path}?confirm=delete");
     let recipe_servings_path = format!("{recipe_path}?servings=8");
     let cook_path = format!("{recipe_path}/cook?step=2&done=1");
+    let cook_timer_path = format!("{recipe_path}/cook?step=3");
 
     let pages = [
         ("admin", &["crabbage-admin"][..], "home", "/"),
@@ -175,6 +176,7 @@ async fn write_pages() {
             recipe_servings_path.as_str(),
         ),
         ("member", &[][..], "cook", cook_path.as_str()),
+        ("member", &[][..], "cook-timer", cook_timer_path.as_str()),
     ];
     for (who, groups, name, path) in pages {
         harness.issuer.set_groups(groups);
@@ -229,7 +231,7 @@ fn sample_recipe(category: i64) -> RecipeInput {
                 line_positions: vec![0, 2],
             },
             StepInput {
-                text: "Fry in a hot pan until golden on both sides.".to_owned(),
+                text: "Fry for 4 minutes until golden on both sides.".to_owned(),
                 duration_seconds: Some(240),
                 line_positions: vec![],
             },

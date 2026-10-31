@@ -4,7 +4,7 @@
 
 use axum::http::StatusCode;
 use axum::http::header::LOCATION;
-use crabbage_store::recipes::{RecipeInput, create as create_recipe};
+use crabbage_store::recipes::{RecipeInput, StepInput, create as create_recipe};
 
 use crate::common::{Harness, body_text, header, sign_in_as};
 use crate::recipes::create;
@@ -306,4 +306,108 @@ async fn the_recipe_page_links_to_cooking_and_keeps_the_servings() {
         body.contains(&format!("href=\"/recipes/{id}/cook?servings=8\"")),
         "{body}"
     );
+}
+
+/// A recipe with one step, `text` and an optional stored duration, owned by the owner. Returns its id.
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
+async fn one_step(harness: &Harness, text: &str, duration_seconds: Option<i64>) -> i64 {
+    let owner: i64 = sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")
+        .bind(OWNER)
+        .fetch_one(&harness.pool)
+        .await
+        .expect("the user exists");
+    create_recipe(
+        &harness.pool,
+        owner,
+        &RecipeInput {
+            title: "Roast".to_owned(),
+            servings: 1,
+            lines: Vec::new(),
+            steps: vec![StepInput {
+                text: text.to_owned(),
+                duration_seconds,
+                line_positions: Vec::new(),
+            }],
+            category_ids: Vec::new(),
+        },
+        0,
+    )
+    .await
+    .expect("recipe is stored")
+}
+
+#[tokio::test]
+async fn a_step_that_names_a_duration_offers_a_start_timer_button() {
+    let harness = Harness::start("cook-timer-text").await;
+    let token = sign_in_as(&harness, OWNER, &[]).await;
+    let id = one_step(&harness, "Bake for 25 minutes", None).await;
+
+    let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
+    assert!(body.contains("data-seconds=\"1500\""), "{body}");
+    assert!(body.contains("Start timer 25:00</button>"), "{body}");
+    assert!(body.contains("data-label=\"Step 1\""), "{body}");
+    assert!(
+        body.contains("aria-label=\"Start timer for step 1\""),
+        "{body}"
+    );
+    assert_eq!(body.matches("data-seconds=").count(), 1, "{body}");
+}
+
+#[tokio::test]
+async fn a_stored_duration_without_text_offers_a_timer() {
+    let harness = Harness::start("cook-timer-stored").await;
+    let token = sign_in_as(&harness, OWNER, &[]).await;
+    let id = one_step(&harness, "Fry until golden", Some(240)).await;
+
+    let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
+    assert!(body.contains("data-seconds=\"240\""), "{body}");
+    assert!(body.contains("Start timer 04:00</button>"), "{body}");
+}
+
+#[tokio::test]
+async fn a_stored_duration_and_the_same_one_in_the_text_give_one_timer() {
+    let harness = Harness::start("cook-timer-once").await;
+    let token = sign_in_as(&harness, OWNER, &[]).await;
+    let id = one_step(&harness, "Bake for 25 minutes", Some(1500)).await;
+
+    let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
+    assert_eq!(body.matches("data-seconds=").count(), 1, "{body}");
+}
+
+#[tokio::test]
+async fn a_dutch_duration_is_offered() {
+    let harness = Harness::start("cook-timer-dutch").await;
+    let token = sign_in_as(&harness, OWNER, &[]).await;
+    let id = one_step(&harness, "Laat 1 uur rusten", None).await;
+
+    let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
+    assert!(body.contains("data-seconds=\"3600\""), "{body}");
+}
+
+#[tokio::test]
+async fn a_step_without_a_duration_offers_no_timer() {
+    let harness = Harness::start("cook-timer-none").await;
+    let (token, id) = three_steps(&harness).await;
+
+    let body = page(&harness, &token, &format!("/recipes/{id}/cook?step=2")).await;
+    assert!(!body.contains("data-seconds"), "{body}");
+    assert!(!body.contains("Start timer"), "{body}");
+}
+
+#[tokio::test]
+async fn the_timer_tray_is_on_every_step() {
+    let harness = Harness::start("cook-tray").await;
+    let (token, id) = three_steps(&harness).await;
+    let path = format!("/recipes/{id}/cook");
+
+    for query in ["", "?step=2", "?step=3&done=3"] {
+        let body = page(&harness, &token, &format!("{path}{query}")).await;
+        assert!(body.contains("class=\"timer-tray\""), "{query}: {body}");
+        assert!(body.contains("aria-live=\"polite\""), "{query}: {body}");
+    }
+    let body = page(&harness, &token, &format!("/recipes/{id}/cook?step=3")).await;
+    assert!(body.contains("Start timer 04:00</button>"), "{body}");
 }
