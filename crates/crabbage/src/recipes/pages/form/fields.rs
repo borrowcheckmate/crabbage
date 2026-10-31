@@ -81,7 +81,7 @@ fn line_row(draft: Draft, line: LineSignals) -> impl IntoView {
     }
 }
 
-fn step_row(draft: Draft, step: StepSignals) -> impl IntoView {
+fn step_row(draft: Draft, step: StepSignals) -> AnyView {
     view! {
         <section class="card">
             <label>{t("recipe.label.step")} <textarea on:input=move |ev| step.text.set(event_target_value(&ev))>{move || step.text.get()}</textarea></label>
@@ -97,13 +97,15 @@ fn step_row(draft: Draft, step: StepSignals) -> impl IntoView {
             </button>
         </section>
     }
+    .into_any()
 }
 
-fn step_line(step: StepSignals, line: LineSignals) -> impl IntoView {
+fn step_line(step: StepSignals, line: LineSignals) -> AnyView {
     view! {
         <label>
             <input type="checkbox" checked=move || step.lines.get().contains(&line.key) on:change=move |ev| step.set_line(line.key, event_target_checked(&ev))/>
             {move || line.text()}
         </label>
     }
+    .into_any()
 }
