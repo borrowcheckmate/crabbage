@@ -157,3 +157,70 @@ async fn ingredient_rows_merge_and_the_merged_form_checks_every_item() {
         "{checked_page}"
     );
 }
+
+#[tokio::test]
+async fn unitless_amounts_render_and_merge_as_pieces() {
+    let harness = Harness::start("shopping-page-unitless").await;
+    let (token, household) = list_context(&harness).await;
+    let eggs = ingredients::create(&harness.pool, "Eggs")
+        .await
+        .expect("ingredient");
+    sqlx::query(
+        "INSERT INTO shopping_items (household_id, ingredient_id, amount) VALUES (?, ?, 3)",
+    )
+    .bind(household)
+    .bind(eggs)
+    .execute(&harness.pool)
+    .await
+    .expect("shopping item");
+    let page = body_text(harness.get("/shopping", Some(&token)).await).await;
+    assert!(page.contains("Eggs: 3"), "{page}");
+    sqlx::query(
+        "INSERT INTO shopping_items (household_id, ingredient_id, amount) VALUES (?, ?, 2)",
+    )
+    .bind(household)
+    .bind(eggs)
+    .execute(&harness.pool)
+    .await
+    .expect("shopping item");
+    let page = body_text(harness.get("/shopping", Some(&token)).await).await;
+    assert!(page.contains("Eggs: 5"), "{page}");
+    assert!(!page.contains("Eggs: 5 piece"), "{page}");
+}
+
+#[tokio::test]
+async fn unknown_unit_amount_is_rendered_without_merging() {
+    let harness = Harness::start("shopping-page-unknown-unit").await;
+    let (token, household) = list_context(&harness).await;
+    let salt = ingredients::create(&harness.pool, "Salt")
+        .await
+        .expect("ingredient");
+    sqlx::query("INSERT INTO shopping_items (household_id, ingredient_id, amount, unit) VALUES (?, ?, 2, 'handful')")
+        .bind(household)
+        .bind(salt)
+        .execute(&harness.pool)
+        .await
+        .expect("shopping item");
+    sqlx::query("INSERT INTO shopping_items (household_id, ingredient_id, amount, unit) VALUES (?, ?, 1, 'handful')")
+        .bind(household)
+        .bind(salt)
+        .execute(&harness.pool)
+        .await
+        .expect("shopping item");
+    let page = body_text(harness.get("/shopping", Some(&token)).await).await;
+    assert!(page.contains("Salt: 2 handful"), "{page}");
+    assert!(page.contains("Salt: 1 handful"), "{page}");
+}
+
+#[tokio::test]
+async fn text_item_amount_is_rendered() {
+    let harness = Harness::start("shopping-page-text-amount").await;
+    let (token, household) = list_context(&harness).await;
+    sqlx::query("INSERT INTO shopping_items (household_id, text, amount) VALUES (?, 'Rice', 2)")
+        .bind(household)
+        .execute(&harness.pool)
+        .await
+        .expect("shopping item");
+    let page = body_text(harness.get("/shopping", Some(&token)).await).await;
+    assert!(page.contains("Rice: 2"), "{page}");
+}

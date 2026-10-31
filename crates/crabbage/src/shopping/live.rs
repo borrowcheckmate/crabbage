@@ -21,7 +21,6 @@ pub(crate) fn routes() -> Router<AppState> {
     Router::new()
         .route("/shopping/events", get(events))
         .route("/shopping/items", post(add_item))
-        .route("/shopping/items/{id}/checked", post(check_item))
         .route("/shopping/checked", post(check_items))
         .route("/shopping/items/{id}/delete", post(delete_item))
         .route("/shopping/clear-checked", post(clear_checked))
@@ -31,12 +30,6 @@ pub(crate) fn routes() -> Router<AppState> {
 struct TextForm {
     #[serde(default)]
     text: String,
-}
-
-#[derive(Deserialize)]
-struct CheckedForm {
-    #[serde(default)]
-    on: String,
 }
 
 #[derive(Deserialize)]
@@ -108,28 +101,6 @@ async fn add_item(
     Ok(Redirect::to("/shopping"))
 }
 
-async fn check_item(
-    State(state): State<AppState>,
-    Extension(user): Extension<SessionUser>,
-    Path(id): Path<i64>,
-    Form(form): Form<CheckedForm>,
-) -> Result<Redirect, StatusCode> {
-    let checked = match form.on.as_str() {
-        "true" => true,
-        "false" => false,
-        _ => return Err(StatusCode::BAD_REQUEST),
-    };
-    let household = household(&state, &user).await?;
-    let changed = shopping::set_checked(&state.pool, household, &[id], checked)
-        .await
-        .map_err(internal_error)?;
-    if changed == 0 {
-        return Err(StatusCode::NOT_FOUND);
-    }
-    state.shopping.publish(household);
-    Ok(Redirect::to("/shopping"))
-}
-
 async fn check_items(
     State(state): State<AppState>,
     Extension(user): Extension<SessionUser>,
@@ -148,22 +119,12 @@ async fn check_items(
     let mut unique = ids.clone();
     unique.sort_unstable();
     unique.dedup();
-    for id in &unique {
-        let owned: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM shopping_items WHERE household_id = ? AND id = ?)",
-        )
-        .bind(household)
-        .bind(id)
-        .fetch_one(&state.pool)
+    let changed = shopping::set_checked(&state.pool, household, &unique, checked)
         .await
         .map_err(internal_error)?;
-        if !owned {
-            return Err(StatusCode::NOT_FOUND);
-        }
+    if changed != u64::try_from(unique.len()).map_err(internal_error)? {
+        return Err(StatusCode::NOT_FOUND);
     }
-    shopping::set_checked(&state.pool, household, &unique, checked)
-        .await
-        .map_err(internal_error)?;
     state.shopping.publish(household);
     Ok(Redirect::to("/shopping"))
 }

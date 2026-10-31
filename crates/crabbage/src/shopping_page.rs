@@ -163,61 +163,107 @@ fn grouped_rows(mut rows: Vec<ShoppingRow>, sections: &[(i64, String)]) -> Vec<G
 }
 
 fn merge_rows(rows: Vec<ShoppingRow>) -> Vec<ShoppingRow> {
+    row_groups(rows)
+        .into_iter()
+        .filter_map(|group| merge_group(&group))
+        .collect()
+}
+
+fn row_groups(rows: Vec<ShoppingRow>) -> Vec<Vec<ShoppingRow>> {
+    use crabbage_domain::quantity::Unit;
+    use std::collections::HashMap;
+    let mut groups = Vec::<Vec<ShoppingRow>>::new();
+    let mut ingredient_groups = HashMap::<(i64, bool), usize>::new();
+    for row in rows {
+        let known = row
+            .unit
+            .as_deref()
+            .is_none_or(|unit| Unit::from_symbol(unit).is_some());
+        let Some(id) = row.ingredient_id.filter(|_| known) else {
+            groups.push(vec![row]);
+            continue;
+        };
+        let key = (id, row.checked);
+        let index = *ingredient_groups.entry(key).or_insert_with(|| {
+            groups.push(Vec::new());
+            groups.len() - 1
+        });
+        if let Some(group) = groups.get_mut(index) {
+            group.push(row);
+        }
+    }
+    groups
+}
+
+fn merge_group(group: &[ShoppingRow]) -> Option<ShoppingRow> {
     use crabbage_domain::quantity::{Quantity, Unit};
     use crabbage_domain::shopping::{Item, merge};
-    let mut output = Vec::<ShoppingRow>::new();
-    for row in rows {
+    let first = group.first()?.clone();
+    if first
+        .unit
+        .as_deref()
+        .is_some_and(|unit| Unit::from_symbol(unit).is_none())
+    {
+        return Some(singleton_row(first));
+    }
+    let Some(id) = first.ingredient_id else {
+        return Some(singleton_row(first));
+    };
+    let merged = merge(group.iter().map(|row| {
         let amount = row.amount.and_then(|amount| {
-            row.unit
+            let unit = row
+                .unit
                 .as_deref()
                 .and_then(Unit::from_symbol)
-                .and_then(|unit| Quantity::new(amount, unit))
+                .unwrap_or(Unit::Piece);
+            Quantity::new(amount, unit)
         });
-        if let Some(id) = row.ingredient_id
-            && let Some(existing) = output
-                .iter_mut()
-                .find(|item| item.ingredient_id == Some(id) && item.checked == row.checked)
-        {
-            let amounts = existing.amounts.iter().filter_map(|(amount, unit)| {
-                Unit::from_symbol(unit).and_then(|unit| Quantity::new(*amount, unit))
-            });
-            let merged = merge(
-                amounts
-                    .map(|amount| (Item::Ingredient(id), Some(amount)))
-                    .chain(std::iter::once((Item::Ingredient(id), amount))),
-            );
-            existing.ids.extend(row.ids);
-            existing.amounts = merged
-                .first()
-                .map(|line| {
-                    line.amounts
-                        .iter()
-                        .map(|amount| (amount.amount(), amount.unit().symbol().to_owned()))
-                        .collect()
+        (Item::Ingredient(id), amount)
+    }));
+    let amounts = merged
+        .first()
+        .map(|line| {
+            line.amounts
+                .iter()
+                .map(|amount| {
+                    (
+                        amount.amount(),
+                        if amount.unit() == Unit::Piece {
+                            String::new()
+                        } else {
+                            amount.unit().symbol().to_owned()
+                        },
+                    )
                 })
-                .unwrap_or_default();
-            existing.label = format_line(
-                existing.ingredient.as_deref().unwrap_or_default(),
-                &existing.amounts,
-            );
-            continue;
-        }
-        let name = row
-            .ingredient
-            .as_deref()
-            .or(row.text.as_deref())
-            .unwrap_or_default();
-        let amounts = amount
-            .map(|amount| vec![(amount.amount(), amount.unit().symbol().to_owned())])
-            .unwrap_or_default();
-        let label = format_line(name, &amounts);
-        output.push(ShoppingRow {
-            label,
-            amounts,
-            ..row
-        });
-    }
-    output
+                .collect()
+        })
+        .unwrap_or_default();
+    let ids = group
+        .iter()
+        .flat_map(|row| row.ids.iter().copied())
+        .collect();
+    let mut result = first;
+    result.ids = ids;
+    result.amounts = amounts;
+    result.label = format_line(
+        result.ingredient.as_deref().unwrap_or_default(),
+        &result.amounts,
+    );
+    Some(result)
+}
+
+fn singleton_row(mut row: ShoppingRow) -> ShoppingRow {
+    let name = row
+        .ingredient
+        .as_deref()
+        .or(row.text.as_deref())
+        .unwrap_or_default();
+    row.amounts = row
+        .amount
+        .map(|amount| vec![(amount, row.unit.clone().unwrap_or_default())])
+        .unwrap_or_default();
+    row.label = format_line(name, &row.amounts);
+    row
 }
 
 fn format_line(name: &str, amounts: &[(f64, String)]) -> String {
@@ -228,7 +274,11 @@ fn format_line(name: &str, amounts: &[(f64, String)]) -> String {
                 .trim_end_matches('0')
                 .trim_end_matches('.')
                 .to_owned();
-            format!("{value} {unit}")
+            if unit.is_empty() {
+                value
+            } else {
+                format!("{value} {unit}")
+            }
         })
         .collect::<Vec<_>>()
         .join(" + ");

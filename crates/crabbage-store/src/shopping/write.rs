@@ -30,20 +30,8 @@ pub async fn add_plan(
     .fetch_all(&mut *tx)
     .await?;
     for (entry, recipe, count) in &entries {
-        let servings = u32::try_from(*count)
-            .ok()
-            .and_then(Servings::new)
-            .ok_or(StoreError::InvalidPlannerSettings)?;
-        let recipe_servings: Option<i64> =
-            sqlx::query_scalar("SELECT servings FROM recipes WHERE id = ?")
-                .bind(recipe)
-                .fetch_optional(&mut *tx)
-                .await?;
-        let source = recipe_servings
-            .and_then(|value| u32::try_from(value).ok())
-            .and_then(Servings::new)
-            .unwrap_or(servings);
-        insert_recipe_lines(&mut tx, household, *recipe, Some(*entry), source, servings).await?;
+        let servings = valid_servings(*count).ok_or(StoreError::InvalidPlannerSettings)?;
+        insert_plan_lines(&mut tx, household, *recipe, *entry, servings).await?;
         sqlx::query("UPDATE plan_entries SET on_list = 1 WHERE id = ?")
             .bind(entry)
             .execute(&mut *tx)
@@ -76,10 +64,7 @@ pub async fn add_recipe(
     else {
         return Ok(false);
     };
-    let from = u32::try_from(from)
-        .ok()
-        .and_then(Servings::new)
-        .unwrap_or(servings);
+    let from = valid_servings(from).unwrap_or(servings);
     insert_recipe_lines(&mut tx, household, recipe, None, from, servings).await?;
     tx.commit().await?;
     Ok(true)
@@ -128,12 +113,29 @@ pub(crate) async fn insert_recipe_lines(
     Ok(())
 }
 
-/// The amount and unit symbol of a recipe line scaled from `from` to `to` servings. A unitless
-/// amount scales as pieces and keeps no unit. An amount whose unit is unknown is kept as it is.
+pub(crate) async fn insert_plan_lines(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    household: i64,
+    recipe: i64,
+    plan_entry: i64,
+    servings: Servings,
+) -> Result<(), StoreError> {
+    let recipe_servings: Option<i64> =
+        sqlx::query_scalar("SELECT servings FROM recipes WHERE id = ?")
+            .bind(recipe)
+            .fetch_optional(&mut **tx)
+            .await?;
+    let from = recipe_servings.and_then(valid_servings).unwrap_or(servings);
+    insert_recipe_lines(tx, household, recipe, Some(plan_entry), from, servings).await
+}
+
+/// Returns valid servings when the stored value is positive and fits in `u32`.
 pub(crate) fn valid_servings(value: i64) -> Option<Servings> {
     u32::try_from(value).ok().and_then(Servings::new)
 }
 
+/// The amount and unit symbol of a recipe line scaled from `from` to `to` servings. A unitless
+/// amount scales as pieces and keeps no unit. An amount whose unit is unknown is kept as it is.
 fn scaled(
     amount: Option<f64>,
     unit: Option<String>,

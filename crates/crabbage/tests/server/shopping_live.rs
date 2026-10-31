@@ -117,9 +117,9 @@ async fn shopping_forms_validate_values_and_household_ownership() {
     assert_eq!(
         harness
             .post_form(
-                &format!("/shopping/items/{item}/checked"),
+                "/shopping/checked",
                 Some(&member),
-                "on=yes",
+                &format!("ids={item}&on=yes")
             )
             .await
             .status(),
@@ -128,9 +128,9 @@ async fn shopping_forms_validate_values_and_household_ownership() {
     assert_eq!(
         harness
             .post_form(
-                &format!("/shopping/items/{item}/checked"),
+                "/shopping/checked",
                 Some(&away),
-                "on=true",
+                &format!("ids={item}&on=true")
             )
             .await
             .status(),

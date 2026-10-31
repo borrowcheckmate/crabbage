@@ -88,19 +88,9 @@ pub async fn set_entry(
     if let Some((id, _, _)) = previous
         && let Some(recipe) = entry.recipe_id
     {
-        let recipe_servings: Option<i64> =
-            sqlx::query_scalar("SELECT servings FROM recipes WHERE id = ?")
-                .bind(recipe)
-                .fetch_optional(&mut *tx)
-                .await?;
         let to = crate::shopping::valid_servings(entry.servings)
             .ok_or(StoreError::InvalidPlannerSettings)?;
-        let from = recipe_servings
-            .and_then(|value| u32::try_from(value).ok())
-            .and_then(|value| crate::shopping::valid_servings(i64::from(value)))
-            .unwrap_or(to);
-        crate::shopping::insert_recipe_lines(&mut tx, household, recipe, Some(id), from, to)
-            .await?;
+        crate::shopping::insert_plan_lines(&mut tx, household, recipe, id, to).await?;
     }
     tx.commit().await?;
     Ok(())

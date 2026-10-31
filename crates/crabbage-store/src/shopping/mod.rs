@@ -7,4 +7,4 @@ mod write;
 pub use model::ShoppingItem;
 pub use read::list;
 pub use write::{add_plan, add_recipe, add_text, clear_checked, edit_text, remove, set_checked};
-pub(crate) use write::{insert_recipe_lines, valid_servings};
+pub(crate) use write::{insert_plan_lines, valid_servings};
