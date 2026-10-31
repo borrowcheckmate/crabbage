@@ -3,6 +3,8 @@
 
 use leptos::prelude::*;
 
+use crate::i18n::messages;
+use crate::recipes::line_text::line_text;
 use crate::recipes::types::{LineDraft, LineRow, RecipeDetail, RecipeDraft, StepDraft};
 
 /// An ingredient row of the form.
@@ -29,6 +31,9 @@ pub(crate) struct StepSignals {
     pub(crate) text: RwSignal<String>,
     /// The minutes, as typed.
     pub(crate) minutes: RwSignal<String>,
+    /// The keys of the ingredient rows this step uses. Keys, not positions, so a link follows its
+    /// row when other rows are removed.
+    pub(crate) lines: RwSignal<Vec<usize>>,
 }
 
 /// The whole recipe form.
@@ -71,6 +76,7 @@ impl Draft {
                         .duration_seconds
                         .map(|seconds| (seconds / 60).to_string())
                         .unwrap_or_default(),
+                    line_positions: step.line_positions.clone(),
                 })
                 .collect(),
             categories: recipe
@@ -111,19 +117,37 @@ impl Draft {
         self.lines.update(|rows| rows.push(row));
     }
 
-    /// Removes the ingredient row with `key`.
+    /// Removes the ingredient row with `key`, and the links to it.
     pub(crate) fn remove_line(&self, key: usize) {
         self.lines.update(|rows| rows.retain(|row| row.key != key));
+        self.steps.with_untracked(|rows| {
+            for row in rows {
+                row.lines.update(|keys| keys.retain(|&other| other != key));
+            }
+        });
     }
 
-    /// Adds a step row at the end, filled with `step`.
+    /// Adds a step row at the end, filled with `step`. Its links are the lines at its positions.
     pub(crate) fn add_step(&self, step: StepDraft) {
+        let keys = self.line_keys();
+        let linked = step
+            .line_positions
+            .iter()
+            .filter_map(|&position| keys.get(position).copied())
+            .collect();
         let row = StepSignals {
             key: self.next_key(),
             text: RwSignal::new(step.text),
             minutes: RwSignal::new(step.minutes),
+            lines: RwSignal::new(linked),
         };
         self.steps.update(|rows| rows.push(row));
+    }
+
+    /// The keys of the ingredient rows, in order.
+    pub(crate) fn line_keys(&self) -> Vec<usize> {
+        self.lines
+            .with_untracked(|rows| rows.iter().map(|row| row.key).collect())
     }
 
     /// Removes the step row with `key`.
@@ -141,8 +165,9 @@ impl Draft {
         });
     }
 
-    /// The draft as the form currently shows it.
+    /// The draft as the form currently shows it. Each step's links are the positions of its lines.
     pub(crate) fn current(&self) -> RecipeDraft {
+        let keys = self.line_keys();
         RecipeDraft {
             title: self.title.get(),
             servings: self.servings.get(),
@@ -164,6 +189,7 @@ impl Draft {
                 .map(|row| StepDraft {
                     text: row.text.get(),
                     minutes: row.minutes.get(),
+                    line_positions: positions_of(&keys, &row.lines.get()),
                 })
                 .collect(),
             categories: self.categories.get(),
@@ -182,6 +208,46 @@ impl Draft {
     }
 }
 
+/// The positions in `keys` of the keys in `linked`, in order. A linked key that is no longer in `keys`
+/// has no position and is dropped.
+pub(crate) fn positions_of(keys: &[usize], linked: &[usize]) -> Vec<usize> {
+    keys.iter()
+        .enumerate()
+        .filter(|(_, key)| linked.contains(key))
+        .map(|(position, _)| position)
+        .collect()
+}
+
+impl LineSignals {
+    /// The line's readable text, as the cook sees it: `250 g Flour, sifted`.
+    pub(crate) fn text(&self) -> String {
+        let line = LineRow {
+            amount: self.amount.get().trim().parse().ok(),
+            unit: non_empty(&self.unit.get()),
+            ingredient: non_empty(&self.ingredient.get()),
+            note: non_empty(&self.note.get()),
+        };
+        line_text(&line, messages())
+    }
+}
+
+fn non_empty(text: &str) -> Option<String> {
+    let text = text.trim();
+    (!text.is_empty()).then(|| text.to_owned())
+}
+
+impl StepSignals {
+    /// Links this step to the ingredient row with `key`, or unlinks it when `on` is false.
+    pub(crate) fn set_line(&self, key: usize, on: bool) {
+        self.lines.update(|keys| {
+            keys.retain(|&other| other != key);
+            if on {
+                keys.push(key);
+            }
+        });
+    }
+}
+
 fn line_draft(line: &LineRow) -> LineDraft {
     LineDraft {
         amount: line
@@ -191,5 +257,21 @@ fn line_draft(line: &LineRow) -> LineDraft {
         unit: line.unit.clone().unwrap_or_default(),
         ingredient: line.ingredient.clone().unwrap_or_default(),
         note: line.note.clone().unwrap_or_default(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::positions_of;
+
+    #[test]
+    fn links_become_the_positions_of_their_lines_in_line_order() {
+        assert_eq!(positions_of(&[10, 11, 12], &[12, 10, 99]), [0, 2]);
+    }
+
+    #[test]
+    fn a_removed_line_drops_its_link_and_the_later_links_shift_down() {
+        assert_eq!(positions_of(&[10, 12], &[10, 11, 12]), [0, 1]);
+        assert_eq!(positions_of(&[11, 12], &[10, 12]), [1]);
     }
 }

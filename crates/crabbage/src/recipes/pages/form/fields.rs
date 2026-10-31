@@ -86,9 +86,24 @@ fn step_row(draft: Draft, step: StepSignals) -> impl IntoView {
         <section class="card">
             <label>{t("recipe.label.step")} <textarea on:input=move |ev| step.text.set(event_target_value(&ev))>{move || step.text.get()}</textarea></label>
             <label>{t("recipe.label.minutes")} <input type="number" min="1" step="1" value=move || step.minutes.get() on:input=move |ev| step.minutes.set(event_target_value(&ev))/></label>
+            {move || (!draft.lines.get().is_empty()).then(move || view! {
+                <fieldset>
+                    <legend>{t("recipe.step.ingredients")}</legend>
+                    <For each=move || draft.lines.get() key=|row| row.key children=move |line| step_line(step, line)/>
+                </fieldset>
+            })}
             <button type="button" class="secondary" on:click=move |_| draft.remove_step(step.key)>
                 {t("recipe.button.remove")}
             </button>
         </section>
+    }
+}
+
+fn step_line(step: StepSignals, line: LineSignals) -> impl IntoView {
+    view! {
+        <label>
+            <input type="checkbox" checked=move || step.lines.get().contains(&line.key) on:change=move |ev| step.set_line(line.key, event_target_checked(&ev))/>
+            {move || line.text()}
+        </label>
     }
 }

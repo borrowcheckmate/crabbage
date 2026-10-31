@@ -41,24 +41,33 @@ impl From<RecipeLine> for LineRow {
     }
 }
 
-impl From<RecipeStep> for StepRow {
-    fn from(step: RecipeStep) -> Self {
-        Self {
-            text: step.text,
-            duration_seconds: step.duration_seconds,
-        }
+fn step_row(step: RecipeStep, lines: &[RecipeLine]) -> StepRow {
+    let line_positions = step
+        .line_ids
+        .iter()
+        .filter_map(|id| lines.iter().position(|line| line.id == *id))
+        .collect();
+    StepRow {
+        text: step.text,
+        duration_seconds: step.duration_seconds,
+        line_positions,
     }
 }
 
 /// The page record of `recipe`, with what the signed-in user may do to it.
 pub(crate) fn detail(recipe: Recipe, rights: Rights) -> RecipeDetail {
+    let steps = recipe
+        .steps
+        .into_iter()
+        .map(|step| step_row(step, &recipe.lines))
+        .collect();
     RecipeDetail {
         id: recipe.id,
         title: recipe.title,
         servings: recipe.servings,
         owner_name: recipe.owner_name,
         lines: recipe.lines.into_iter().map(LineRow::from).collect(),
-        steps: recipe.steps.into_iter().map(StepRow::from).collect(),
+        steps,
         editors: recipe.editors.into_iter().map(PersonRow::from).collect(),
         categories: recipe
             .categories

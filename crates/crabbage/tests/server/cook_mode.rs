@@ -185,6 +185,40 @@ async fn the_servings_are_kept_in_every_link() {
 }
 
 #[tokio::test]
+async fn a_step_shows_the_lines_it_uses_scaled_to_the_chosen_servings() {
+    let harness = Harness::start("cook-needs").await;
+    let (token, id) = three_steps(&harness).await;
+    let path = format!("/recipes/{id}/cook");
+
+    let body = page(&harness, &token, &format!("{path}?step=2")).await;
+    assert!(body.contains("You need</h2>"), "{body}");
+    assert!(body.contains("<li>250 g Flour, sifted</li>"), "{body}");
+    assert!(body.contains("<li>Salt, to taste</li>"), "{body}");
+    assert!(!body.contains("2 Egg"), "{body}");
+
+    let body = page(&harness, &token, &format!("{path}?step=1")).await;
+    assert!(body.contains("<li>2 Egg</li>"), "{body}");
+    assert!(!body.contains("Flour, sifted</li>"), "{body}");
+
+    let body = page(&harness, &token, &format!("{path}?step=3")).await;
+    assert!(!body.contains("You need"), "{body}");
+}
+
+#[tokio::test]
+async fn the_needed_lines_follow_the_servings_asked_for() {
+    let harness = Harness::start("cook-needs-servings").await;
+    let (token, id) = three_steps(&harness).await;
+    let path = format!("/recipes/{id}/cook");
+
+    let body = page(&harness, &token, &format!("{path}?step=2&servings=8")).await;
+    assert!(body.contains("<li>500 g Flour, sifted</li>"), "{body}");
+    assert!(body.contains("<li>Salt, to taste</li>"), "{body}");
+
+    let body = page(&harness, &token, &format!("{path}?step=1&servings=8")).await;
+    assert!(body.contains("<li>4 Egg</li>"), "{body}");
+}
+
+#[tokio::test]
 async fn the_swipe_container_carries_the_previous_and_next_addresses() {
     let harness = Harness::start("cook-swipe").await;
     let (token, id) = three_steps(&harness).await;
