@@ -224,3 +224,38 @@ async fn planner_forms_reject_invalid_values_and_week_view_links_with_servings()
         "{page}"
     );
 }
+
+#[tokio::test]
+async fn plan_page_adds_the_week_to_shopping_once() {
+    let (harness, token, owner, recipes) = setup("planner-shopping").await;
+    let home = household(&harness, owner).await;
+    crabbage_store::planner::set_entry(
+        &harness.pool,
+        home,
+        &PlanEntry {
+            date: WEEK.to_owned(),
+            recipe_id: Some(recipes[0]),
+            servings: 8,
+        },
+    )
+    .await
+    .expect("entry saved");
+    let page = body_text(harness.get("/plan?week=2024-02-26", Some(&token)).await).await;
+    assert!(page.contains("Add week to shopping list"), "{page}");
+    assert_eq!(
+        post(&harness, &token, "/plan/shopping", "week=2024-02-26").await,
+        StatusCode::SEE_OTHER
+    );
+    assert_eq!(
+        post(&harness, &token, "/plan/shopping", "week=2024-02-26").await,
+        StatusCode::SEE_OTHER
+    );
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM shopping_items WHERE household_id = ? AND plan_entry_id IS NOT NULL",
+    )
+    .bind(home)
+    .fetch_one(&harness.pool)
+    .await
+    .expect("shopping count");
+    assert_eq!(count, 3);
+}

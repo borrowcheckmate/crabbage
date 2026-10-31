@@ -22,6 +22,7 @@ pub(crate) fn routes() -> Router<AppState> {
         .route("/shopping/events", get(events))
         .route("/shopping/items", post(add_item))
         .route("/shopping/items/{id}/checked", post(check_item))
+        .route("/shopping/checked", post(check_items))
         .route("/shopping/items/{id}/delete", post(delete_item))
         .route("/shopping/clear-checked", post(clear_checked))
 }
@@ -35,6 +36,12 @@ struct TextForm {
 #[derive(Deserialize)]
 struct CheckedForm {
     #[serde(default)]
+    on: String,
+}
+
+#[derive(Deserialize)]
+struct CheckedItemsForm {
+    ids: String,
     on: String,
 }
 
@@ -121,6 +128,52 @@ async fn check_item(
     }
     state.shopping.publish(household);
     Ok(Redirect::to("/shopping"))
+}
+
+async fn check_items(
+    State(state): State<AppState>,
+    Extension(user): Extension<SessionUser>,
+    Form(form): Form<CheckedItemsForm>,
+) -> Result<Redirect, StatusCode> {
+    let checked = checked_value(&form.on)?;
+    let ids = form
+        .ids
+        .split(',')
+        .map(|id| id.parse::<i64>().map_err(|_error| StatusCode::BAD_REQUEST))
+        .collect::<Result<Vec<_>, _>>()?;
+    if ids.is_empty() || ids.iter().any(|id| *id <= 0) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let household = household(&state, &user).await?;
+    let mut unique = ids.clone();
+    unique.sort_unstable();
+    unique.dedup();
+    for id in &unique {
+        let owned: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM shopping_items WHERE household_id = ? AND id = ?)",
+        )
+        .bind(household)
+        .bind(id)
+        .fetch_one(&state.pool)
+        .await
+        .map_err(internal_error)?;
+        if !owned {
+            return Err(StatusCode::NOT_FOUND);
+        }
+    }
+    shopping::set_checked(&state.pool, household, &unique, checked)
+        .await
+        .map_err(internal_error)?;
+    state.shopping.publish(household);
+    Ok(Redirect::to("/shopping"))
+}
+
+fn checked_value(value: &str) -> Result<bool, StatusCode> {
+    match value {
+        "true" => Ok(true),
+        "false" => Ok(false),
+        _ => Err(StatusCode::BAD_REQUEST),
+    }
 }
 
 async fn delete_item(

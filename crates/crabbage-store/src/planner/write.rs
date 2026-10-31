@@ -61,6 +61,20 @@ pub async fn set_entry(
     if entry.servings <= 0 {
         return Err(StoreError::InvalidPlannerSettings);
     }
+    let mut tx = begin_write(pool).await?;
+    let previous: Option<(i64, Option<i64>, i64)> = sqlx::query_as(
+        "SELECT id, recipe_id, servings FROM plan_entries WHERE household_id = ? AND date = ? AND on_list = 1",
+    )
+    .bind(household)
+    .bind(&entry.date)
+    .fetch_optional(&mut *tx)
+    .await?;
+    if let Some((id, _, _)) = previous {
+        sqlx::query("DELETE FROM shopping_items WHERE plan_entry_id = ? AND checked = 0")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+    }
     sqlx::query(
         "INSERT INTO plan_entries (household_id, date, recipe_id, servings) VALUES (?, ?, ?, ?) \
          ON CONFLICT (household_id, date) DO UPDATE SET recipe_id = excluded.recipe_id, servings = excluded.servings",
@@ -69,8 +83,26 @@ pub async fn set_entry(
     .bind(&entry.date)
     .bind(entry.recipe_id)
     .bind(entry.servings)
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
+    if let Some((id, _, _)) = previous
+        && let Some(recipe) = entry.recipe_id
+    {
+        let recipe_servings: Option<i64> =
+            sqlx::query_scalar("SELECT servings FROM recipes WHERE id = ?")
+                .bind(recipe)
+                .fetch_optional(&mut *tx)
+                .await?;
+        let to = crate::shopping::valid_servings(entry.servings)
+            .ok_or(StoreError::InvalidPlannerSettings)?;
+        let from = recipe_servings
+            .and_then(|value| u32::try_from(value).ok())
+            .and_then(|value| crate::shopping::valid_servings(i64::from(value)))
+            .unwrap_or(to);
+        crate::shopping::insert_recipe_lines(&mut tx, household, recipe, Some(id), from, to)
+            .await?;
+    }
+    tx.commit().await?;
     Ok(())
 }
 
@@ -85,15 +117,29 @@ pub async fn remove_entry(
     date: &str,
 ) -> Result<bool, StoreError> {
     validate_date(date)?;
+    let mut tx = begin_write(pool).await?;
+    let id: Option<i64> =
+        sqlx::query_scalar("SELECT id FROM plan_entries WHERE household_id = ? AND date = ?")
+            .bind(household)
+            .bind(date)
+            .fetch_optional(&mut *tx)
+            .await?;
+    if let Some(id) = id {
+        sqlx::query("UPDATE shopping_items SET plan_entry_id = NULL WHERE plan_entry_id = ? AND checked = 1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+    }
     let result = sqlx::query("DELETE FROM plan_entries WHERE household_id = ? AND date = ?")
         .bind(household)
         .bind(date)
-        .execute(pool)
+        .execute(&mut *tx)
         .await?;
+    tx.commit().await?;
     Ok(result.rows_affected() > 0)
 }
 
-pub(super) fn validate_date(value: &str) -> Result<(), StoreError> {
+pub(crate) fn validate_date(value: &str) -> Result<(), StoreError> {
     let bytes = value.as_bytes();
     if bytes.len() != 10
         || bytes.get(4) != Some(&b'-')

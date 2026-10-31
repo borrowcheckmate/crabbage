@@ -7,6 +7,52 @@ use sqlx::sqlite::SqlitePool;
 
 use crate::StoreError;
 
+/// Adds each planned recipe in the inclusive range once and marks the entries as listed.
+///
+/// # Errors
+///
+/// Returns an error if a query fails. The whole range is added atomically.
+pub async fn add_plan(
+    pool: &SqlitePool,
+    household: i64,
+    from: &str,
+    to: &str,
+) -> Result<u64, StoreError> {
+    crate::planner::validate_date(from)?;
+    crate::planner::validate_date(to)?;
+    let mut tx = crate::begin_write(pool).await?;
+    let entries: Vec<(i64, i64, i64)> = sqlx::query_as(
+        "SELECT id, recipe_id, servings FROM plan_entries WHERE household_id = ? AND date >= ? AND date <= ? AND recipe_id IS NOT NULL AND on_list = 0 ORDER BY date",
+    )
+    .bind(household)
+    .bind(from)
+    .bind(to)
+    .fetch_all(&mut *tx)
+    .await?;
+    for (entry, recipe, count) in &entries {
+        let servings = u32::try_from(*count)
+            .ok()
+            .and_then(Servings::new)
+            .ok_or(StoreError::InvalidPlannerSettings)?;
+        let recipe_servings: Option<i64> =
+            sqlx::query_scalar("SELECT servings FROM recipes WHERE id = ?")
+                .bind(recipe)
+                .fetch_optional(&mut *tx)
+                .await?;
+        let source = recipe_servings
+            .and_then(|value| u32::try_from(value).ok())
+            .and_then(Servings::new)
+            .unwrap_or(servings);
+        insert_recipe_lines(&mut tx, household, *recipe, Some(*entry), source, servings).await?;
+        sqlx::query("UPDATE plan_entries SET on_list = 1 WHERE id = ?")
+            .bind(entry)
+            .execute(&mut *tx)
+            .await?;
+    }
+    tx.commit().await?;
+    Ok(u64::try_from(entries.len()).unwrap_or(u64::MAX))
+}
+
 /// Adds the lines of recipe `recipe` to the list of `household`, scaled to `servings`.
 ///
 /// Lines with an ingredient become items for it; lines without one become items for their note,
@@ -34,34 +80,7 @@ pub async fn add_recipe(
         .ok()
         .and_then(Servings::new)
         .unwrap_or(servings);
-    let lines: Vec<LineRow> = sqlx::query_as(
-        "SELECT amount, unit, ingredient_id, note FROM recipe_lines \
-         WHERE recipe_id = ? ORDER BY position",
-    )
-    .bind(recipe)
-    .fetch_all(&mut *tx)
-    .await?;
-    for line in lines {
-        let (amount, unit) = scaled(line.amount, line.unit, from, servings);
-        let (ingredient_id, text) = match (line.ingredient_id, line.note) {
-            (Some(ingredient), _) => (Some(ingredient), None),
-            (None, Some(note)) if !note.trim().is_empty() => (None, Some(note.trim().to_owned())),
-            (None, _) => continue,
-        };
-        sqlx::query(
-            "INSERT INTO shopping_items \
-             (household_id, ingredient_id, text, amount, unit, recipe_id) \
-             VALUES (?, ?, ?, ?, ?, ?)",
-        )
-        .bind(household)
-        .bind(ingredient_id)
-        .bind(text)
-        .bind(amount)
-        .bind(unit)
-        .bind(recipe)
-        .execute(&mut *tx)
-        .await?;
-    }
+    insert_recipe_lines(&mut tx, household, recipe, None, from, servings).await?;
     tx.commit().await?;
     Ok(true)
 }
@@ -74,8 +93,47 @@ struct LineRow {
     note: Option<String>,
 }
 
+pub(crate) async fn insert_recipe_lines(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    household: i64,
+    recipe: i64,
+    plan_entry: Option<i64>,
+    from: Servings,
+    servings: Servings,
+) -> Result<(), StoreError> {
+    let lines: Vec<LineRow> = sqlx::query_as(
+        "SELECT amount, unit, ingredient_id, note FROM recipe_lines WHERE recipe_id = ? ORDER BY position",
+    )
+    .bind(recipe)
+    .fetch_all(&mut **tx)
+    .await?;
+    for line in lines {
+        let (amount, unit) = scaled(line.amount, line.unit, from, servings);
+        let (ingredient_id, text) = match (line.ingredient_id, line.note) {
+            (Some(ingredient), _) => (Some(ingredient), None),
+            (None, Some(note)) if !note.trim().is_empty() => (None, Some(note.trim().to_owned())),
+            (None, _) => continue,
+        };
+        sqlx::query("INSERT INTO shopping_items (household_id, ingredient_id, text, amount, unit, recipe_id, plan_entry_id) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            .bind(household)
+            .bind(ingredient_id)
+            .bind(text)
+            .bind(amount)
+            .bind(unit)
+            .bind(recipe)
+            .bind(plan_entry)
+            .execute(&mut **tx)
+            .await?;
+    }
+    Ok(())
+}
+
 /// The amount and unit symbol of a recipe line scaled from `from` to `to` servings. A unitless
 /// amount scales as pieces and keeps no unit. An amount whose unit is unknown is kept as it is.
+pub(crate) fn valid_servings(value: i64) -> Option<Servings> {
+    u32::try_from(value).ok().and_then(Servings::new)
+}
+
 fn scaled(
     amount: Option<f64>,
     unit: Option<String>,
