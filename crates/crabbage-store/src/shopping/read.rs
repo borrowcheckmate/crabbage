@@ -14,7 +14,7 @@ use crate::StoreError;
 pub async fn list(pool: &SqlitePool, household: i64) -> Result<Vec<ShoppingItem>, StoreError> {
     let items = sqlx::query_as(
         "SELECT s.id, s.ingredient_id, i.name AS ingredient, s.text, s.amount, s.unit, s.checked, \
-         s.recipe_id, i.store_section_id AS section_id, sec.position AS section_position \
+         s.recipe_id, s.plan_entry_id, i.store_section_id AS section_id, sec.position AS section_position \
          FROM shopping_items s \
          LEFT JOIN ingredients i ON i.id = s.ingredient_id \
          LEFT JOIN store_sections sec ON sec.id = i.store_section_id \

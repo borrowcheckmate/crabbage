@@ -6,6 +6,7 @@ use axum::routing::post;
 use crabbage_domain::dates::{format_iso_date, parse_iso_date};
 use crabbage_domain::planner::{Candidate, DayPlan, HistoryEntry, PlanningDay};
 use crabbage_store::planner::{self, PlanEntry, PlannerSettings};
+use crabbage_store::shopping;
 use serde::Deserialize;
 
 use crate::SessionUser;
@@ -15,6 +16,7 @@ use crate::state::AppState;
 pub(crate) fn routes() -> Router<AppState> {
     Router::new()
         .route("/plan/generate", post(generate))
+        .route("/plan/shopping", post(add_week))
         .route("/plan/{date}/reroll", post(reroll))
         .route("/plan/{date}/recipe", post(recipe))
         .route("/plan/{date}/servings", post(servings))
@@ -73,6 +75,23 @@ async fn generate(
     Form(form): Form<WeekForm>,
 ) -> Result<Redirect, StatusCode> {
     fill_week(&state, &user, &form.week).await?;
+    state.shopping.publish(household(&state, &user).await?);
+    redirect_week(&form.week)
+}
+
+async fn add_week(
+    State(state): State<AppState>,
+    Extension(user): Extension<SessionUser>,
+    Form(form): Form<WeekForm>,
+) -> Result<Redirect, StatusCode> {
+    let start = week_start(&form.week)?;
+    let home = household(&state, &user).await?;
+    let from = date(start)?;
+    let to = date(start + 6)?;
+    shopping::add_plan(&state.pool, home, &from, &to)
+        .await
+        .map_err(internal_error)?;
+    state.shopping.publish(home);
     redirect_week(&form.week)
 }
 
@@ -231,6 +250,7 @@ async fn reroll(
     )
     .await
     .map_err(internal_error)?;
+    state.shopping.publish(household);
     redirect_week(&day)
 }
 
@@ -280,6 +300,7 @@ async fn recipe(
     )
     .await
     .map_err(internal_error)?;
+    state.shopping.publish(household);
     redirect_week(&day)
 }
 
@@ -306,6 +327,7 @@ async fn servings(
     planner::set_entry(&state.pool, household, &entry)
         .await
         .map_err(internal_error)?;
+    state.shopping.publish(household);
     redirect_week(&day)
 }
 

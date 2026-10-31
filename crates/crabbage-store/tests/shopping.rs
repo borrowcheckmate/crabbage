@@ -10,9 +10,11 @@ mod common;
 use common::database;
 use crabbage_domain::scaling::Servings;
 use crabbage_store::StoreError;
+use crabbage_store::planner::{PlanEntry, remove_entry, set_entry};
 use crabbage_store::recipes::{LineInput, RecipeInput, create as create_recipe};
 use crabbage_store::shopping::{
-    ShoppingItem, add_recipe, add_text, clear_checked, edit_text, list, remove, set_checked,
+    ShoppingItem, add_plan, add_recipe, add_text, clear_checked, edit_text, list, remove,
+    set_checked,
 };
 use crabbage_store::users::upsert_user;
 use sqlx::sqlite::SqlitePool;
@@ -248,4 +250,94 @@ async fn deleting_a_household_removes_its_items() {
         .await
         .unwrap();
     assert_eq!(left, 0);
+}
+
+#[expect(
+    clippy::unwrap_used,
+    reason = "test setup stops on an invalid plan entry"
+)]
+async fn set_plan(pool: &SqlitePool, home: i64, date: &str, recipe_id: Option<i64>, servings: i64) {
+    set_entry(
+        pool,
+        home,
+        &PlanEntry {
+            date: date.to_owned(),
+            recipe_id,
+            servings,
+        },
+    )
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn adding_a_plan_scales_non_rest_days_once() {
+    let (_dir, pool) = database("shopping-plan-add").await;
+    let home = household(&pool, "crabbage-household-home").await;
+    let bread = recipe(
+        &pool,
+        vec![line(Some(100.0), Some("g"), Some("Butter"), None)],
+    )
+    .await;
+    set_plan(&pool, home, "2024-02-26", Some(bread), 4).await;
+    set_plan(&pool, home, "2024-02-27", None, 4).await;
+    set_plan(&pool, home, "2024-02-28", Some(bread), 2).await;
+
+    assert_eq!(
+        add_plan(&pool, home, "2024-02-26", "2024-03-03")
+            .await
+            .unwrap(),
+        2
+    );
+    assert_eq!(
+        add_plan(&pool, home, "2024-02-26", "2024-03-03")
+            .await
+            .unwrap(),
+        0
+    );
+    let items = items(&pool, home).await;
+    assert_eq!(
+        items
+            .iter()
+            .map(|item| item.amount.unwrap())
+            .collect::<Vec<_>>(),
+        [200.0, 100.0]
+    );
+    assert!(items.iter().all(|item| item.plan_entry_id.is_some()));
+}
+
+#[tokio::test]
+async fn changing_or_removing_a_listed_entry_replaces_unchecked_items_and_keeps_checked() {
+    let (_dir, pool) = database("shopping-plan-change").await;
+    let home = household(&pool, "crabbage-household-home").await;
+    let first = recipe(
+        &pool,
+        vec![line(Some(100.0), Some("g"), Some("Butter"), None)],
+    )
+    .await;
+    let second = recipe(
+        &pool,
+        vec![line(Some(2.0), Some("tbsp"), Some("Milk"), None)],
+    )
+    .await;
+    set_plan(&pool, home, "2024-02-26", Some(first), 2).await;
+    add_plan(&pool, home, "2024-02-26", "2024-02-26")
+        .await
+        .unwrap();
+    let checked = items(&pool, home).await[0].id;
+    set_checked(&pool, home, &[checked], true).await.unwrap();
+    set_plan(&pool, home, "2024-02-26", Some(second), 4).await;
+    let listed = items(&pool, home).await;
+    assert_eq!(listed.len(), 2);
+    assert!(listed.iter().any(|item| item.id == checked && item.checked));
+    assert!(
+        listed
+            .iter()
+            .any(|item| item.ingredient.as_deref() == Some("Milk") && item.amount == Some(4.0))
+    );
+
+    set_plan(&pool, home, "2024-02-26", None, 4).await;
+    assert_eq!(items(&pool, home).await.len(), 1);
+    assert!(remove_entry(&pool, home, "2024-02-26").await.unwrap());
+    assert_eq!(items(&pool, home).await.len(), 1);
 }

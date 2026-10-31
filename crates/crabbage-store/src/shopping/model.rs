@@ -22,6 +22,8 @@ pub struct ShoppingItem {
     pub checked: bool,
     /// The recipe the item came from, if it still exists.
     pub recipe_id: Option<i64>,
+    /// The plan entry the item came from, if any.
+    pub plan_entry_id: Option<i64>,
     /// The store section of the ingredient, if it has one.
     pub section_id: Option<i64>,
     /// The position of that section in the shopping order.

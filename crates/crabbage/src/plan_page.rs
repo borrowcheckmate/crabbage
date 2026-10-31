@@ -131,6 +131,7 @@ pub(crate) fn PlanPage() -> impl IntoView {
                     <h1>{t("plan.heading")}</h1>
                     <nav class="plan-week"><a href=format!("/plan?week={prev}")>{t("plan.previous")}</a><span>{data.week.clone()}</span><a href=format!("/plan?week={next}")>{t("plan.next")}</a></nav>
                     <form method="post" action="/plan/generate"><input type="hidden" name="week" value=data.week.clone()/><button>{t("plan.generate")}</button></form>
+                    <form method="post" action="/plan/shopping"><input type="hidden" name="week" value=data.week.clone()/><button>{t("plan.add_shopping")}</button></form>
                     <For each=move || data.days.clone() key=|day| day.date.clone() let(day)>
                         <section class="plan-day"><h2>{t(weekday_key(day.weekday))} {day.date.clone()}</h2>
                             {match (day.recipe_id, day.recipe.clone()) {
