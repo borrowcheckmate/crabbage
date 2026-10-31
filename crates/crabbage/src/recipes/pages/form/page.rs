@@ -33,7 +33,7 @@ pub(crate) fn RecipeNewPage() -> impl IntoView {
     });
     view! {
         <h1>{t("recipe.new_heading")}</h1>
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="notice" role="status">{t("recipe.form.loading")}</p> }>
             {move || Suspend::new(async move { new_form(create).await })}
         </Suspense>
         {move || create.value().with(|value| failure(value.as_ref()))}
@@ -45,11 +45,13 @@ async fn new_form(create: ServerAction<CreateRecipe>) -> AnyView {
         Ok((names, categories)) => {
             let draft = Draft::blank();
             view! {
-                <ActionForm action=create>
+                <ActionForm action=create attr:class="recipe-form">
                     <DraftFields draft names/>
                     <CategoryBoxes draft categories/>
                     <input type="hidden" name="draft" value=move || draft.json()/>
-                    <button>{t("recipe.button.save")}</button>
+                    <button disabled=move || create.pending().get() aria-busy=move || create.pending().get()>
+                        {move || if create.pending().get() { t("recipe.form.saving") } else { t("recipe.button.save") }}
+                    </button>
                 </ActionForm>
             }
             .into_any()
@@ -77,7 +79,7 @@ pub(crate) fn RecipeEditPage() -> impl IntoView {
     });
     view! {
         <h1>{t("recipe.edit_heading")}</h1>
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="notice" role="status">{t("recipe.form.loading")}</p> }>
             {move || {
                 let id = id();
                 Suspend::new(async move { edit_form(id, save).await })
@@ -113,12 +115,14 @@ async fn load_edit_form(
     let photo = photo_card(recipe.id, &recipe.title, recipe.image.as_deref());
     let editors = recipe.editors;
     Ok(view! {
-        <ActionForm action=save>
+        <ActionForm action=save attr:class="recipe-form">
             <input type="hidden" name="id" value=recipe.id/>
             <DraftFields draft names/>
             <CategoryBoxes draft categories/>
             <input type="hidden" name="draft" value=move || draft.json()/>
-            <button>{t("recipe.button.save")}</button>
+            <button disabled=move || save.pending().get() aria-busy=move || save.pending().get()>
+                {move || if save.pending().get() { t("recipe.form.saving") } else { t("recipe.button.save") }}
+            </button>
         </ActionForm>
         {photo}
         {can_manage_editors.then(|| view! {

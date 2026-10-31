@@ -164,6 +164,20 @@ fn images_scale_down_to_their_container() {
 }
 
 #[test]
+fn import_method_disclosure_has_one_rotating_marker_and_divider() {
+    let css = stylesheet();
+    let marker = declarations_of(&css, ".import-method summary::before").unwrap_or_default();
+    let open_marker =
+        declarations_of(&css, ".import-method[open] > summary::before").unwrap_or_default();
+    let method = declarations_of(&css, ".import-method").unwrap_or_default();
+    let catalogue_note = declarations_of(&css, ".import-catalog-note").unwrap_or_default();
+    assert!(marker.contains("content:\"▶\""));
+    assert!(open_marker.contains("transform:rotate(90deg)"));
+    assert!(method.contains("border-bottom:1px solid var(--border)"));
+    assert!(!catalogue_note.contains("border-top:"));
+}
+
+#[test]
 fn no_fixed_width_is_wider_than_a_phone_screen() {
     let css = stylesheet();
     for declaration in css.split([';', '{', '}']).map(str::trim) {
