@@ -23,6 +23,8 @@ pub(crate) fn CookPage() -> impl IntoView {
     let query = use_query_map();
     let timers = RwSignal::new(Vec::<Timer>::new());
     let now = RwSignal::new(0.0_f64);
+    #[cfg(feature = "hydrate")]
+    super::wake_client::attach();
     view! {
         <Suspense fallback=|| ()>
             {move || {
