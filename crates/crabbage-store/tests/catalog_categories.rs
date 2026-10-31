@@ -78,6 +78,9 @@ async fn deleting_a_category_takes_it_off_every_recipe() {
     assert!(!delete(&pool, dinner).await.unwrap());
 
     assert_eq!(names(&pool).await, Vec::<String>::new());
-    let recipe = get(&pool, soup).await.unwrap().expect("the recipe stays");
+    let recipe = get(&pool, soup, owner)
+        .await
+        .unwrap()
+        .expect("the recipe stays");
     assert_eq!(recipe.categories, Vec::new());
 }

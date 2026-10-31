@@ -15,6 +15,10 @@ struct Header {
     owner_id: i64,
     owner_name: String,
     image: Option<String>,
+    average: Option<f64>,
+    rating_count: i64,
+    my_stars: Option<i64>,
+    favourite: bool,
 }
 
 #[derive(FromRow)]
@@ -24,16 +28,21 @@ struct StepRow {
     duration_seconds: Option<i64>,
 }
 
-/// The recipe `id`, or `None` when there is no such recipe.
+/// The recipe `id` as user `viewer` sees it, or `None` when there is no such recipe.
 ///
 /// # Errors
 ///
 /// Returns an error if a query fails.
-pub async fn get(pool: &SqlitePool, id: i64) -> Result<Option<Recipe>, StoreError> {
+pub async fn get(pool: &SqlitePool, id: i64, viewer: i64) -> Result<Option<Recipe>, StoreError> {
     let header: Option<Header> = sqlx::query_as(
-        "SELECT r.id, r.title, r.servings, r.owner_id, u.name AS owner_name, r.image \
-         FROM recipes r JOIN users u ON u.id = r.owner_id WHERE r.id = ?",
+        "SELECT r.id, r.title, r.servings, r.owner_id, u.name AS owner_name, r.image, \
+    (SELECT ROUND(AVG(stars), 1) FROM ratings WHERE recipe_id = r.id) AS average, \
+    (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count, \
+    (SELECT stars FROM ratings WHERE recipe_id = r.id AND user_id = ?1) AS my_stars, \
+    EXISTS (SELECT 1 FROM favourites WHERE recipe_id = r.id AND user_id = ?1) AS favourite \
+         FROM recipes r JOIN users u ON u.id = r.owner_id WHERE r.id = ?2",
     )
+    .bind(viewer)
     .bind(id)
     .fetch_optional(pool)
     .await?;
@@ -74,6 +83,10 @@ pub async fn get(pool: &SqlitePool, id: i64) -> Result<Option<Recipe>, StoreErro
         steps,
         categories,
         image: header.image,
+        average: header.average,
+        rating_count: header.rating_count,
+        my_stars: header.my_stars,
+        favourite: header.favourite,
     }))
 }
 
@@ -106,7 +119,8 @@ async fn steps_of(pool: &SqlitePool, recipe_id: i64) -> Result<Vec<RecipeStep>, 
         .collect())
 }
 
-/// Every recipe ordered by title, or only those filed under `category` when it is given.
+/// Every recipe ordered by title, as user `viewer` sees it. `category` keeps only the recipes filed
+/// under it, and `favourites_only` only the viewer's favourites. Both filters apply together.
 ///
 /// # Errors
 ///
@@ -114,15 +128,25 @@ async fn steps_of(pool: &SqlitePool, recipe_id: i64) -> Result<Vec<RecipeStep>, 
 pub async fn list(
     pool: &SqlitePool,
     category: Option<i64>,
+    favourites_only: bool,
+    viewer: i64,
 ) -> Result<Vec<RecipeSummary>, StoreError> {
     let recipes = sqlx::query_as(
-        "SELECT r.id, r.title, r.servings, u.name AS owner_name, r.image FROM recipes r \
-         JOIN users u ON u.id = r.owner_id \
-         WHERE ?1 IS NULL OR EXISTS (SELECT 1 FROM recipe_categories rc \
-             WHERE rc.recipe_id = r.id AND rc.category_id = ?1) \
+        "SELECT r.id, r.title, r.servings, u.name AS owner_name, r.image, \
+    (SELECT ROUND(AVG(stars), 1) FROM ratings WHERE recipe_id = r.id) AS average, \
+    (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count, \
+    (SELECT stars FROM ratings WHERE recipe_id = r.id AND user_id = ?1) AS my_stars, \
+    EXISTS (SELECT 1 FROM favourites WHERE recipe_id = r.id AND user_id = ?1) AS favourite \
+         FROM recipes r JOIN users u ON u.id = r.owner_id \
+         WHERE (?2 IS NULL OR EXISTS (SELECT 1 FROM recipe_categories rc \
+             WHERE rc.recipe_id = r.id AND rc.category_id = ?2)) \
+         AND (?3 = 0 OR EXISTS (SELECT 1 FROM favourites f \
+             WHERE f.recipe_id = r.id AND f.user_id = ?1)) \
          ORDER BY r.title COLLATE NOCASE, r.id",
     )
+    .bind(viewer)
     .bind(category)
+    .bind(favourites_only)
     .fetch_all(pool)
     .await?;
     Ok(recipes)

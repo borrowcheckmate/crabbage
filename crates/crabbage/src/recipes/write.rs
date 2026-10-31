@@ -44,7 +44,7 @@ pub(crate) async fn delete_recipe(id: i64) -> Result<(), ServerFnError> {
     use crabbage_store::recipes::delete;
     let (pool, user) = crate::access::signed_in().await?;
     permit(&pool, user, id, Change::Delete).await?;
-    let image = load(&pool, id).await?.image;
+    let image = load(&pool, user, id).await?.image;
     let found = delete(&pool, id)
         .await
         .map_err(|error| crate::access::store_failure(&error))?;

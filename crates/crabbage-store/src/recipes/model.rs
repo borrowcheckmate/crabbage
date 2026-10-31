@@ -67,6 +67,14 @@ pub struct Recipe {
     pub categories: Vec<Category>,
     /// The file name of the recipe's photo in the images directory, if it has one.
     pub image: Option<String>,
+    /// The average of the ratings to one decimal place, if anyone rated the recipe.
+    pub average: Option<f64>,
+    /// The number of ratings.
+    pub rating_count: i64,
+    /// The viewing user's own rating, if they rated the recipe.
+    pub my_stars: Option<i64>,
+    /// Whether the viewing user has the recipe as a favourite.
+    pub favourite: bool,
 }
 
 /// An ingredient line as the store returns it.
@@ -96,7 +104,7 @@ pub struct RecipeStep {
 }
 
 /// A recipe as the list shows it.
-#[derive(Clone, Debug, PartialEq, Eq, FromRow)]
+#[derive(Clone, Debug, PartialEq, FromRow)]
 pub struct RecipeSummary {
     /// The recipe's id.
     pub id: i64,
@@ -108,6 +116,14 @@ pub struct RecipeSummary {
     pub owner_name: String,
     /// The file name of the recipe's photo in the images directory, if it has one.
     pub image: Option<String>,
+    /// The average of the ratings to one decimal place, if anyone rated the recipe.
+    pub average: Option<f64>,
+    /// The number of ratings.
+    pub rating_count: i64,
+    /// The viewing user's own rating, if they rated the recipe.
+    pub my_stars: Option<i64>,
+    /// Whether the viewing user has the recipe as a favourite.
+    pub favourite: bool,
 }
 
 /// A user's id and name.

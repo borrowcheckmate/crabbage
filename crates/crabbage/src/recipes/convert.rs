@@ -14,6 +14,9 @@ impl From<RecipeSummary> for RecipeSummaryRow {
             title: summary.title,
             servings: summary.servings,
             owner_name: summary.owner_name,
+            average: summary.average,
+            rating_count: summary.rating_count,
+            favourite: summary.favourite,
         }
     }
 }
@@ -66,5 +69,9 @@ pub(crate) fn detail(recipe: Recipe, rights: Rights) -> RecipeDetail {
         can_edit: rights.edit,
         can_delete: rights.delete,
         can_manage_editors: rights.manage_editors,
+        average: recipe.average,
+        rating_count: recipe.rating_count,
+        my_stars: recipe.my_stars,
+        favourite: recipe.favourite,
     }
 }

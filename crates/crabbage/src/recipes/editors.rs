@@ -37,7 +37,7 @@ pub(crate) async fn add_recipe_editor(
         .await
         .map_err(|error| crate::access::store_failure(&error))?;
     crate::access::ensure_found(found)?;
-    let recipe = load(&pool, recipe_id).await?;
+    let recipe = load(&pool, user, recipe_id).await?;
     Ok(recipe.editors.into_iter().map(PersonRow::from).collect())
 }
 
@@ -55,6 +55,6 @@ pub(crate) async fn remove_recipe_editor(
         .await
         .map_err(|error| crate::access::store_failure(&error))?;
     crate::access::ensure_found(found)?;
-    let recipe = load(&pool, recipe_id).await?;
+    let recipe = load(&pool, user, recipe_id).await?;
     Ok(recipe.editors.into_iter().map(PersonRow::from).collect())
 }

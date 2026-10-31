@@ -5,6 +5,7 @@ mod editor_list;
 mod form;
 mod list;
 mod photo_card;
+mod rating_section;
 
 pub(crate) use detail::RecipePage;
 pub(crate) use form::{RecipeEditPage, RecipeNewPage};

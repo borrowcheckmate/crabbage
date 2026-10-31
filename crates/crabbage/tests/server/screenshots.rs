@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use crabbage_store::catalog::{categories, ingredients, sections};
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create, set_image};
 
-use crate::common::{Harness, body_text, session_token};
+use crate::common::{Harness, body_text, session_token, sign_in_as};
 
 #[tokio::test]
 #[expect(
@@ -48,7 +48,7 @@ async fn write_pages() {
 
     harness.issuer.set_groups(&[]);
     harness.issuer.set_name(Some("Sam Baker"));
-    session_token(&harness.sign_in().await).expect("sign-in sets a session");
+    let member = session_token(&harness.sign_in().await).expect("sign-in sets a session");
     let owner = harness.user_id().await;
     let breakfast = categories::create(&harness.pool, "Breakfast")
         .await
@@ -70,6 +70,31 @@ async fn write_pages() {
         dir.join("images").join(PHOTO_NAME),
     )
     .expect("photo is copied");
+    harness.issuer.set_name(Some("Alex Baker"));
+    let neighbour = sign_in_as(&harness, "neighbour", &[]).await;
+    harness.issuer.set_name(Some("Sam Baker"));
+    harness.issuer.set_subject("subject-1");
+    harness
+        .post_form(
+            &format!("/recipes/{recipe}/rating"),
+            Some(&neighbour),
+            "stars=5",
+        )
+        .await;
+    harness
+        .post_form(
+            &format!("/recipes/{recipe}/rating"),
+            Some(&member),
+            "stars=4",
+        )
+        .await;
+    harness
+        .post_form(
+            &format!("/recipes/{recipe}/favourite"),
+            Some(&member),
+            "on=true",
+        )
+        .await;
     let recipe_path = format!("/recipes/{recipe}");
     let breakfast_path = format!("/recipes?category={breakfast}");
     let recipe_edit_path = format!("/recipes/{recipe}/edit");
@@ -119,6 +144,12 @@ async fn write_pages() {
         ("member", &[][..], "home", "/"),
         ("member", &[][..], "ingredients", "/admin/ingredients"),
         ("member", &[][..], "recipes", "/recipes"),
+        (
+            "member",
+            &[][..],
+            "recipes-favourites",
+            "/recipes?favourites=1",
+        ),
         (
             "member",
             &[][..],

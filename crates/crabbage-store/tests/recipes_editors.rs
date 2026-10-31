@@ -30,7 +30,7 @@ async fn editors_are_added_listed_and_removed() {
 
     assert!(add_editor(&pool, id, friend).await.unwrap());
     assert!(add_editor(&pool, id, friend).await.unwrap());
-    let editors: Vec<String> = get(&pool, id)
+    let editors: Vec<String> = get(&pool, id, owner)
         .await
         .unwrap()
         .expect("the recipe exists")
@@ -43,7 +43,11 @@ async fn editors_are_added_listed_and_removed() {
     assert!(remove_editor(&pool, id, friend).await.unwrap());
     assert!(!remove_editor(&pool, id, friend).await.unwrap());
     assert_eq!(
-        get(&pool, id).await.unwrap().expect("exists").editors,
+        get(&pool, id, owner)
+            .await
+            .unwrap()
+            .expect("exists")
+            .editors,
         Vec::new()
     );
 }

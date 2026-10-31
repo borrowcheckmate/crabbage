@@ -17,6 +17,8 @@ pub enum StoreError {
     InUse,
     /// A step links to a line position that the recipe does not have.
     UnknownLine,
+    /// A rating is not from 1 to 5 stars.
+    InvalidStars,
 }
 
 impl Display for StoreError {
@@ -28,6 +30,7 @@ impl Display for StoreError {
             Self::Conflict(text) => write!(f, "`{text}` is already a name or alias"),
             Self::InUse => write!(f, "the ingredient is used by recipes"),
             Self::UnknownLine => write!(f, "a step links to a line the recipe does not have"),
+            Self::InvalidStars => write!(f, "a rating must be from 1 to 5 stars"),
         }
     }
 }
@@ -38,7 +41,7 @@ impl Error for StoreError {
             Self::Io(error) => Some(error),
             Self::Database(error) => Some(error),
             Self::Migrate(error) => Some(error),
-            Self::Conflict(_) | Self::InUse | Self::UnknownLine => None,
+            Self::Conflict(_) | Self::InUse | Self::UnknownLine | Self::InvalidStars => None,
         }
     }
 }

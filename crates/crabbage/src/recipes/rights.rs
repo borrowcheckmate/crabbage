@@ -44,9 +44,9 @@ impl Rights {
     }
 }
 
-/// The recipe `id`, or the missing-item error when there is none.
-pub(crate) async fn load(pool: &SqlitePool, id: i64) -> Result<Recipe, ServerFnError> {
-    get(pool, id)
+/// The recipe `id` as user `user` sees it, or the missing-item error when there is none.
+pub(crate) async fn load(pool: &SqlitePool, user: i64, id: i64) -> Result<Recipe, ServerFnError> {
+    get(pool, id, user)
         .await
         .map_err(|error| store_failure(&error))?
         .ok_or_else(|| ServerFnError::new(t("catalog.error.missing")))
@@ -63,7 +63,7 @@ pub(crate) async fn permit(
     id: i64,
     change: Change,
 ) -> Result<(), ServerFnError> {
-    let recipe = load(pool, id).await?;
+    let recipe = load(pool, user, id).await?;
     let rights = Rights::of(role(pool, user).await?, user, &recipe);
     let allowed = match change {
         Change::Edit => rights.edit,

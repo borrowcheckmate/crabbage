@@ -89,7 +89,7 @@ fn is_generated(name: &str, extension: &str) -> bool {
 }
 
 async fn photo_of(harness: &Harness, id: i64) -> Option<String> {
-    get(&harness.pool, id)
+    get(&harness.pool, id, user_id(harness, OWNER).await)
         .await
         .expect("recipe reads")
         .expect("recipe exists")
@@ -336,7 +336,12 @@ async fn deleting_a_recipe_deletes_its_photo() {
         .await;
     let status = response.status();
     assert_eq!(status, StatusCode::OK, "{}", body_text(response).await);
-    assert!(get(&harness.pool, id).await.expect("reads").is_none());
+    assert!(
+        get(&harness.pool, id, user_id(&harness, OWNER).await)
+            .await
+            .expect("reads")
+            .is_none()
+    );
     assert!(!harness.images_dir().join(&name).exists());
 }
 

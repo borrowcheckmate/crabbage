@@ -86,7 +86,7 @@ async fn image_bytes(multipart: &mut Multipart) -> Result<Vec<u8>, StatusCode> {
 /// Checks that user `user` may change recipe `id`: 404 for a missing recipe, 403 for anyone the
 /// recipe's rule does not allow.
 async fn may_edit(state: &AppState, user: i64, id: i64) -> Result<(), StatusCode> {
-    let recipe = get(&state.pool, id)
+    let recipe = get(&state.pool, id, user)
         .await
         .map_err(internal_error)?
         .ok_or(StatusCode::NOT_FOUND)?;
