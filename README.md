@@ -34,6 +34,8 @@ The server listens on `site-addr` from `[package.metadata.leptos]` in `crates/cr
 
 The server reads its settings from environment variables at startup and refuses to start if a required one is missing or invalid. The error names every problem.
 
+On first startup, an empty catalog is populated with translated ingredient, aisle and dinner category defaults in the configured language.
+
 | Variable | Required | Default | Meaning |
 | --- | --- | --- | --- |
 | `CRABBAGE_LANGUAGE` | no | `en` | App language: `en` or `nl` |

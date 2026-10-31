@@ -1,5 +1,6 @@
 //! Ingredient name matching: normalisation, names and aliases, and unmatched names.
 
+use crabbage_import::lines::parse_line;
 use crabbage_import::matching::{Candidate, match_all, match_ingredient, normalise};
 
 fn aliases(names: &[&str]) -> Vec<String> {
@@ -128,4 +129,36 @@ fn unmatched_names_are_reported_once_in_order() {
     );
     assert_eq!(matches.linked, [None, Some(1), None, None, None]);
     assert_eq!(matches.unmatched, ["Salt", "pepper"]);
+}
+
+#[test]
+fn recipe_lines_match_common_english_and_dutch_catalog_aliases() {
+    let onion_aliases = aliases(&["onions", "gele ui", "gele uien"]);
+    let tomato_aliases = aliases(&["tomatoes", "tomaten"]);
+    let candidates = [
+        Candidate {
+            id: 1,
+            name: "Onion",
+            aliases: &onion_aliases,
+        },
+        Candidate {
+            id: 2,
+            name: "Tomato",
+            aliases: &tomato_aliases,
+        },
+    ];
+    for (line, expected) in [
+        ("2 onions, diced", 1),
+        ("1 gele ui", 1),
+        ("3 tomatoes", 2),
+        ("4 tomaten, gehalveerd", 2),
+    ] {
+        let parsed = parse_line(line);
+        assert!(parsed.parsed, "{line}");
+        assert_eq!(
+            match_ingredient(&parsed.name, &candidates),
+            Some(expected),
+            "{line}"
+        );
+    }
 }
