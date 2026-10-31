@@ -6,6 +6,8 @@ use leptos_router::hooks::use_query_map;
 
 use super::links::Place;
 use super::query::{current_step, done_steps};
+use super::timers::{Timer, step_durations};
+use super::tray::{TimerTray, start_button};
 use crate::i18n::{messages, t, t_with};
 use crate::notice::{error_notice, message};
 use crate::recipes::duration::duration_text;
@@ -19,6 +21,8 @@ use crate::route::route_id;
 pub(crate) fn CookPage() -> impl IntoView {
     let id = route_id();
     let query = use_query_map();
+    let timers = RwSignal::new(Vec::<Timer>::new());
+    let now = RwSignal::new(0.0_f64);
     view! {
         <Suspense fallback=|| ()>
             {move || {
@@ -26,9 +30,10 @@ pub(crate) fn CookPage() -> impl IntoView {
                 let step = query.with(|map| map.get("step"));
                 let servings = query.with(|map| map.get("servings"));
                 let done = query.with(|map| map.get("done"));
-                Suspend::new(async move { cook_view(id, step, servings, done).await })
+                Suspend::new(async move { cook_view(id, step, servings, done, timers).await })
             }}
         </Suspense>
+        <TimerTray timers now/>
     }
 }
 
@@ -37,6 +42,7 @@ async fn cook_view(
     step: Option<String>,
     servings: Option<String>,
     done: Option<String>,
+    timers: RwSignal<Vec<Timer>>,
 ) -> AnyView {
     let Some(id) = id else {
         return error_notice(t("catalog.error.missing"));
@@ -47,6 +53,7 @@ async fn cook_view(
             step.as_deref(),
             servings.as_deref(),
             done.as_deref(),
+            timers,
         ),
         Err(error) => error_notice(&message(&error)),
     }
@@ -57,6 +64,7 @@ fn cook(
     step: Option<&str>,
     requested: Option<&str>,
     done: Option<&str>,
+    timers: RwSignal<Vec<Timer>>,
 ) -> AnyView {
     let RecipeDetail {
         id,
@@ -95,6 +103,7 @@ fn cook(
         {is_done.then(|| view! { <p class="cook-done">{t("cook.done.mark")}</p> })}
         <p class="cook-step">{row.text.clone()}</p>
         {row.duration_seconds.map(|seconds| view! { <p>{duration_text(seconds)}</p> })}
+        {timer_starts(row, current, timers)}
         {needed(row, &lines, servings, shown)}
         <a class="button secondary" href=place.toggle(current) aria-pressed=is_done.to_string()>{toggle_label}</a>
         <div class="cook-nav">
@@ -111,6 +120,15 @@ fn cook(
         {dots(&place, total, current)}
     }
     .into_any()
+}
+
+/// One start button per duration the step names, for step number `step`.
+fn timer_starts(row: &StepRow, step: usize, timers: RwSignal<Vec<Timer>>) -> AnyView {
+    let buttons = step_durations(&row.text, row.duration_seconds)
+        .into_iter()
+        .map(|seconds| start_button(timers, step, seconds))
+        .collect_view();
+    view! { <div class="timer-starts">{buttons}</div> }.into_any()
 }
 
 /// The lines the step uses, scaled from the recipe's servings to `shown`, or nothing when it uses none.
