@@ -71,11 +71,34 @@ async fn list_groups_items_in_section_order_and_posts_checked_forms() {
     let unchecked_at = body.find("Cheese").expect("cheese");
     let checked_at = body.find("Apples").expect("checked item");
     assert!(unchecked_at < checked_at, "{body}");
+    assert_completed_action_follows_rows(&body, checked_at);
     assert!(body.contains("action=\"/shopping/checked\""), "{body}");
     assert!(body.contains("name=\"on\" value=\"false\""), "{body}");
     assert!(body.contains("name=\"on\" value=\"true\""), "{body}");
     assert!(body.contains("Paper towels"), "{body}");
     assert!(body.contains("action=\"/shopping/items\""), "{body}");
+    assert_review_layout(&body);
+}
+
+fn assert_completed_action_follows_rows(body: &str, checked_at: usize) {
+    let clear_at = body
+        .find("Clear checked items")
+        .expect("clear completed items action");
+    assert!(checked_at < clear_at, "{body}");
+}
+
+fn assert_review_layout(body: &str) {
+    assert!(body.contains("shopping-review"), "{body}");
+    assert!(body.contains("disabled"), "{body}");
+    assert!(body.contains("shopping-quantity"), "{body}");
+    assert!(
+        body.contains("3 items left · Shared with your household"),
+        "{body}"
+    );
+    assert!(
+        body.contains("<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">"),
+        "{body}"
+    );
 }
 
 #[tokio::test]
@@ -84,6 +107,10 @@ async fn empty_list_and_quick_add_render() {
     let (token, _) = list_context(&harness).await;
     let body = body_text(harness.get("/shopping", Some(&token)).await).await;
     assert!(body.contains("Your shopping list is empty."), "{body}");
+    assert!(
+        body.contains("0 items left · Shared with your household"),
+        "{body}"
+    );
     assert!(body.contains("action=\"/shopping/items\""), "{body}");
     assert_eq!(
         harness
@@ -94,6 +121,10 @@ async fn empty_list_and_quick_add_render() {
     );
     let body = body_text(harness.get("/shopping", Some(&token)).await).await;
     assert!(body.contains("Apples"), "{body}");
+    assert!(
+        body.contains("1 item left · Shared with your household"),
+        "{body}"
+    );
 }
 
 #[tokio::test]
@@ -124,7 +155,8 @@ async fn ingredient_rows_merge_and_the_merged_form_checks_every_item() {
     let second: i64 = sqlx::query_scalar("INSERT INTO shopping_items (household_id, ingredient_id, amount, unit) VALUES (?, ?, 50, 'g') RETURNING id")
         .bind(household).bind(flour).fetch_one(&harness.pool).await.expect("manual ingredient item");
     let page = body_text(harness.get("/shopping", Some(&token)).await).await;
-    assert!(page.contains("Flour: 300 g"), "{page}");
+    assert!(page.contains("Flour"), "{page}");
+    assert!(page.contains(">300 g</span>"), "{page}");
     assert!(
         page.contains(&format!("name=\"ids\" value=\"{first},{second}\""))
             || page.contains(&format!("name=\"ids\" value=\"{second},{first}\"")),
@@ -151,7 +183,7 @@ async fn ingredient_rows_merge_and_the_merged_form_checks_every_item() {
     .expect("checked count");
     assert_eq!(checked, 2);
     let checked_page = body_text(harness.get("/shopping", Some(&token)).await).await;
-    assert!(checked_page.contains("Flour: 300 g"), "{checked_page}");
+    assert!(checked_page.contains(">300 g</span>"), "{checked_page}");
     assert!(
         checked_page.contains("class=\"shopping-row checked\""),
         "{checked_page}"
@@ -174,7 +206,7 @@ async fn unitless_amounts_render_and_merge_as_pieces() {
     .await
     .expect("shopping item");
     let page = body_text(harness.get("/shopping", Some(&token)).await).await;
-    assert!(page.contains("Eggs: 3"), "{page}");
+    assert!(page.contains(">3</span>"), "{page}");
     sqlx::query(
         "INSERT INTO shopping_items (household_id, ingredient_id, amount) VALUES (?, ?, 2)",
     )
@@ -184,8 +216,8 @@ async fn unitless_amounts_render_and_merge_as_pieces() {
     .await
     .expect("shopping item");
     let page = body_text(harness.get("/shopping", Some(&token)).await).await;
-    assert!(page.contains("Eggs: 5"), "{page}");
-    assert!(!page.contains("Eggs: 5 piece"), "{page}");
+    assert!(page.contains(">5</span>"), "{page}");
+    assert!(!page.contains("5 piece"), "{page}");
 }
 
 #[tokio::test]
@@ -208,8 +240,8 @@ async fn unknown_unit_amount_is_rendered_without_merging() {
         .await
         .expect("shopping item");
     let page = body_text(harness.get("/shopping", Some(&token)).await).await;
-    assert!(page.contains("Salt: 2 handful"), "{page}");
-    assert!(page.contains("Salt: 1 handful"), "{page}");
+    assert!(page.contains(">2 handful</span>"), "{page}");
+    assert!(page.contains(">1 handful</span>"), "{page}");
 }
 
 #[tokio::test]
@@ -222,5 +254,5 @@ async fn text_item_amount_is_rendered() {
         .await
         .expect("shopping item");
     let page = body_text(harness.get("/shopping", Some(&token)).await).await;
-    assert!(page.contains("Rice: 2"), "{page}");
+    assert!(page.contains(">2</span>"), "{page}");
 }

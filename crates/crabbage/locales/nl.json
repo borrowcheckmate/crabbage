@@ -230,5 +230,14 @@
   "system.loading": "Laden…",
   "system.not_found.heading": "Pagina niet gevonden",
   "system.not_found.message": "Deze pagina is niet beschikbaar of is mogelijk verplaatst.",
-  "system.not_found.home": "Naar Vandaag"
+  "system.not_found.home": "Naar Vandaag",
+  "shopping.error": "De boodschappenlijst kon niet worden bijgewerkt. Controleer je verbinding en laad de pagina opnieuw.",
+  "shopping.next": "Volgende stap",
+  "shopping.review.heading": "Exporteren naar Appie",
+  "shopping.review.copy": "Kies passende producten en controleer de verpakkingsgrootte voordat je exporteert.",
+  "shopping.review.button": "Producten bekijken",
+  "shopping.review.note": "Appie-integratieconcept · Voorbeeld",
+  "shopping.add.placeholder": "Voeg iets toe aan de lijst…",
+  "shopping.remaining.one": "{count} artikel over · Gedeeld met je huishouden",
+  "shopping.remaining.many": "{count} artikelen over · Gedeeld met je huishouden"
 }
