@@ -4,6 +4,5 @@ mod draft;
 mod fields;
 mod page;
 
-pub(super) use draft::Draft;
-pub(super) use fields::DraftFields;
+pub(super) use draft::{Draft, LineSignals, StepSignals};
 pub(crate) use page::{RecipeEditPage, RecipeNewPage};

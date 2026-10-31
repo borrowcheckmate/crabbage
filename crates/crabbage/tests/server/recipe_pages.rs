@@ -201,6 +201,15 @@ async fn the_new_form_offers_the_fields_and_the_add_buttons() {
     for expected in ["Add ingredient", "Add step", "ingredient-names", "Save"] {
         assert!(body.contains(expected), "{expected}: {body}");
     }
+    for expected in [
+        "Essentials",
+        "Ingredients",
+        "Steps",
+        "More details",
+        "class=\"recipe-form\"",
+    ] {
+        assert!(body.contains(expected), "{expected}: {body}");
+    }
     assert!(!body.contains("Who may edit this recipe"), "{body}");
 }
 
@@ -214,6 +223,9 @@ async fn the_edit_page_shows_the_editors_to_owners_and_admins_only() {
     assert!(body.contains("Add ingredient"), "{body}");
     assert!(body.contains("Who may edit this recipe"), "{body}");
     assert!(body.contains("Pancakes"), "{body}");
+    assert!(body.contains("class=\"recipe-form\""), "{body}");
+    assert!(body.contains("aria-label=\"Remove ingredient\""), "{body}");
+    assert!(body.contains("aria-label=\"Remove step\""), "{body}");
 
     let other = sign_in_as(&harness, OTHER, &[]).await;
     let body = page(&harness, &other, &format!("/recipes/{id}/edit")).await;

@@ -132,9 +132,14 @@ async fn the_photo_form_is_offered_only_when_the_ai_is_configured() {
     assert!(body.contains("action=\"/recipes/import/photos\""), "{body}");
     assert!(body.contains("enctype=\"multipart/form-data\""), "{body}");
     assert!(body.contains("name=\"photo\""), "{body}");
-    assert!(body.contains("accept=\"image/*\""), "{body}");
+    assert!(
+        body.contains("accept=\"image/jpeg,image/png,image/webp\""),
+        "{body}"
+    );
     assert!(body.contains("multiple"), "{body}");
-    assert!(!body.contains("capture"), "{body}");
+    assert!(body.contains("capture=\"environment\""), "{body}");
+    assert!(body.contains("Take photo"), "{body}");
+    assert!(body.contains("Choose photos"), "{body}");
 
     let off = Harness::start("photo-import-off").await;
     let token = sign_in_as(&off, MEMBER, &[]).await;
@@ -178,7 +183,7 @@ async fn two_photos_become_one_ai_request_and_a_draft_to_review() {
     assert!(body.contains("value=\"leeks\""), "{body}");
     assert!(body.contains("value=\"sliced\""), "{body}");
     assert!(body.contains("Simmer the leeks."), "{body}");
-    assert!(body.contains("Read from 2 photo(s)."), "{body}");
+    assert!(body.contains("Source · 2 photo(s)"), "{body}");
     assert!(body.contains("data:image/jpeg;base64,"), "{body}");
     assert!(body.contains("name=\"keep_photo\""), "{body}");
     assert!(body.contains("checked"), "{body}");

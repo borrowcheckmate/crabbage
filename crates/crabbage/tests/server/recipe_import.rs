@@ -80,9 +80,23 @@ async fn the_import_page_asks_for_an_address_and_the_list_links_to_it() {
     let token = sign_in_as(&harness, MEMBER, &[]).await;
     let body = page(&harness, &token, "/recipes/import").await;
     assert!(body.contains("Import a recipe"), "{body}");
-    assert!(body.contains("action=\"/recipes/import\""), "{body}");
-    assert!(body.contains("name=\"url\""), "{body}");
+    assert!(body.contains("Choose how to add a recipe"), "{body}");
+    assert!(body.contains("aria-label=\"Import source\""), "{body}");
+    assert!(body.contains("Photos"), "{body}");
+    assert!(body.contains("Website"), "{body}");
+    assert_eq!(body.matches("Enter recipe manually").count(), 1, "{body}");
+    assert!(
+        body.contains("href=\"/recipes/import?source=website\">Website</a>"),
+        "{body}"
+    );
+    assert!(
+        body.contains("AI is off, so photo reading is unavailable"),
+        "{body}"
+    );
     assert!(!body.contains("unresolved"), "{body}");
+    let website = page(&harness, &token, "/recipes/import?source=website").await;
+    assert!(website.contains("action=\"/recipes/import\""), "{website}");
+    assert!(website.contains("name=\"url\""), "{website}");
     let list = page(&harness, &token, "/recipes").await;
     assert!(list.contains("href=\"/recipes/import\""), "{list}");
 }
@@ -113,9 +127,12 @@ async fn the_preview_fills_the_form_and_marks_the_unresolved_line() {
     assert!(body.contains("value=\"Flour\""), "{body}");
     assert!(body.contains("value=\"Okra pods\""), "{body}");
     assert!(body.contains("value=\"sliced\""), "{body}");
-    assert!(body.contains("value=\"g\" selected"), "{body}");
+    assert!(body.contains("value=\"g\""), "{body}");
     assert!(body.contains("Note"), "{body}");
-    assert_eq!(body.matches("card unresolved").count(), 1, "{body}");
+    assert_eq!(body.matches("import-line unresolved").count(), 1, "{body}");
+    assert!(body.contains("1 ingredient needs attention"), "{body}");
+    assert!(body.contains("New ingredient"), "{body}");
+    assert!(!body.contains("quantity needs checking"), "{body}");
     assert!(
         body.contains("Not found among the ingredients: Okra pods"),
         "{body}"
