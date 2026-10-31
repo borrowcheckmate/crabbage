@@ -12,3 +12,6 @@ categories = ["data-structures"]
 
 [lints]
 workspace = true
+
+[dependencies]
+fastrand.workspace = true

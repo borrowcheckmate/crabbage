@@ -44,6 +44,8 @@ Their responsibilities:
 | `tests/durations.rs` | Every form of the durations in both languages, case, whole-word units, numbers without units, combinations and the ones that stay apart |
 | `src/permissions.rs` | `can_manage_catalog(role)`: true only for `Role::Admin`. `can_edit_recipe(role, user, owner, editors)`: admin, owner or a listed editor. `can_delete_recipe` and `can_manage_editors(role, user, owner)`: admin or owner. Anyone signed in may create a recipe |
 | `tests/permissions.rs` | Admins manage the catalog, members do not; owner, listed editor, admin and other member for each recipe rule |
+| `src/planner.rs` | `plan(days, candidates, history, lookback_weeks, rng)`: chooses a recipe in each requested category, excludes recipes planned within the lookback, chooses randomly among remaining recipes, falls back to the least recently planned recipe (never planned first, ties by id), and preserves rest and empty categories as `None`. Planning dates are ordered integer day numbers |
+| `tests/planner.rs` | Category membership, lookback exclusion, least-recent fallback, rest days, empty categories and no repeats when enough candidates exist |
 | `tests/unit_symbols.rs` | `Unit::from_symbol` finds every unit by its symbol and nothing else |
 
 ## crates/crabbage-import

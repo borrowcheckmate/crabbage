@@ -3,6 +3,8 @@
 pub mod durations;
 pub mod membership;
 pub mod permissions;
+/// Meal planning rules.
+pub mod planner;
 pub mod quantity;
 pub mod scaling;
 pub mod shopping;
