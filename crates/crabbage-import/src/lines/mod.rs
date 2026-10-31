@@ -6,3 +6,4 @@ mod units;
 mod words;
 
 pub use line::{ParsedLine, parse_line};
+pub(crate) use units::measure_of;

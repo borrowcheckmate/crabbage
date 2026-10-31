@@ -7,6 +7,9 @@ pub struct Draft {
     pub title: String,
     /// The number of servings the recipe yields.
     pub servings: Option<u32>,
+    /// The language the page is written in, from the recipe's `inLanguage` or else the `lang` of
+    /// the `html` tag, as the page gives it.
+    pub language: Option<String>,
     /// The address of the recipe photo.
     pub image: Option<String>,
     /// The ingredient lines, trimmed, in page order.

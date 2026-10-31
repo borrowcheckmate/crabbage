@@ -510,6 +510,7 @@ dependencies = [
  "axum",
  "base64 0.23.1",
  "crabbage-domain",
+ "crabbage-import",
  "crabbage-store",
  "getrandom 0.4.3",
  "http-body-util",
