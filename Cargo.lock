@@ -526,6 +526,7 @@ dependencies = [
  "tower",
  "url",
  "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

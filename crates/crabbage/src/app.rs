@@ -5,7 +5,7 @@ use leptos_router::path;
 
 use crate::admin::{CategoriesPage, IngredientPage, IngredientsPage, ReviewPage, SectionsPage};
 use crate::i18n::{current_language, t};
-use crate::recipes::{RecipeEditPage, RecipeNewPage, RecipePage, RecipesPage};
+use crate::recipes::{CookPage, RecipeEditPage, RecipeNewPage, RecipePage, RecipesPage};
 use crate::user::current_user;
 
 /// The root component of the app: the routes and the sign-out button.
@@ -26,6 +26,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/recipes") view=RecipesPage/>
                     <Route path=path!("/recipes/new") view=RecipeNewPage/>
                     <Route path=path!("/recipes/:id") view=RecipePage/>
+                    <Route path=path!("/recipes/:id/cook") view=CookPage/>
                     <Route path=path!("/recipes/:id/edit") view=RecipeEditPage/>
                 </Routes>
                 <form method="post" action="/auth/logout">

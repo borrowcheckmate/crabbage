@@ -4,8 +4,10 @@
 mod categories;
 #[cfg(feature = "ssr")]
 mod convert;
+mod cook;
 #[cfg(feature = "ssr")]
 mod draft;
+mod duration;
 mod editors;
 mod ingredients;
 mod line_text;
@@ -24,6 +26,7 @@ mod types;
 mod units;
 mod write;
 
+pub(crate) use cook::CookPage;
 pub(crate) use pages::{RecipeEditPage, RecipeNewPage, RecipePage, RecipesPage};
 #[cfg(feature = "ssr")]
 pub(crate) use photo::routes as photo_routes;
