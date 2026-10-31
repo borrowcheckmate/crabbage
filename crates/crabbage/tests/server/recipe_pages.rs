@@ -260,7 +260,8 @@ async fn the_list_shows_only_the_chosen_category_and_marks_it() {
     let body = page(&harness, &member, &format!("/recipes?category={breakfast}")).await;
     assert!(body.contains("Pancakes</a>"), "{body}");
     assert!(!body.contains("Roast</a>"), "{body}");
-    assert_eq!(body.matches("aria-current=\"page\"").count(), 1, "{body}");
+    // NOTE: the chosen category plus the Recipes link in the side and bottom navigation.
+    assert_eq!(body.matches("aria-current=\"page\"").count(), 3, "{body}");
     assert!(
         body.contains(&format!(
             "<a href=\"/recipes?category={breakfast}\" aria-current=\"page\""

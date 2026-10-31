@@ -72,7 +72,7 @@
   "recipes.filter.favourites": "Favorieten",
   "recipes.empty_favourites": "Je hebt nog geen favorieten.",
   "recipes.nav": "Recepten",
-  "shopping.nav": "Boodschappenlijst",
+  "shopping.nav": "Boodschappen",
   "shopping.heading": "Boodschappenlijst",
   "shopping.add.label": "Voeg een artikel toe",
   "shopping.add.button": "Toevoegen",
@@ -197,7 +197,7 @@
   "unit.to_taste": "naar smaak",
   "unit.minutes": "min",
   "number.decimal": ",",
-  "plan.nav": "Week plannen",
+  "plan.nav": "Planning",
   "plan.heading": "Plan de week",
   "plan.previous": "Vorige week",
   "plan.next": "Volgende week",
@@ -216,5 +216,13 @@
   "plan.thursday": "Donderdag",
   "plan.friday": "Vrijdag",
   "plan.saturday": "Zaterdag",
-  "plan.sunday": "Zondag"
+  "plan.sunday": "Zondag",
+  "app.skip": "Ga naar inhoud",
+  "app.account": "Account",
+  "app.navigation": "Hoofdnavigatie",
+  "app.switch_household": "Huishouden",
+  "app.switch": "Huishouden wisselen",
+  "app.no_household": "Je hebt een huishouden nodig voor de weekplanning en boodschappenlijst.",
+  "home.nav": "Vandaag",
+  "admin.nav.label": "Beheer"
 }

@@ -36,6 +36,31 @@ fn stylesheet_follows_the_system_colour_scheme() {
 }
 
 #[test]
+fn navigation_and_layout_follow_the_visual_contract() {
+    let css = stylesheet();
+    for contract in [
+        "main-workspace (min-width:560px)",
+        "min-width:900px",
+        "env(safe-area-inset-bottom)",
+        "prefers-reduced-motion: reduce",
+        ".mobile-nav",
+        ".primary-nav",
+    ] {
+        assert!(
+            css.contains(contract),
+            "missing responsive shell rule {contract}"
+        );
+    }
+}
+
+#[test]
+fn focus_remains_visible() {
+    let css = stylesheet();
+    assert!(css.contains(":focus-visible"));
+    assert!(css.contains("outline:3px solid var(--focus)"));
+}
+
+#[test]
 fn buttons_and_inputs_are_at_least_44_pixels_tall() {
     let css = stylesheet();
     for selectors in [&["input", "button"][..], &["input", "select", "button"][..]] {
@@ -48,16 +73,15 @@ fn buttons_and_inputs_are_at_least_44_pixels_tall() {
 }
 
 #[test]
-fn body_has_a_maximum_width() {
+fn workspace_and_readable_text_have_bounded_widths() {
     let css = stylesheet();
-    let body = css.split('}').find_map(|block| {
-        block
-            .split_once('{')
-            .filter(|(selector, _)| selector.trim() == "body")
-    });
     assert!(
-        body.is_some_and(|(_, declarations)| declarations.contains("max-width:")),
-        "body must limit its width so text stays readable on large screens"
+        css.contains("main { width:100%;") && css.contains("max-width:1024px"),
+        "the workspace must stay bounded on wide screens"
+    );
+    assert!(
+        css.contains("max-width:68ch"),
+        "long text must keep a readable line length"
     );
 }
 

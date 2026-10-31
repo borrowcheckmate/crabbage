@@ -72,7 +72,7 @@
   "recipes.filter.favourites": "Favourites",
   "recipes.empty_favourites": "You have no favourites yet.",
   "recipes.nav": "Recipes",
-  "shopping.nav": "Shopping list",
+  "shopping.nav": "Shopping",
   "shopping.heading": "Shopping list",
   "shopping.add.label": "Add an item",
   "shopping.add.button": "Add",
@@ -197,7 +197,7 @@
   "unit.to_taste": "to taste",
   "unit.minutes": "min",
   "number.decimal": ".",
-  "plan.nav": "Plan the week",
+  "plan.nav": "Plan",
   "plan.heading": "Plan the week",
   "plan.previous": "Previous week",
   "plan.next": "Next week",
@@ -216,5 +216,13 @@
   "plan.thursday": "Thursday",
   "plan.friday": "Friday",
   "plan.saturday": "Saturday",
-  "plan.sunday": "Sunday"
+  "plan.sunday": "Sunday",
+  "app.skip": "Skip to content",
+  "app.account": "Account",
+  "app.navigation": "Main navigation",
+  "app.switch_household": "Household",
+  "app.switch": "Switch household",
+  "app.no_household": "A household is needed to use the weekly plan and shopping list.",
+  "home.nav": "Today",
+  "admin.nav.label": "Administration"
 }
