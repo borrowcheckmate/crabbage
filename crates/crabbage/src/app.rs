@@ -13,6 +13,7 @@ use crate::recipes::{
     CookPage, RecipeEditPage, RecipeImportPage, RecipeNewPage, RecipePage, RecipesPage,
 };
 use crate::shopping_page::ShoppingPage;
+use crate::today_page::TodayPage;
 use crate::user::current_user;
 
 /// The root component of the app: the routes and the shared navigation.
@@ -33,7 +34,7 @@ pub fn App() -> impl IntoView {
                     <main id="main-content">
                         <NoHouseholdNotice/>
                         <Routes fallback=NotFound>
-                            <Route path=path!("/") view=Home/>
+                            <Route path=path!("/") view=TodayPage/>
                             <Route path=path!("/admin/ingredients") view=IngredientsPage/>
                             <Route path=path!("/admin/ingredients/:id") view=IngredientPage/>
                             <Route path=path!("/admin/sections") view=SectionsPage/>
@@ -156,14 +157,6 @@ fn NoHouseholdNotice() -> impl IntoView {
                 })}
             </Suspense>
         </Show>
-    }
-}
-
-/// The home page: the recipes for everyone, and the admin pages for admins.
-#[component]
-fn Home() -> impl IntoView {
-    view! {
-        <h1>{t("home.nav")}</h1>
     }
 }
 
