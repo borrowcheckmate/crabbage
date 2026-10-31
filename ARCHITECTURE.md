@@ -203,7 +203,7 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/images/` (`ssr`) | Recipe photos, see below |
 | `src/notice.rs` | How pages show a failed action or load: `failure`, `error_notice` (`.notice.error`), `message` |
 | `src/route.rs` | `route_id`: the `:id` of the current route as a number, or `None`. Used by the recipe, cook and ingredient pages |
-| `src/app.rs` | `App`: the `Router` with `/` (home: the recipes and shopping links for everyone, admin links for admins), `/admin/ingredients`, `/admin/ingredients/:id`, `/admin/sections`, `/admin/categories`, `/admin/review`, `/admin/mealie`, `/recipes`, `/recipes/new`, `/recipes/:id`, `/recipes/:id/cook`, `/recipes/:id/edit` and `/shopping`, and the sign-out button (`.secondary`). `shell` is the HTML document |
+| `src/app.rs` | `App`: the `Router` with the Today, Recipes, Plan and Shopping destinations, an active-route navigation, household/account menu, admin links, skip link and no-household explanation on Plan and Shopping; all existing recipe, plan, shopping and admin routes remain. `shell` is the HTML document |
 | `src/user.rs` | `current_user` server function: `SignedInUser` (name and `is_admin`) |
 | `src/catalog/` | Catalog server functions and their records, see below. `categories.rs` holds the admin endpoints for recipe categories. `types.rs` holds `IngredientRow` and `SectionRow` (both builds), `convert.rs` the store conversions (`ssr`) |
 | `src/recipes/` | Recipes: server functions, records and pages, see below |
@@ -229,7 +229,7 @@ To add a language: add `locales/<code>.json` with the same keys, add a `Language
 
 ### Styling
 
-Pages get their look from `style/main.css` and never from inline styles. Use the plain elements (`button`, `input`, `select`, `label`, `form`) and these shared classes:
+Pages get their look from `style/main.css` and never from inline styles. The stylesheet defines the light and dark product tokens, bounded 1024px workspace, 68ch readable text measure, 560px paired-pane and 900px side-navigation breakpoints, compact top bar, safe-area-aware bottom navigation, control states, focus and reduced-motion rules. Use the plain elements (`button`, `input`, `select`, `label`, `form`) and these shared classes:
 
 | Class | Use |
 | --- | --- |

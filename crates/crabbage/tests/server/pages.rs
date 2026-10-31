@@ -61,6 +61,28 @@ async fn home_links_to_the_admin_pages_only_for_admins() {
 }
 
 #[tokio::test]
+async fn shared_navigation_has_labels_current_route_and_household_help() {
+    let harness = Harness::start("pages-shell-nav").await;
+    let member = token_for(&harness, &[]).await;
+    let body = body_text(harness.get("/plan", Some(&member)).await).await;
+    for (href, label) in [
+        ("/", "Today"),
+        ("/recipes", "Recipes"),
+        ("/plan", "Plan"),
+        ("/shopping", "Shopping list"),
+    ] {
+        assert!(body.contains(&format!("href=\"{href}\"")), "{href}: {body}");
+        assert!(body.contains(label), "{label}: {body}");
+    }
+    assert!(body.contains("aria-current=\"page\""), "{body}");
+    assert!(
+        body.contains("A household is needed to use the weekly plan and shopping list."),
+        "{body}"
+    );
+    assert!(!body.contains("/admin/ingredients"), "{body}");
+}
+
+#[tokio::test]
 async fn admin_mealie_page_has_a_password_token_form_and_summary_labels() {
     let harness = Harness::start("pages-mealie").await;
     let token = token_for(&harness, &["admin"]).await;

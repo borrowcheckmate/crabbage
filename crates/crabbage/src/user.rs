@@ -19,6 +19,8 @@ pub(crate) struct SignedInUser {
     pub(crate) name: String,
     /// Whether the user may manage the catalog.
     pub(crate) is_admin: bool,
+    pub(crate) active_household: Option<String>,
+    pub(crate) households: Vec<(i64, String)>,
 }
 
 #[server(prefix = "/api", endpoint = "current_user")]
@@ -29,8 +31,22 @@ pub(crate) async fn current_user() -> Result<SignedInUser, ServerFnError> {
         .await
         .map_err(|error| crate::access::store_failure(&error))?
         .ok_or_else(|| ServerFnError::new(t("catalog.error.database")))?;
+    let households = crabbage_store::households::households_of(&pool, user)
+        .await
+        .map_err(|error| crate::access::store_failure(&error))?;
+    let active = crabbage_store::households::active_household(&pool, user)
+        .await
+        .map_err(|error| crate::access::store_failure(&error))?;
     Ok(SignedInUser {
         name: found.name,
         is_admin: found.is_admin,
+        active_household: households
+            .iter()
+            .find(|household| Some(household.id) == active)
+            .map(|household| household.group_name.clone()),
+        households: households
+            .into_iter()
+            .map(|household| (household.id, household.group_name))
+            .collect(),
     })
 }
