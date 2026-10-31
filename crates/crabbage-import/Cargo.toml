@@ -10,5 +10,8 @@ readme = "../../README.md"
 keywords = ["recipe", "recipes", "cooking", "recipe-book"]
 categories = ["web-programming"]
 
+[dependencies]
+crabbage-domain = { version = "0.1.0", path = "../crabbage-domain" }
+
 [lints]
 workspace = true
