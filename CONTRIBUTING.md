@@ -23,6 +23,8 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 
 ## Tasks
 
+`cargo xtask demo` builds and serves a local demo instance. It accepts `--port`, `--language en|nl`, `--ai <base-url>`, and `--keep` to retain its database under `target/demo-data`.
+
 | Command | Purpose |
 | --- | --- |
 | `cargo xtask fmt [--check]` | Format |

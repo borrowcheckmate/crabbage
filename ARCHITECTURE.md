@@ -9,6 +9,7 @@ crates/crabbage-domain/   pure recipe rules, no IO
 crates/crabbage-store/    SQLite persistence
 crates/crabbage-import/   recipe import from web pages, photos and Mealie
 crates/crabbage/          the Leptos app: library (SSR shell and hydration) + server binary
+crates/crabbage-dev/      fake OpenID Connect provider shared by tests and the demo
 xtask/                    repository automation, invoked as `cargo xtask`
 .githooks/                pre-commit and commit-msg hooks, both call xtask
 .github/                  CI, release, dependabot, issue and PR templates
@@ -371,6 +372,8 @@ The upload route's body limit is `DefaultBodyLimit` of 10 MiB (`MAX_UPLOAD_BYTES
 | `tests/binary.rs` | Runs the server binary: missing config vars and invalid `LEPTOS_SITE_ADDR` or an address already in use exit with an error. With an unreachable issuer the server runs: `/healthz` is 200 and `/auth/login` is 503. Each run uses its own temp `CRABBAGE_DATA_DIR`, and the server process is killed when the test ends |
 
 ## xtask
+
+`cargo xtask demo` starts the shared fake issuer, loads localized demo data through `crabbage-store` and serves the SSR app. The loader in `crates/crabbage-dev/src/demo.rs` creates recipes and gradient PNGs, ratings and favourites, current and next week planner entries and a checked shopping list; a database marker makes repeat loads a no-op.
 
 | Module | Responsibility |
 | --- | --- |

@@ -95,6 +95,10 @@ networks:
 
 Sign-in uses the OpenID Connect provider (Pocket ID). Register `{CRABBAGE_PUBLIC_URL}/auth/callback` as the redirect URI of the client. Every page except `/healthz` needs a session and redirects to `/auth/login` without one.
 
+## Demo
+
+Run `cargo xtask demo` to build and serve the app on `http://localhost:3000` with demo users and generated recipe, planner and shopping data. Sign in with the admin, household member or solo member link on the local issuer page. Use `--port 3100`, `--language nl`, `--ai http://localhost:8080/v1`, or `--keep` to reuse `target/demo-data`.
+
 ## Development
 
 Open the repository in the devcontainer, or install the toolchain from `rust-toolchain.toml`.

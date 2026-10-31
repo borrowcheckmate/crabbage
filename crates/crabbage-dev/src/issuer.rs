@@ -3,8 +3,9 @@
 use std::sync::{Arc, Mutex, OnceLock};
 
 use axum::Router;
+use axum::extract::Query;
 use axum::http::{StatusCode, header::CONTENT_TYPE};
-use axum::response::{IntoResponse, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -16,7 +17,10 @@ use rsa::pkcs1::EncodeRsaPrivateKey;
 use rsa::pkcs8::LineEnding;
 use rsa::rand_core::OsRng;
 use serde_json::json;
+use std::collections::HashMap;
+use std::fmt::Write as _;
 use tokio::net::TcpListener;
+use url::Url;
 
 const KEY_ID: &str = "test-key";
 const CLIENT_ID: &str = "crabbage";
@@ -38,6 +42,7 @@ fn signing_key() -> &'static CoreRsaPrivateSigningKey {
 /// The subject of the user who signs in unless a test chooses another with `set_subject`.
 const DEFAULT_SUBJECT: &str = "subject-1";
 
+#[derive(Debug)]
 struct Expectations {
     nonce: Option<String>,
     groups: Vec<String>,
@@ -49,21 +54,21 @@ struct Expectations {
 }
 
 /// A running fake provider. Its ID tokens carry the nonce set with [`FakeIssuer::expect_nonce`].
-#[derive(Clone)]
-pub(crate) struct FakeIssuer {
+#[derive(Clone, Debug)]
+pub struct FakeIssuer {
     url: String,
     expectations: Arc<Mutex<Expectations>>,
 }
 
 impl FakeIssuer {
     /// Starts the provider on a free loopback port.
-    pub(crate) async fn start() -> Self {
+    pub async fn start() -> Self {
         Self::start_on("127.0.0.1:0").await
     }
 
     /// Starts the provider on `address`, a loopback socket address.
     /// The key is generated before serving so no request waits on it past the client timeout.
-    pub(crate) async fn start_on(address: &str) -> Self {
+    pub async fn start_on(address: &str) -> Self {
         tokio::task::spawn_blocking(signing_key)
             .await
             .expect("key generates");
@@ -84,6 +89,8 @@ impl FakeIssuer {
         };
         let router = Router::new()
             .route("/.well-known/openid-configuration", get(discovery))
+            .route("/authorize", get(authorize))
+            .route("/demo-login", get(demo_login))
             .route("/jwks", get(jwks))
             .route("/token", post(token))
             .with_state(issuer.clone());
@@ -93,46 +100,81 @@ impl FakeIssuer {
         issuer
     }
 
-    /// The issuer URL, with a trailing slash. Its endpoints are relative to it.
-    pub(crate) fn url(&self) -> &str {
+    /// The issuer URL, without a trailing slash.
+    #[must_use]
+    pub fn url(&self) -> &str {
         &self.url
     }
 
     /// Makes the next ID tokens carry `nonce`.
-    pub(crate) fn expect_nonce(&self, nonce: &str) {
+    pub fn expect_nonce(&self, nonce: &str) {
         self.expectations.lock().expect("not poisoned").nonce = Some(nonce.to_owned());
     }
 
     /// Makes the next ID tokens carry the `groups` claim `groups`.
-    pub(crate) fn set_groups(&self, groups: &[&str]) {
+    pub fn set_groups(&self, groups: &[&str]) {
         self.expectations.lock().expect("not poisoned").groups =
             groups.iter().map(|group| (*group).to_owned()).collect();
     }
 
-    pub(crate) fn set_role(&self, role: Option<&str>) {
+    /// Sets the role claim for later tokens.
+    pub fn set_role(&self, role: Option<&str>) {
         self.expectations.lock().expect("not poisoned").role = role.map(str::to_owned);
     }
 
-    pub(crate) fn set_household(&self, household: Option<serde_json::Value>) {
+    /// Sets the household claim for later tokens.
+    pub fn set_household(&self, household: Option<serde_json::Value>) {
         self.expectations.lock().expect("not poisoned").household = household;
     }
 
     /// Makes the next ID tokens belong to the user with `subject`, a user of their own.
-    pub(crate) fn set_subject(&self, subject: &str) {
+    pub fn set_subject(&self, subject: &str) {
         subject.clone_into(&mut self.expectations.lock().expect("not poisoned").subject);
     }
 
     /// Makes the next ID tokens carry the `name` claim `name`, or no name when it is `None`.
-    pub(crate) fn set_name(&self, name: Option<&str>) {
+    pub fn set_name(&self, name: Option<&str>) {
         self.expectations.lock().expect("not poisoned").name = name.map(str::to_owned);
     }
 
     /// Makes the next ID tokens carry the `preferred_username` claim, or none when it is `None`.
-    pub(crate) fn set_preferred_username(&self, username: Option<&str>) {
+    pub fn set_preferred_username(&self, username: Option<&str>) {
         self.expectations
             .lock()
             .expect("not poisoned")
             .preferred_username = username.map(str::to_owned);
+    }
+
+    /// Sets the claims for a built-in demo identity and binds them to a login nonce.
+    pub fn set_demo_user(&self, user: &str, nonce: &str) -> bool {
+        let (subject, name, groups) = match user {
+            "admin" => (
+                "demo-admin",
+                "Demo Admin",
+                vec![
+                    "admin",
+                    "crabbage-household-maple",
+                    "crabbage-household-birch",
+                ],
+            ),
+            "member" => (
+                "demo-member",
+                "Demo Member",
+                vec!["crabbage-household-maple"],
+            ),
+            "solo" => ("demo-solo", "Demo Solo", vec![]),
+            _ => return false,
+        };
+        let Ok(mut expectations) = self.expectations.lock() else {
+            return false;
+        };
+        expectations.nonce = Some(nonce.to_owned());
+        subject.clone_into(&mut expectations.subject);
+        expectations.name = Some(name.to_owned());
+        expectations.groups = groups.into_iter().map(str::to_owned).collect();
+        expectations.role = None;
+        expectations.household = None;
+        true
     }
 
     fn id_token(&self) -> String {
@@ -194,6 +236,62 @@ async fn discovery(axum::extract::State(issuer): axum::extract::State<FakeIssuer
 async fn jwks() -> Response {
     let key: CoreJsonWebKey = signing_key().as_verification_key();
     json_response(&json!({ "keys": [key] }).to_string())
+}
+
+async fn authorize(
+    axum::extract::State(issuer): axum::extract::State<FakeIssuer>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Response {
+    let Some(redirect_uri) = query.get("redirect_uri") else {
+        return StatusCode::BAD_REQUEST.into_response();
+    };
+    let mut buttons = String::new();
+    for (id, title) in [
+        ("admin", "Demo admin"),
+        ("member", "Household member"),
+        ("solo", "Member without a household"),
+    ] {
+        let mut link = match Url::parse(&issuer.url) {
+            Ok(url) => url,
+            Err(_error) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        };
+        link.set_path("/demo-login");
+        link.query_pairs_mut()
+            .append_pair("redirect_uri", redirect_uri)
+            .append_pair("state", query.get("state").map_or("", String::as_str))
+            .append_pair("nonce", query.get("nonce").map_or("", String::as_str))
+            .append_pair("user", id);
+        if write!(buttons, "<li><a href=\"{link}\">{title}</a></li>").is_err() {
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    }
+    Html(format!("<!doctype html><html><meta charset=utf-8><title>Demo sign in</title><h1>Choose a demo user</h1><ul>{buttons}</ul>" )).into_response()
+}
+
+async fn demo_login(
+    Query(query): Query<HashMap<String, String>>,
+    axum::extract::State(issuer): axum::extract::State<FakeIssuer>,
+) -> Response {
+    let (Some(redirect_uri), Some(state), Some(nonce), Some(user)) = (
+        query.get("redirect_uri"),
+        query.get("state"),
+        query.get("nonce"),
+        query.get("user"),
+    ) else {
+        return StatusCode::BAD_REQUEST.into_response();
+    };
+    if !issuer.set_demo_user(user, nonce) {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    let mut callback = match Url::parse(redirect_uri) {
+        Ok(url) if matches!(url.scheme(), "http" | "https") => url,
+        _ => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    callback
+        .query_pairs_mut()
+        .append_pair("code", user)
+        .append_pair("state", state);
+    Redirect::to(callback.as_str()).into_response()
 }
 
 async fn token(
