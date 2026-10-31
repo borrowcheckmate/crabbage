@@ -523,7 +523,7 @@ dependencies = [
 
 [[package]]
 name = "crabbage"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "axum",
  "base64 0.23.1",
@@ -553,14 +553,14 @@ dependencies = [
 
 [[package]]
 name = "crabbage-domain"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "fastrand",
 ]
 
 [[package]]
 name = "crabbage-import"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.23.1",
  "crabbage-domain",
@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "crabbage-store"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "crabbage-domain",
  "serde",
