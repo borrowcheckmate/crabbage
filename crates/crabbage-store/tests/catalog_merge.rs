@@ -1,5 +1,5 @@
-//! Merging: recipe lines move to the target, aliases move, the source name becomes an alias, and
-//! the source is deleted.
+//! Merging: recipe lines and shopping items move to the target, aliases move, the source name
+//! becomes an alias, and the source is deleted.
 
 #[expect(
     clippy::expect_used,
@@ -9,6 +9,7 @@ mod common;
 
 use common::database;
 use crabbage_store::catalog::ingredients::{add_alias, create, list, merge};
+use crabbage_store::shopping::list as list_shopping;
 use sqlx::sqlite::SqlitePool;
 
 #[expect(
@@ -80,4 +81,30 @@ async fn insert_recipe_with_lines(pool: &SqlitePool, ingredients: &[i64]) {
         .await
         .unwrap();
     }
+}
+
+#[tokio::test]
+async fn merge_repoints_shopping_items() {
+    let (_dir, pool) = database("merge-shopping").await;
+    let from = create(&pool, "Scallion").await.unwrap();
+    let into = create(&pool, "Spring onion").await.unwrap();
+    let household: i64 = sqlx::query_scalar(
+        "INSERT INTO households (group_name) VALUES ('crabbage-household-merge') RETURNING id",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    sqlx::query("INSERT INTO shopping_items (household_id, ingredient_id) VALUES (?, ?)")
+        .bind(household)
+        .bind(from)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    assert!(merge(&pool, from, into).await.unwrap());
+
+    let items = list_shopping(&pool, household).await.unwrap();
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].ingredient_id, Some(into));
+    assert_eq!(items[0].ingredient.as_deref(), Some("Spring onion"));
 }

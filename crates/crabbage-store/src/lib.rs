@@ -7,6 +7,7 @@ pub mod login_attempts;
 mod pool;
 pub mod recipes;
 pub mod sessions;
+pub mod shopping;
 pub mod users;
 
 pub use error::StoreError;

@@ -103,22 +103,26 @@ Parses free-text ingredient lines, matches their names to catalogue ingredients,
 
 ## crates/crabbage-store
 
-SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` creates the directory and `crabbage.db` if missing, sets WAL journaling and foreign keys on every connection, and applies the embedded migrations. Every write transaction starts with `begin_write` (`BEGIN IMMEDIATE`), so concurrent writers wait for the busy timeout instead of failing to upgrade a read transaction. `StoreError` wraps the io, sqlx and migration errors.
+SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` creates the directory and `crabbage.db` if missing, sets WAL journaling and foreign keys on every connection, and applies the embedded migrations. Every write transaction starts with `begin_write` (`BEGIN IMMEDIATE`), so concurrent writers wait for the busy timeout instead of failing to upgrade a read transaction. `StoreError` wraps the io, sqlx and migration errors. Depends on `crabbage-domain` for `Servings`, `Quantity` and `Unit` (recipe scaling in the shopping list).
 
 | Module | Responsibility |
 | --- | --- |
 | `src/lib.rs` | Crate doc, module declarations, re-exports |
 | `src/pool.rs` | `open`: connection options, the embedded `MIGRATOR`; `begin_write` |
-| `src/error.rs` | `StoreError`: io, database and migration failures, `Conflict(text)` when a name or alias is taken or would equal a name or alias, `InUse` when recipe lines use an ingredient, `UnknownLine` when a step links to a line the recipe does not have, and `InvalidStars` when a rating is not from 1 to 5 |
+| `src/error.rs` | `StoreError`: io, database and migration failures, `Conflict(text)` when a name or alias is taken or would equal a name or alias, `InUse` when recipe lines use an ingredient, `UnknownLine` when a step links to a line the recipe does not have, `InvalidStars` when a rating is not from 1 to 5, and `Empty` when a shopping text is blank |
 | `src/users.rs` | `upsert_user`: one row per OIDC subject, returns the user id. `find`: the name and admin flag of a user (`User`) |
 | `src/sessions.rs` | `create`, `find_user`, `delete`. Takes the raw token and stores only its SHA-256 hash |
 | `src/login_attempts.rs` | `create` and `take` for pending logins. `take` deletes the row; attempts expire after 10 minutes |
 | `src/households.rs` | `sync_membership` (one transaction per login: admin flag, households upserted by group name, memberships replaced, active household kept, cleared or defaulted to the first by group name), `households_of`, `active_household`, `set_active_household` (only for members) |
 | `src/catalog/mod.rs` | Declares `categories`, `ingredients` and `sections` (all public) and the shared rules in `names.rs` |
 | `src/catalog/names.rs` | Maps unique violations to `Conflict`. A name is never an alias and an alias never a name, both case-insensitively; the checks run inside the store functions |
-| `src/catalog/ingredients.rs` | `Ingredient` with its aliases. `list`, `list_pending`, `create`, `rename`, `delete` (`InUse` while recipe lines use it), `add_alias`, `remove_alias`, `set_section`, `approve`, `merge` (one transaction: recipe lines and aliases move to the target, the source name becomes an alias of it, the source is deleted). Missing rows return `false` |
+| `src/catalog/ingredients.rs` | `Ingredient` with its aliases. `list`, `list_pending`, `create`, `rename`, `delete` (`InUse` while recipe lines use it), `add_alias`, `remove_alias`, `set_section`, `approve`, `merge` (one transaction: recipe lines and shopping items move to the target, aliases move, the source name becomes an alias of it, the source is deleted). Missing rows return `false` |
 | `src/catalog/sections.rs` | `Section`. `list` in position order, `create` at the end, `rename`, `delete` (ingredients keep their row and lose the section), `move_section` renumbers 0 to n-1 with the moved section at the new position |
 | `src/catalog/categories.rs` | `Category`. `list` by name, `create`, `rename`, `delete` (the category leaves every recipe it was filed under) |
+| `src/shopping/mod.rs` | Declares `model`, `read` and `write`, and re-exports `ShoppingItem`, `list` and the write functions |
+| `src/shopping/model.rs` | `ShoppingItem`: ingredient id and name, text, amount, unit, `checked`, recipe id, and the ingredient's store section id and position |
+| `src/shopping/read.rs` | `list(pool, household)`: the household's items, unchecked first, then by id. Joins ingredients and store sections |
+| `src/shopping/write.rs` | `add_recipe(pool, household, recipe, servings)` (`false` for a missing recipe; one `begin_write`). Amounts scale from the recipe's servings through `Unit::from_symbol` and `scale`, unitless counts as pieces. Lines with an ingredient become ingredient items, note-only lines text items, others are skipped. `add_text` and `edit_text` trim and refuse blank text (`Empty`); edit only changes manual items. `remove`, `set_checked` (one `begin_write`, returns the rows changed) and `clear_checked`. Every query filters by household |
 | `src/recipes/mod.rs` | Declares `model`, `write`, `read`, `editors`, `image` and `standing`, and re-exports the public functions and records |
 | `src/recipes/model.rs` | `RecipeInput` (title, servings, `LineInput`s, `StepInput`s with `line_positions`, `category_ids`) and what the store returns: `Recipe` (lines and steps in order, owner, editors, `categories`, `image`), `RecipeLine`, `RecipeStep` (`line_ids`), `RecipeSummary` (with `image`), `Person`. Both recipe records carry the viewer's view of ratings: `average` (one decimal, `None` without ratings), `rating_count`, `my_stars` and `favourite` |
 | `src/recipes/write.rs` | `create(pool, owner, input, now)`, `update(pool, id, input)` and `delete`. Create and update run in one transaction and replace categories, lines and steps wholesale. Unknown category ids are ignored. An ingredient name matches a name or alias case-insensitively, and an unknown name creates an ingredient with `pending_review`. Blank names become no ingredient |
@@ -131,7 +135,7 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `tests/concurrent_writes.rs` | Many concurrent creates and renames all succeed |
 | `tests/recipes_images.rs` | `set_image` returns the replaced name, clears it, reads back through `get` and `list`, and does nothing for a missing recipe |
 | `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs`, `tests/households.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
-| `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines inserted with SQL), section ordering and renumbering |
+| `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines and shopping items inserted with SQL, both re-pointed), section ordering and renumbering |
 | `tests/catalog_categories.rs` | Category order by name, unique names regardless of case, rename, and delete taking the category off its recipes |
 | `tests/recipes_categories.rs` | Categories stored by name with unknown ids ignored, replaced on update, the list filtered by category |
 | `tests/recipes_round_trip.rs` | Lines and steps round-trip in order with step-line links, unknown ingredients created pending, alias and case-insensitive resolution, list order, `UnknownLine` |
@@ -140,6 +144,7 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `tests/recipes_delete.rs` | Delete removes lines, steps, step links, editors, ratings and favourites (ratings and favourites inserted with SQL) |
 | `tests/recipes_ratings.rs` | A user's rating changes in place, out-of-range stars are refused before storing, rating a missing recipe changes nothing, the average and count cover every user |
 | `tests/recipes_favourites.rs` | Favourites belong to one user and toggle, a missing recipe changes nothing, the list filters by the viewer's favourites alone and with a category |
+| `tests/shopping.rs` | Recipe lines scaled and skipped, unknown recipe, manual items trimmed and edited, blank refused, edit refuses ingredient items, checked items last, clearing, other households refused in every change, household delete removes items |
 | `tests/recipes_search.rs` | Search by title, ingredient and alternative name, case-insensitively, `%`, `_` and `\` literal, blank search is none, and search combined with the category and favourites filters |
 
 Migrations:
@@ -152,6 +157,7 @@ Migrations:
 | `0004_catalog_and_recipes.sql` | `store_sections`, `ingredients` (`pending_review`), `ingredient_aliases` (cascade with the ingredient), `recipes`, `recipe_lines` (`ingredient_id` restricts deletes of used ingredients) |
 | `0005_recipe_details.sql` | `recipe_editors`, `steps` (position, text, optional duration), `step_lines` (step to line), `ratings` (one per user and recipe, 1 to 5 stars) and `favourites` (one per user and recipe); both cascade with the recipe and the user |
 | `0006_categories.sql` | `categories` (unique name regardless of case), `recipe_categories` (cascade with the recipe and the category) |
+| `0007_shopping.sql` | `shopping_items` (cascade with the household; ingredient items cascade with the ingredient, recipe items set null with the recipe; exactly one of ingredient or text) |
 
 Migrations are embedded at compile time by `sqlx::migrate!()`. To add one, create `migrations/NNNN_description.sql` with the next number. Never edit an applied migration; add a new one. Tables are `STRICT`.
 
