@@ -37,7 +37,7 @@ async fn set_image_returns_the_replaced_name_and_reads_back() {
         Some("a.jpg")
     );
     assert_eq!(
-        list(&pool, None, false, owner).await.unwrap()[0]
+        list(&pool, None, false, None, owner).await.unwrap()[0]
             .image
             .as_deref(),
         Some("a.jpg")

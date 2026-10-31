@@ -119,8 +119,11 @@ async fn steps_of(pool: &SqlitePool, recipe_id: i64) -> Result<Vec<RecipeStep>, 
         .collect())
 }
 
-/// Every recipe ordered by title, as user `viewer` sees it. `category` keeps only the recipes filed
-/// under it, and `favourites_only` only the viewer's favourites. Both filters apply together.
+/// Every recipe ordered by title, as user `viewer` sees it.
+///
+/// `category` keeps only the recipes filed under it, `favourites_only` only the viewer's favourites,
+/// and `search` only the recipes whose title, or whose ingredient or alternative ingredient name,
+/// contains it ignoring case. A blank search is no search. All filters apply together.
 ///
 /// # Errors
 ///
@@ -129,8 +132,10 @@ pub async fn list(
     pool: &SqlitePool,
     category: Option<i64>,
     favourites_only: bool,
+    search: Option<&str>,
     viewer: i64,
 ) -> Result<Vec<RecipeSummary>, StoreError> {
+    let pattern = search.and_then(like_pattern);
     let recipes = sqlx::query_as(
         "SELECT r.id, r.title, r.servings, u.name AS owner_name, r.image, \
     (SELECT ROUND(AVG(stars), 1) FROM ratings WHERE recipe_id = r.id) AS average, \
@@ -142,14 +147,32 @@ pub async fn list(
              WHERE rc.recipe_id = r.id AND rc.category_id = ?2)) \
          AND (?3 = 0 OR EXISTS (SELECT 1 FROM favourites f \
              WHERE f.recipe_id = r.id AND f.user_id = ?1)) \
+         AND (?4 IS NULL OR r.title LIKE ?4 ESCAPE '\\' OR EXISTS (SELECT 1 FROM recipe_lines l \
+             JOIN ingredients i ON i.id = l.ingredient_id \
+             WHERE l.recipe_id = r.id AND (i.name LIKE ?4 ESCAPE '\\' OR EXISTS (SELECT 1 \
+                 FROM ingredient_aliases a WHERE a.ingredient_id = i.id AND a.alias LIKE ?4 ESCAPE '\\')))) \
          ORDER BY r.title COLLATE NOCASE, r.id",
     )
     .bind(viewer)
     .bind(category)
     .bind(favourites_only)
+    .bind(pattern)
     .fetch_all(pool)
     .await?;
     Ok(recipes)
+}
+
+/// The `LIKE` pattern that finds `search` anywhere in a value, with `%`, `_` and `\` taken literally.
+/// `None` for a blank search.
+fn like_pattern(search: &str) -> Option<String> {
+    let text = search.trim();
+    (!text.is_empty()).then(|| {
+        let escaped = text
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
+        format!("%{escaped}%")
+    })
 }
 
 /// Every user, as a person to pick an editor from, ordered by name.

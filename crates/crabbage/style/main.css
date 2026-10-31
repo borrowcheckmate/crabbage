@@ -349,6 +349,26 @@ ol + h2 {
   background: var(--accent);
 }
 
+.stepper {
+  margin: 1rem 0;
+}
+
+.stepper a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 fieldset {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
