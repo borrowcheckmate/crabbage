@@ -8,7 +8,7 @@ use sqlx::sqlite::SqlitePool;
 
 use crate::common::{Harness, body_text, sign_in_as};
 
-const ADMIN: &str = "crabbage-admin";
+const ADMIN: &str = "admin";
 const OWNER: &str = "owner";
 const OTHER: &str = "other";
 const EDITOR: &str = "editor";

@@ -10,7 +10,7 @@ use crabbage_store::users::upsert_user;
 
 use crate::common::{Harness, body_text, header, session_token};
 
-const ADMIN: &str = "crabbage-admin";
+const ADMIN: &str = "admin";
 
 async fn memberships(harness: &Harness, user: i64) -> Vec<String> {
     households_of(&harness.pool, user)
@@ -72,6 +72,38 @@ async fn login_sets_the_admin_role_and_the_active_household_from_groups() {
         active_household(&harness.pool, user).await.unwrap(),
         Some(smith.id)
     );
+}
+
+#[tokio::test]
+async fn login_reads_admin_and_household_from_custom_claims() {
+    let harness = Harness::start("household-custom-claims").await;
+    harness.issuer.set_groups(&[]);
+    harness.issuer.set_role(Some("admin"));
+    harness
+        .issuer
+        .set_household(Some(serde_json::json!("Vinkenhoeven")));
+    let response = harness.sign_in().await;
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let user = harness.user_id().await;
+    assert!(is_admin(&harness, user).await);
+    let household = household_named(&harness, user, "Vinkenhoeven").await;
+    assert_eq!(memberships(&harness, user).await, ["Vinkenhoeven"]);
+    assert_eq!(
+        active_household(&harness.pool, user).await.unwrap(),
+        Some(household.id)
+    );
+}
+
+#[tokio::test]
+async fn unsupported_household_claim_does_not_reject_login() {
+    let harness = Harness::start("household-unsupported-claim").await;
+    harness.issuer.set_groups(&[]);
+    harness.issuer.set_household(Some(serde_json::json!(42)));
+    let response = harness.sign_in().await;
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let user = harness.user_id().await;
+    assert!(!is_admin(&harness, user).await);
+    assert_eq!(memberships(&harness, user).await, Vec::<String>::new());
 }
 
 #[tokio::test]

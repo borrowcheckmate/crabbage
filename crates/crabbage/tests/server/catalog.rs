@@ -9,7 +9,7 @@ use sqlx::sqlite::SqlitePool;
 
 use crate::common::{Harness, body_text, session_token};
 
-const ADMIN: &str = "crabbage-admin";
+const ADMIN: &str = "admin";
 
 async fn token_for(harness: &Harness, groups: &[&str]) -> String {
     harness.issuer.set_groups(groups);

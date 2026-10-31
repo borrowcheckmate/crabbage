@@ -33,8 +33,12 @@ pub(super) async fn callback(
         .await
         .ok_or(AuthError::Rejected("login failed"))?;
     let user_id = users::upsert_user(&state.pool, &identity.subject, &identity.name).await?;
-    let membership = Membership::from_groups(
-        &identity.groups,
+    let membership = Membership::from_claims(
+        &crabbage_domain::membership::Claims {
+            groups: identity.groups,
+            role: identity.role,
+            households: identity.households,
+        },
         &state.admin_group,
         &state.household_group_prefix,
     );

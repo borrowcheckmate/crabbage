@@ -25,6 +25,29 @@ pub(crate) type HttpClient = reqwest::Client;
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Profile {
     groups: Option<Vec<String>>,
+    #[serde(default)]
+    crabbage_role: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_households")]
+    crabbage_household: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum HouseholdClaim {
+    One(String),
+    Many(Vec<String>),
+    Other(serde::de::IgnoredAny),
+}
+
+fn deserialize_households<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(match HouseholdClaim::deserialize(deserializer)? {
+        HouseholdClaim::One(value) => vec![value],
+        HouseholdClaim::Many(values) => values,
+        HouseholdClaim::Other(_) => Vec::new(),
+    })
 }
 
 impl AdditionalClaims for Profile {}
@@ -64,6 +87,8 @@ pub(crate) struct Identity {
     pub(crate) subject: String,
     pub(crate) name: String,
     pub(crate) groups: Vec<String>,
+    pub(crate) role: Option<String>,
+    pub(crate) households: Vec<String>,
 }
 
 pub(crate) struct Oidc {
@@ -147,10 +172,14 @@ impl Oidc {
             .groups
             .clone()
             .unwrap_or_default();
+        let role = claims.additional_claims().crabbage_role.clone();
+        let households = claims.additional_claims().crabbage_household.clone();
         Some(Identity {
             subject,
             name,
             groups,
+            role,
+            households,
         })
     }
 }

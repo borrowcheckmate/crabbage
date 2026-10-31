@@ -43,8 +43,10 @@ The server reads its settings from environment variables at startup and refuses 
 | `OIDC_CLIENT_ID` | yes | | Client ID registered with the provider |
 | `OIDC_CLIENT_SECRET` | yes | | Client secret for the provider (never printed) |
 | `LEPTOS_SITE_ADDR` | no | `127.0.0.1:3000` | Address the server listens on. The image sets `0.0.0.0:3000` |
-| `CRABBAGE_ADMIN_GROUP` | no | `crabbage-admin` | Group whose members administer the app |
+| `CRABBAGE_ADMIN_GROUP` | no | `admin` | Group whose members administer the app |
 | `CRABBAGE_HOUSEHOLD_GROUP_PREFIX` | no | `crabbage-household-` | Prefix of the groups that name households |
+
+Membership can come from groups or custom claims. Put users in the configured admin group and in groups named with the household prefix (the full group name identifies each household), or set `crabbage_role: "admin"` and `crabbage_household` (a string or list of strings) as custom claims on a Pocket ID group. Pocket ID merges group custom claims into members' ID token claims. If two groups set the same claim key, only one value arrives; use one group per household.
 | `AI_BASE_URL` | with `AI_MODEL` | | `http(s)` base URL of an OpenAI-compatible API. Setting it turns AI on |
 | `AI_MODEL` | with `AI_BASE_URL` | | Model to request. Setting it turns AI on |
 | `AI_API_KEY` | no | | API key for the AI service, if it needs one (never printed) |

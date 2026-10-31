@@ -18,19 +18,36 @@ pub struct Membership {
     pub households: Vec<String>,
 }
 
+/// Claims used to derive a user's membership.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Claims {
+    /// Full names of groups in the identity provider token.
+    pub groups: Vec<String>,
+    /// Optional role from the `crabbage_role` claim.
+    pub role: Option<String>,
+    /// Optional household values from the `crabbage_household` claim.
+    pub households: Vec<String>,
+}
+
 impl Membership {
-    /// Derives the membership from the `groups` of a login.
+    /// Derives membership from the groups and custom claims of a login.
     ///
-    /// The user is an admin when `groups` contains `admin_group`. Every group that starts with
-    /// `household_prefix` and has a name after it is a household, named by the whole group.
+    /// The user is an admin when a group matches `admin_group` or the role claim is `admin`.
+    /// Household groups retain their full names, while custom household claims supply names.
     #[must_use]
-    pub fn from_groups(groups: &[String], admin_group: &str, household_prefix: &str) -> Self {
-        let role = if groups.iter().any(|group| group == admin_group) {
+    pub fn from_claims(claims: &Claims, admin_group: &str, household_prefix: &str) -> Self {
+        let role = if claims.groups.iter().any(|group| group == admin_group)
+            || claims
+                .role
+                .as_deref()
+                .is_some_and(|role| role.trim().eq_ignore_ascii_case("admin"))
+        {
             Role::Admin
         } else {
             Role::Member
         };
-        let mut households: Vec<String> = groups
+        let mut households: Vec<String> = claims
+            .groups
             .iter()
             .filter(|group| {
                 group
@@ -39,6 +56,14 @@ impl Membership {
             })
             .cloned()
             .collect();
+        households.extend(
+            claims
+                .households
+                .iter()
+                .map(|household| household.trim())
+                .filter(|household| !household.is_empty())
+                .map(str::to_owned),
+        );
         households.sort();
         households.dedup();
         Self { role, households }

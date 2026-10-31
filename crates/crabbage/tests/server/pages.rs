@@ -15,7 +15,7 @@ async fn token_for(harness: &Harness, groups: &[&str]) -> String {
 #[tokio::test]
 async fn admin_sees_the_ingredients_page() {
     let harness = Harness::start("pages-admin").await;
-    let token = token_for(&harness, &["crabbage-admin"]).await;
+    let token = token_for(&harness, &["admin"]).await;
     let response = harness.get("/admin/ingredients", Some(&token)).await;
     assert_eq!(response.status(), StatusCode::OK);
     let body = body_text(response).await;
@@ -48,7 +48,7 @@ async fn member_sees_the_not_allowed_message_on_admin_pages() {
 #[tokio::test]
 async fn home_links_to_the_admin_pages_only_for_admins() {
     let harness = Harness::start("pages-home").await;
-    let admin = token_for(&harness, &["crabbage-admin"]).await;
+    let admin = token_for(&harness, &["admin"]).await;
     let body = body_text(harness.get("/", Some(&admin)).await).await;
     assert!(body.contains("href=\"/admin/ingredients\""), "{body}");
     assert!(body.contains("href=\"/admin/categories\""), "{body}");
@@ -63,7 +63,7 @@ async fn home_links_to_the_admin_pages_only_for_admins() {
 #[tokio::test]
 async fn admin_mealie_page_has_a_password_token_form_and_summary_labels() {
     let harness = Harness::start("pages-mealie").await;
-    let token = token_for(&harness, &["crabbage-admin"]).await;
+    let token = token_for(&harness, &["admin"]).await;
     let body = body_text(harness.get("/admin/mealie", Some(&token)).await).await;
     for expected in [
         "Import from Mealie</h1>",
@@ -97,7 +97,7 @@ async fn member_cannot_start_a_mealie_migration() {
 #[tokio::test]
 async fn ingredients_page_lists_sections_alias_counts_and_pending_ingredients() {
     let harness = Harness::start("pages-ingredients").await;
-    let token = token_for(&harness, &["crabbage-admin"]).await;
+    let token = token_for(&harness, &["admin"]).await;
     let produce = sections::create(&harness.pool, "Produce").await.unwrap();
     let tomato = ingredients::create(&harness.pool, "Tomato").await.unwrap();
     ingredients::create(&harness.pool, "Onion").await.unwrap();
@@ -130,7 +130,7 @@ async fn ingredients_page_lists_sections_alias_counts_and_pending_ingredients() 
 #[tokio::test]
 async fn empty_admin_pages_say_so() {
     let harness = Harness::start("pages-empty").await;
-    let token = token_for(&harness, &["crabbage-admin"]).await;
+    let token = token_for(&harness, &["admin"]).await;
     let cases = [
         ("/admin/ingredients", "No ingredients yet."),
         ("/admin/sections", "No store sections yet."),
@@ -145,7 +145,7 @@ async fn empty_admin_pages_say_so() {
 #[tokio::test]
 async fn sections_and_review_pages_list_their_rows() {
     let harness = Harness::start("pages-rows").await;
-    let token = token_for(&harness, &["crabbage-admin"]).await;
+    let token = token_for(&harness, &["admin"]).await;
     sections::create(&harness.pool, "Dairy").await.unwrap();
     sqlx::query("INSERT INTO ingredients (name, pending_review) VALUES ('Okra', 1)")
         .execute(&harness.pool)
@@ -162,7 +162,7 @@ async fn sections_and_review_pages_list_their_rows() {
 #[tokio::test]
 async fn categories_page_lists_the_categories_for_admins() {
     let harness = Harness::start("pages-categories").await;
-    let token = token_for(&harness, &["crabbage-admin"]).await;
+    let token = token_for(&harness, &["admin"]).await;
     categories::create(&harness.pool, "Breakfast")
         .await
         .unwrap();

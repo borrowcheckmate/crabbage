@@ -55,7 +55,7 @@ fn defaults_apply_when_optional_vars_are_unset() {
     let config = Config::from_lookup(lookup(&REQUIRED)).unwrap();
     assert_eq!(config.language, Language::En);
     assert_eq!(config.data_dir, PathBuf::from("/data"));
-    assert_eq!(config.admin_group, "crabbage-admin");
+    assert_eq!(config.admin_group, "admin");
     assert_eq!(config.household_group_prefix, "crabbage-household-");
     assert_eq!(config.public_url.as_str(), "https://recipes.example.com/");
     assert_eq!(config.oidc_issuer_url.as_str(), "https://id.example.com/");

@@ -45,7 +45,7 @@ pub struct Config {
     pub oidc_client_id: String,
     /// Client secret for the provider, from `OIDC_CLIENT_SECRET`.
     pub oidc_client_secret: String,
-    /// Group whose members administer the app, from `CRABBAGE_ADMIN_GROUP` (default `crabbage-admin`).
+    /// Group whose members administer the app, from `CRABBAGE_ADMIN_GROUP` (default `admin`).
     pub admin_group: String,
     /// Prefix of the groups that name households, from `CRABBAGE_HOUSEHOLD_GROUP_PREFIX` (default `crabbage-household-`).
     pub household_group_prefix: String,
@@ -102,7 +102,7 @@ impl Config {
         let oidc_client_secret = vars.required("OIDC_CLIENT_SECRET");
         let admin_group = vars
             .get("CRABBAGE_ADMIN_GROUP")
-            .unwrap_or_else(|| "crabbage-admin".to_owned());
+            .unwrap_or_else(|| "admin".to_owned());
         let household_group_prefix = vars
             .get("CRABBAGE_HOUSEHOLD_GROUP_PREFIX")
             .unwrap_or_else(|| "crabbage-household-".to_owned());
