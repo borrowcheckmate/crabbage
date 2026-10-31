@@ -24,6 +24,29 @@ async fn admin_sees_the_ingredients_page() {
 }
 
 #[tokio::test]
+async fn admin_settings_page_never_renders_the_saved_key() {
+    let harness = Harness::start("pages-admin-settings").await;
+    let key = "admin-settings-secret-key";
+    crabbage_store::settings::save(
+        &harness.pool,
+        &crabbage_store::settings::AiSettings {
+            ai_enabled: true,
+            provider: "custom".to_owned(),
+            base_url: "https://ai.example/v1".to_owned(),
+            model: "small".to_owned(),
+            api_key: Some(key.to_owned()),
+        },
+    )
+    .await
+    .expect("settings saved");
+    let token = token_for(&harness, &["admin"]).await;
+    let body = body_text(harness.get("/admin/settings", Some(&token)).await).await;
+    assert!(body.contains("AI settings"), "{body}");
+    assert!(body.contains("An API key is saved."), "{body}");
+    assert!(!body.contains(key), "{body}");
+}
+
+#[tokio::test]
 async fn member_sees_the_not_allowed_message_on_admin_pages() {
     let harness = Harness::start("pages-member").await;
     let token = token_for(&harness, &[]).await;
@@ -33,6 +56,7 @@ async fn member_sees_the_not_allowed_message_on_admin_pages() {
         "/admin/categories",
         "/admin/review",
         "/admin/mealie",
+        "/admin/settings",
     ] {
         let response = harness.get(path, Some(&token)).await;
         assert_eq!(response.status(), StatusCode::OK, "{path}");

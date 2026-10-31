@@ -5,4 +5,4 @@ mod tests;
 mod vars;
 
 pub use error::ConfigError;
-pub use settings::{AiConfig, Config};
+pub use settings::Config;

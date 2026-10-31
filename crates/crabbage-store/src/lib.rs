@@ -9,6 +9,8 @@ pub mod planner;
 mod pool;
 pub mod recipes;
 pub mod sessions;
+/// Persisted application settings.
+pub mod settings;
 pub mod shopping;
 pub mod users;
 

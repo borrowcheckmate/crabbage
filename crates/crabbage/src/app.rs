@@ -6,6 +6,7 @@ use leptos_router::path;
 
 use crate::admin::{
     CategoriesPage, IngredientPage, IngredientsPage, MealiePage, ReviewPage, SectionsPage,
+    SettingsPage,
 };
 use crate::i18n::{current_language, t};
 use crate::plan_page::PlanPage;
@@ -41,6 +42,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/admin/categories") view=CategoriesPage/>
                             <Route path=path!("/admin/review") view=ReviewPage/>
                             <Route path=path!("/admin/mealie") view=MealiePage/>
+                            <Route path=path!("/admin/settings") view=SettingsPage/>
                             <Route path=path!("/recipes") view=RecipesPage/>
                             <Route path=path!("/recipes/new") view=RecipeNewPage/>
                             <Route path=path!("/recipes/import") view=RecipeImportPage/>
@@ -118,6 +120,7 @@ fn AdminLinks(is_admin: bool) -> impl IntoView {
                 <a href="/admin/categories">{t("admin.nav.categories")}</a>
                 <a href="/admin/review">{t("admin.nav.review")}</a>
                 <a href="/admin/mealie">{t("admin.nav.mealie")}</a>
+                <a href="/admin/settings">{t("admin.nav.settings")}</a>
             </nav>
         }
     })

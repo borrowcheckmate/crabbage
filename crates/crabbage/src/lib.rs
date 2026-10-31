@@ -66,7 +66,7 @@ mod config;
 mod i18n;
 
 #[cfg(feature = "ssr")]
-pub use config::{AiConfig, Config, ConfigError};
+pub use config::{Config, ConfigError};
 
 pub use i18n::Language;
 

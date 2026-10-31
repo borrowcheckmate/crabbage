@@ -1,7 +1,6 @@
 use url::Url;
 
 use super::error::Problem;
-use super::settings::AiConfig;
 use crate::i18n::Language;
 
 pub(super) struct Vars<F> {
@@ -71,28 +70,5 @@ impl<F: Fn(&str) -> Option<String>> Vars<F> {
             });
         }
         language
-    }
-
-    /// Returns `None` when AI is disabled and when its settings are invalid; the problems say which.
-    pub(super) fn ai(&mut self) -> Option<AiConfig> {
-        match (self.get("AI_BASE_URL"), self.get("AI_MODEL")) {
-            (None, None) => None,
-            (Some(base_url), Some(model)) => {
-                let base_url = self.parse_url("AI_BASE_URL", &base_url)?;
-                Some(AiConfig {
-                    base_url,
-                    api_key: self.get("AI_API_KEY"),
-                    model,
-                })
-            }
-            (Some(_), None) => {
-                self.problems.push(Problem::Missing("AI_MODEL"));
-                None
-            }
-            (None, Some(_)) => {
-                self.problems.push(Problem::Missing("AI_BASE_URL"));
-                None
-            }
-        }
     }
 }

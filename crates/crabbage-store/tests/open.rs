@@ -38,7 +38,7 @@ async fn fresh_dir_gets_a_migrated_database() {
     let dir = TempDir::new("fresh");
     let pool = open(dir.path()).await.unwrap();
     assert!(dir.path().join("crabbage.db").is_file());
-    assert_eq!(migration_count(&pool).await.unwrap(), 11);
+    assert_eq!(migration_count(&pool).await.unwrap(), 12);
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('households', 'users', 'user_households') ORDER BY name",
     )
@@ -86,7 +86,7 @@ async fn opening_twice_keeps_the_migration_count() {
     let dir = TempDir::new("twice");
     drop(open(dir.path()).await.unwrap());
     let pool = open(dir.path()).await.unwrap();
-    assert_eq!(migration_count(&pool).await.unwrap(), 11);
+    assert_eq!(migration_count(&pool).await.unwrap(), 12);
 }
 
 #[tokio::test]
