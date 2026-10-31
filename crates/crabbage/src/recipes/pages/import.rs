@@ -84,8 +84,8 @@ async fn preview(url: String, photos: String, save: ServerAction<SaveImport>) ->
     if url.is_empty() && photos.is_empty() {
         return ().into_any();
     }
-    match load(url, photos).await {
-        Ok((preview, names)) => review(preview, names, save),
+    match load(url, photos.clone()).await {
+        Ok((preview, names)) => review(preview, names, photos, save),
         Err(error) => error_notice(&message(&error)),
     }
 }
@@ -99,13 +99,19 @@ async fn load(url: String, photos: String) -> Result<(ImportPreview, Vec<String>
     Ok((preview, ingredient_names().await?))
 }
 
-fn review(preview: ImportPreview, names: Vec<String>, save: ServerAction<SaveImport>) -> AnyView {
+fn review(
+    preview: ImportPreview,
+    names: Vec<String>,
+    photos: String,
+    save: ServerAction<SaveImport>,
+) -> AnyView {
     let ImportPreview {
         draft,
         image,
         source,
         unresolved,
         ai_error,
+        photo_preview,
     } = preview;
     let draft = Draft::from_wire(&draft);
     let intro = t_with("import.source", &[("source", &source)]);
@@ -120,6 +126,13 @@ fn review(preview: ImportPreview, names: Vec<String>, save: ServerAction<SaveImp
             </section>
         }
     });
+    let dish_photo = photo_preview.map(|src| view! {
+        <section class="card">
+            <h2>{t("import.photo")}</h2>
+            <img class="photo" src=src alt=draft.title.get_untracked()/>
+            <label><input type="checkbox" name="keep_photo" value="true" checked/>{t("import.keep_photo")}</label>
+        </section>
+    });
     let image_field = image.map(|src| view! { <input type="hidden" name="image" value=src/> });
     view! {
         <p>{intro}</p>
@@ -128,7 +141,9 @@ fn review(preview: ImportPreview, names: Vec<String>, save: ServerAction<SaveImp
         <ActionForm action=save>
             <DraftFields draft names unresolved/>
             {photo}
+            {dish_photo}
             {image_field}
+            <input type="hidden" name="photo_token" value=photos/>
             <input type="hidden" name="draft" value=move || draft.json()/>
             <button>{t("recipe.button.save")}</button>
         </ActionForm>

@@ -1,5 +1,7 @@
 use crabbage_domain::quantity::Unit;
 
+use crate::ai::AiPhoto;
+
 /// A recipe ready to save: metric amounts and units, its lines matched to the catalogue, and its
 /// steps linked to the lines they use.
 #[derive(Debug, Clone, PartialEq)]
@@ -10,6 +12,8 @@ pub struct Imported {
     pub servings: Option<u32>,
     /// The address of the recipe photo.
     pub image: Option<String>,
+    /// The AI's normalized finished-dish crop on one submitted photo.
+    pub photo: Option<AiPhoto>,
     /// The ingredient lines in order.
     pub lines: Vec<ImportedLine>,
     /// The method steps in order.

@@ -47,6 +47,8 @@ pub(crate) async fn photo_preview(token: String) -> Result<ImportPreview, Server
 pub(crate) async fn save_import(
     draft: String,
     image: Option<String>,
+    photo_token: Option<String>,
+    keep_photo: Option<bool>,
 ) -> Result<i64, ServerFnError> {
     use crabbage_store::recipes::create;
     let (pool, user) = crate::access::signed_in().await?;
@@ -61,6 +63,19 @@ pub(crate) async fn save_import(
         .filter(|url| !url.is_empty())
     {
         crate::recipes::import_photo::attach(&pool, &config, id, url).await;
+    }
+    if keep_photo == Some(true) {
+        use crate::images::{Kind, write};
+        use crabbage_store::recipes::set_image;
+        if let (Some(token), Some(drafts)) = (
+            photo_token.as_deref(),
+            leptos::prelude::use_context::<std::sync::Arc<crate::recipes::PhotoDrafts>>(),
+        ) && let Some(bytes) = drafts.photo(token, user, std::time::Instant::now())
+            && let Ok(name) = write(&config.data_dir, &bytes, Kind::Jpeg).await
+            && set_image(&pool, id, Some(&name)).await.is_err()
+        {
+            drop(crate::images::remove(&config.data_dir, &name).await);
+        }
     }
     Ok(id)
 }

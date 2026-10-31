@@ -14,7 +14,7 @@ use crabbage_store::shopping::add_text;
 
 use crate::common::{Harness, body_text, session_token, sign_in_as};
 use crate::recipe_import::serve_with;
-use crate::recipe_photo_import::with_ai;
+use crate::recipe_photo_import::{location, png, upload, with_ai};
 
 #[tokio::test]
 #[expect(
@@ -305,6 +305,13 @@ async fn write_pages() {
         .await
         .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
     std::fs::write(dir.join("member-recipe-import-photos.html"), body).expect("page is written");
+    let photo = png();
+    let review = location(&upload(&with_ai, Some(&token), &[("photo", &photo)]).await);
+    let body = body_text(with_ai.get(&review, Some(&token)).await)
+        .await
+        .replace("href=\"/pkg/crabbage.css\"", "href=\"crabbage.css\"");
+    std::fs::write(dir.join("member-recipe-import-photo-review.html"), body)
+        .expect("page is written");
 }
 
 const PHOTO_NAME: &str = "5a0c1e2f3b4d5e6f7a8b9c0d1e2f3a4b.png";

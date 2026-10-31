@@ -24,7 +24,7 @@ required-features = ["ssr"]
 
 [features]
 default = []
-ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:base64", "dep:crabbage-import", "dep:crabbage-store", "dep:futures-util", "dep:getrandom", "dep:leptos_axum", "dep:axum", "dep:openidconnect", "dep:sqlx", "dep:tokio", "dep:url"]
+ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:base64", "dep:crabbage-import", "dep:crabbage-store", "dep:futures-util", "dep:getrandom", "dep:image", "dep:leptos_axum", "dep:axum", "dep:openidconnect", "dep:sqlx", "dep:tokio", "dep:url"]
 hydrate = ["leptos/hydrate", "dep:wasm-bindgen", "dep:web-sys"]
 
 [dependencies]
@@ -36,6 +36,7 @@ futures-util = { workspace = true, optional = true }
 fastrand = { workspace = true, features = ["std"] }
 crabbage-store = { version = "0.1.0", path = "../crabbage-store", optional = true }
 getrandom = { workspace = true, optional = true }
+image = { workspace = true, optional = true }
 leptos.workspace = true
 leptos_axum = { workspace = true, optional = true }
 leptos_meta.workspace = true

@@ -16,16 +16,17 @@ use crate::common::{Harness, SESSION_COOKIE, body_text, header, sign_in_as};
 const BOUNDARY: &str = "crabbage-test-boundary";
 const MEMBER: &str = "photographer";
 const PNG: &[u8] = b"\x89PNG\r\n\x1a\npng";
-const DRAFT: &str = r#"{"title":"Grandma's soup","servings":4,"lines":[{"amount":200,"unit":"g","name":"leeks","note":"sliced","ingredient_id":null}],"steps":[{"text":"Simmer the leeks.","lines":[0]}]}"#;
+const DRAFT: &str = r#"{"title":"Grandma's soup","servings":4,"lines":[{"amount":200,"unit":"g","name":"leeks","note":"sliced","ingredient_id":null}],"steps":[{"text":"Simmer the leeks.","lines":[0]}],"photo":{"page":0,"left":0.2,"top":0.2,"width":0.6,"height":0.6}}"#;
+const NULL_PHOTO_DRAFT: &str = r#"{"title":"Grandma's soup","servings":4,"lines":[{"amount":200,"unit":"g","name":"leeks","note":"sliced","ingredient_id":null}],"steps":[{"text":"Simmer the leeks.","lines":[0]}],"photo":null}"#;
 
 /// A loopback AI endpoint that records each request body and answers with `status` and the draft.
-async fn serve_ai(status: StatusCode) -> (String, UnboundedReceiver<Value>) {
+async fn serve_ai(status: StatusCode, draft: &'static str) -> (String, UnboundedReceiver<Value>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
     let base = format!("http://{}/v1", listener.local_addr().expect("address"));
     let (sender, receiver) = unbounded_channel();
     let handler = move |State(sender): State<UnboundedSender<Value>>, body: String| async move {
         drop(sender.send(serde_json::from_str(&body).unwrap_or_default()));
-        let answer = json!({"choices": [{"message": {"content": DRAFT}}]});
+        let answer = json!({"choices": [{"message": {"content": draft}}]});
         (status, answer.to_string())
     };
     let router = Router::new()
@@ -36,9 +37,25 @@ async fn serve_ai(status: StatusCode) -> (String, UnboundedReceiver<Value>) {
 }
 
 pub(crate) async fn with_ai(name: &str, status: StatusCode) -> (Harness, UnboundedReceiver<Value>) {
-    let (base, requests) = serve_ai(status).await;
+    with_ai_draft(name, status, DRAFT).await
+}
+
+async fn with_ai_draft(
+    name: &str,
+    status: StatusCode,
+    draft: &'static str,
+) -> (Harness, UnboundedReceiver<Value>) {
+    let (base, requests) = serve_ai(status, draft).await;
     let extra = [("AI_BASE_URL", base.as_str()), ("AI_MODEL", "small")];
     (Harness::start_with(name, None, &extra).await, requests)
+}
+
+pub(crate) fn png() -> Vec<u8> {
+    let mut bytes = std::io::Cursor::new(Vec::new());
+    image::DynamicImage::new_rgb8(100, 100)
+        .write_to(&mut bytes, image::ImageFormat::Png)
+        .expect("PNG fixture");
+    bytes.into_inner()
 }
 
 fn multipart(parts: &[(&str, &[u8])]) -> Vec<u8> {
@@ -57,7 +74,11 @@ fn multipart(parts: &[(&str, &[u8])]) -> Vec<u8> {
     body
 }
 
-async fn upload(harness: &Harness, token: Option<&str>, parts: &[(&str, &[u8])]) -> Response<Body> {
+pub(crate) async fn upload(
+    harness: &Harness,
+    token: Option<&str>,
+    parts: &[(&str, &[u8])],
+) -> Response<Body> {
     let mut builder = Request::builder()
         .method("POST")
         .uri("/recipes/import/photos")
@@ -78,9 +99,17 @@ async fn page(harness: &Harness, token: &str, path: &str) -> String {
     body_text(response).await
 }
 
-fn location(response: &Response<Body>) -> String {
+pub(crate) fn location(response: &Response<Body>) -> String {
     assert_eq!(response.status(), StatusCode::SEE_OTHER);
     header(response, LOCATION).expect("a location")
+}
+
+async fn importer(harness: &Harness) -> i64 {
+    sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")
+        .bind(MEMBER)
+        .fetch_one(&harness.pool)
+        .await
+        .expect("the user exists")
 }
 
 #[tokio::test]
@@ -115,7 +144,8 @@ async fn signed_out_uploads_are_sent_to_sign_in() {
 async fn two_photos_become_one_ai_request_and_a_draft_to_review() {
     let (harness, mut requests) = with_ai("photo-import-draft", StatusCode::OK).await;
     let token = sign_in_as(&harness, MEMBER, &[]).await;
-    let parts = [("photo", PNG), ("photo", PNG)];
+    let bytes = png();
+    let parts = [("photo", bytes.as_slice()), ("photo", bytes.as_slice())];
     let target = location(&upload(&harness, Some(&token), &parts).await);
     assert!(target.starts_with("/recipes/import?photos="), "{target}");
     assert_eq!(target.len(), "/recipes/import?photos=".len() + 32);
@@ -137,6 +167,67 @@ async fn two_photos_become_one_ai_request_and_a_draft_to_review() {
     assert!(body.contains("value=\"sliced\""), "{body}");
     assert!(body.contains("Simmer the leeks."), "{body}");
     assert!(body.contains("Read from 2 photo(s)."), "{body}");
+    assert!(body.contains("data:image/jpeg;base64,"), "{body}");
+    assert!(body.contains("name=\"keep_photo\""), "{body}");
+    assert!(body.contains("checked"), "{body}");
+}
+
+#[tokio::test]
+async fn saving_a_photo_import_attaches_the_crop_only_when_kept() {
+    let (harness, _) = with_ai("photo-import-save", StatusCode::OK).await;
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let bytes = png();
+    let target = location(&upload(&harness, Some(&token), &[("photo", &bytes)]).await);
+    let photo_token = target
+        .strip_prefix("/recipes/import?photos=")
+        .expect("token");
+    let recipe_draft = r#"{"title":"Soup","servings":"4","lines":[{"amount":"","unit":"","ingredient":"Leeks","note":""}],"steps":[{"text":"Simmer.","minutes":"","line_positions":[]}],"categories":[]}"#;
+    for (keep_photo, expected) in [("true", true), ("", false)] {
+        let mut pairs = vec![("draft", recipe_draft), ("photo_token", photo_token)];
+        if !keep_photo.is_empty() {
+            pairs.push(("keep_photo", keep_photo));
+        }
+        let body = url::form_urlencoded::Serializer::new(String::new())
+            .extend_pairs(pairs)
+            .finish();
+        let response = harness
+            .post_form("/api/save_import", Some(&token), &body)
+            .await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let id: i64 = body_text(response).await.trim().parse().expect("recipe id");
+        let recipe = crabbage_store::recipes::get(&harness.pool, id, importer(&harness).await)
+            .await
+            .expect("read")
+            .expect("recipe");
+        assert_eq!(recipe.image.is_some(), expected);
+    }
+}
+
+#[tokio::test]
+async fn a_null_ai_photo_import_saves_without_an_image() {
+    let (harness, _) = with_ai_draft("photo-import-null", StatusCode::OK, NULL_PHOTO_DRAFT).await;
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let bytes = png();
+    let target = location(&upload(&harness, Some(&token), &[("photo", &bytes)]).await);
+    let photo_token = target
+        .strip_prefix("/recipes/import?photos=")
+        .expect("token");
+    let body = r#"{"title":"Soup","servings":"4","lines":[{"amount":"","unit":"","ingredient":"Leeks","note":""}],"steps":[{"text":"Simmer.","minutes":"","line_positions":[]}],"categories":[]}"#;
+    let form = url::form_urlencoded::Serializer::new(String::new())
+        .append_pair("draft", body)
+        .append_pair("photo_token", photo_token)
+        .append_pair("keep_photo", "true")
+        .finish();
+    let response = harness
+        .post_form("/api/save_import", Some(&token), &form)
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let id: i64 = body_text(response).await.trim().parse().expect("recipe id");
+    let recipe = crabbage_store::recipes::get(&harness.pool, id, importer(&harness).await)
+        .await
+        .expect("read")
+        .expect("recipe");
+    assert_eq!(recipe.image, None);
 }
 
 #[tokio::test]

@@ -8,3 +8,7 @@ mod serve;
 pub(crate) use files::{remove, write};
 pub(crate) use kind::Kind;
 pub(crate) use serve::routes;
+#[cfg(feature = "ssr")]
+mod crop;
+#[cfg(feature = "ssr")]
+pub(crate) use crop::crop;

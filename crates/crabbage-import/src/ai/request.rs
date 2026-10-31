@@ -2,12 +2,16 @@ use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
 use serde_json::{Value, json};
 
-const SCHEMA: &str = "Answer with one JSON object and nothing else. The object has: \
-\"title\" (text); \"servings\", \"prep_minutes\" and \"cook_minutes\" (whole numbers or null); \
-\"lines\" (the ingredient lines in order, each with \"amount\" (a number or null), \"unit\" (one of \
-g, kg, ml, l, tsp, tbsp, piece, pinch, \"to taste\", or null), \"name\" (text), \"note\" (text or \
-null) and \"ingredient_id\" (a number or null)); \"steps\" (in order, each with \"text\" and \"lines\", \
-the zero-based indexes of the ingredient lines the step uses).";
+const SCHEMA: &str = r#"Answer with one JSON object and nothing else. The object has:
+"title" (text); "servings", "prep_minutes" and "cook_minutes" (whole numbers or null);
+"lines" (the ingredient lines in order, each with "amount" (a number or null), "unit" (one of
+g, kg, ml, l, tsp, tbsp, piece, pinch, "to taste", or null), "name" (text), "note" (text or
+null) and "ingredient_id" (a number or null)); "steps" (in order, each with "text" and "lines",
+the zero-based indexes of the ingredient lines the step uses); "photo" (null when there is no
+finished-dish photo, otherwise an object with "page" (zero-based image index), "left", "top",
+"width" and "height" (fractions from 0 to 1 describing the dish photo crop). Prefer a clear
+photo of the finished dish. Return null for text-only pages, ads, step photos, or when only the
+whole page could be selected; do not return a whole-page crop."#;
 
 /// What the model reads: the instructions, the recipe text and its photos.
 #[derive(Debug)]
@@ -21,7 +25,7 @@ pub struct Prompt {
 }
 
 /// A photo sent to the model.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Image {
     /// The media type, such as `image/png`.
     pub media_type: String,

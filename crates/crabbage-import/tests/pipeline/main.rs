@@ -39,6 +39,7 @@ fn complete_recipe() -> Imported {
         title: "Lemon Pancakes".to_owned(),
         servings: Some(2),
         image: None,
+        photo: None,
         lines: vec![ImportedLine {
             amount: Some(200.0),
             unit: None,

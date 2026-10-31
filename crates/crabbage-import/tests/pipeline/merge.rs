@@ -22,6 +22,7 @@ fn ai_draft(lines: Vec<AiLine>, steps: Vec<AiStep>) -> AiDraft {
         steps,
         prep_minutes: None,
         cook_minutes: None,
+        photo: None,
     }
 }
 

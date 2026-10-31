@@ -50,6 +50,7 @@ pub fn from_draft(draft: &Draft, candidates: &[Candidate<'_>]) -> Imported {
         title: draft.title.clone(),
         servings: draft.servings,
         image: draft.image.clone(),
+        photo: None,
         lines,
         steps,
         unmatched,

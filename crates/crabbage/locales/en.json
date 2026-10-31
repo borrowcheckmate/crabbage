@@ -148,6 +148,7 @@
   "import.ai_off": "AI is off, so unresolved items stay as they were read.",
   "import.ai_failed": "The AI could not complete this recipe: {error}",
   "import.photo": "Photo from the page",
+  "import.keep_photo": "Keep this photo",
   "import.error.not_http": "Only http and https addresses can be imported.",
   "import.error.private": "That address is on a private network and cannot be imported.",
   "import.error.timeout": "The page took too long to answer.",

@@ -148,6 +148,7 @@
   "import.ai_off": "AI staat uit, dus onopgeloste onderdelen blijven zoals ze gelezen zijn.",
   "import.ai_failed": "De AI kon dit recept niet aanvullen: {error}",
   "import.photo": "Foto van de pagina",
+  "import.keep_photo": "Deze foto bewaren",
   "import.error.not_http": "Alleen http- en https-adressen kunnen worden geïmporteerd.",
   "import.error.private": "Dat adres staat in een privénetwerk en kan niet worden geïmporteerd.",
   "import.error.timeout": "De pagina antwoordde te langzaam.",
