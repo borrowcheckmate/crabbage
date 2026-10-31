@@ -47,7 +47,7 @@ async fn migration_status() -> Result<RunState, ServerFnError> {
 #[component]
 pub(crate) fn MealiePage() -> impl IntoView {
     view! {
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || Suspend::new(async move { page().await })}
         </Suspense>
     }
@@ -57,8 +57,17 @@ async fn page() -> AnyView {
     if !matches!(current_user().await, Ok(user) if user.is_admin) {
         return error_notice(t("admin.not_allowed"));
     }
-    let status = migration_status().await.unwrap_or_default();
+    let Ok(status) = migration_status().await else {
+        return view! {
+            <section class="admin-page">
+                <h1>{t("admin.mealie.heading")}</h1>
+                {error_notice(t("admin.mealie.status_error"))}
+            </section>
+        }
+        .into_any();
+    };
     view! {
+        <section class="admin-page admin-mealie">
         <h1>{t("admin.mealie.heading")}</h1>
         {status.running.then(|| view! { <meta http-equiv="refresh" content="2"/> })}
         <form method="post" action="/admin/mealie/start">
@@ -67,6 +76,7 @@ async fn page() -> AnyView {
             <button disabled=status.running>{t("admin.mealie.start")}</button>
         </form>
         {status_view(status)}
+        </section>
     }.into_any()
 }
 
@@ -79,7 +89,7 @@ fn status_view(status: RunState) -> AnyView {
         return ().into_any();
     }
     view! {
-        <section class="card" aria-live="polite">
+        <section class="card admin-status" aria-live="polite" role="status">
             {status.running.then(|| view! { <p>{t_with("admin.mealie.progress", &[("done", &status.done.to_string()), ("total", &status.total.to_string())])}</p> })}
             <p>{t_with("admin.mealie.imported", &[("count", &status.imported.to_string())])}</p>
             <p>{t_with("admin.mealie.skipped", &[("count", &status.skipped.to_string())])}</p>

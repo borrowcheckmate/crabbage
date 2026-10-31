@@ -224,5 +224,11 @@
   "app.switch": "Switch household",
   "app.no_household": "A household is needed to use the weekly plan and shopping list.",
   "home.nav": "Today",
-  "admin.nav.label": "Administration"
+  "admin.nav.label": "Administration",
+  "admin.loading": "Loading administration tools…",
+  "admin.mealie.status_error": "Migration status could not be loaded. Refresh the page to try again.",
+  "system.loading": "Loading…",
+  "system.not_found.heading": "Page not found",
+  "system.not_found.message": "This page is unavailable or may have been moved.",
+  "system.not_found.home": "Go to Today"
 }

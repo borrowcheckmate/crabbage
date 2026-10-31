@@ -19,7 +19,7 @@ pub(crate) fn IngredientsPage() -> impl IntoView {
     let create = ServerAction::<CreateIngredient>::new();
     let query = use_query_map();
     view! {
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
                 let _version = create.version().get();
                 let search = query.with(|map| map.get("q")).unwrap_or_default();
@@ -35,17 +35,19 @@ async fn ingredient_page(create: ServerAction<CreateIngredient>, search: String)
             let rows = list_ingredients().await;
             let sections = list_sections().await;
             view! {
+                <section class="admin-page">
                 <h1>{t("admin.ingredients.heading")}</h1>
-                <ActionForm action=create>
+                <section class="admin-card admin-create"><ActionForm action=create>
                     <label>{t("admin.label.name")} <input name="name" required/></label>
                     <button>{t("admin.button.add")}</button>
-                </ActionForm>
+                </ActionForm></section>
                 {move || create.value().with(|value| failure(value.as_ref()))}
-                <form method="get" action="/admin/ingredients">
+                <form class="admin-search" method="get" action="/admin/ingredients">
                     <label>{t("admin.label.search")} <input type="search" name="q" value=search.clone()/></label>
                     <button>{t("admin.button.search")}</button>
                 </form>
                 {ingredient_rows(rows, sections, &search)}
+                </section>
             }
             .into_any()
         }
@@ -115,6 +117,7 @@ fn ingredient_item(row: &IngredientRow, sections: &[SectionRow]) -> impl IntoVie
                     {section.map(|name| view! { <span>{name}</span> })}
                     {aliases.map(|aliases| view! { <span>{aliases}</span> })}
                 </span>
+                <svg class="row-chevron" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
             </a>
         </li>
     }

@@ -56,7 +56,7 @@ pub(crate) fn IngredientPage() -> impl IntoView {
         }
     });
     view! {
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
                 let _versions = (
                     actions.rename.version().get(),
@@ -116,18 +116,22 @@ fn ingredient_view(
         Some(_) | None => action_links(&detail_href, can_merge),
     };
     view! {
+        <section class="admin-page admin-detail">
         <p><a href="/admin/ingredients">{t("admin.ingredients.back")}</a></p>
         <h1>{row.name.clone()}</h1>
         {row.pending_review.then(|| view! { <p class="notice">{t("admin.ingredients.pending")}</p> })}
         {ingredient_failures(actions)}
+        <section class="admin-row admin-detail-section">
         <ActionForm action=actions.rename>
             <input type="hidden" name="id" value=id/>
             <label>{t("admin.label.name")} <input name="name" value=row.name.clone() required/></label>
             <button>{t("admin.button.rename")}</button>
         </ActionForm>
+        </section>
         {alias_section(id, row.aliases, actions)}
         {section_form(id, row.section_id, sections, actions.set_section)}
         {confirmation}
+        </section>
     }
     .into_any()
 }
@@ -135,8 +139,9 @@ fn ingredient_view(
 /// The alternative names, each with a button to remove it, and the form that adds one.
 fn alias_section(id: i64, aliases: Vec<String>, actions: IngredientActions) -> AnyView {
     view! {
-        <h3>{t("admin.label.aliases")}</h3>
-        <ul>
+        <section class="admin-row admin-detail-section">
+        <h2>{t("admin.label.aliases")}</h2>
+        <ul class="admin-sublist">
             {aliases
                 .into_iter()
                 .map(|alias| view! {
@@ -145,7 +150,7 @@ fn alias_section(id: i64, aliases: Vec<String>, actions: IngredientActions) -> A
                             <input type="hidden" name="ingredient_id" value=id/>
                             <input type="hidden" name="alias" value=alias.clone()/>
                             <span>{alias.clone()}</span>
-                            <button class="secondary">{t("admin.button.remove")}</button>
+                            <button class="quiet">{t("admin.button.remove")}</button>
                         </ActionForm>
                     </li>
                 })
@@ -156,6 +161,7 @@ fn alias_section(id: i64, aliases: Vec<String>, actions: IngredientActions) -> A
             <label>{t("admin.label.alias")} <input name="alias" required/></label>
             <button>{t("admin.button.add")}</button>
         </ActionForm>
+        </section>
     }
     .into_any()
 }
@@ -168,6 +174,7 @@ fn section_form(
     set_section: ServerAction<SetIngredientSection>,
 ) -> AnyView {
     view! {
+        <section class="admin-row admin-detail-section">
         <ActionForm action=set_section>
             <input type="hidden" name="id" value=id/>
             <label>{t("admin.label.section")}
@@ -188,6 +195,7 @@ fn section_form(
             </label>
             <button>{t("admin.button.save")}</button>
         </ActionForm>
+        </section>
     }
     .into_any()
 }
@@ -226,7 +234,7 @@ fn delete_confirmation(
 ) -> AnyView {
     let question = t_with("admin.confirm.delete", &[("name", name)]);
     view! {
-        <section class="card">
+        <section class="admin-row admin-confirmation">
             <p>{question}</p>
             <div class="row">
                 <ActionForm action=delete>
@@ -249,7 +257,7 @@ fn merge_confirmation(
 ) -> AnyView {
     let question = t_with("admin.confirm.merge", &[("name", name)]);
     view! {
-        <section class="card">
+        <section class="admin-row admin-confirmation">
             <p>{question}</p>
             <ActionForm action=merge>
                 <input type="hidden" name="from" value=id/>

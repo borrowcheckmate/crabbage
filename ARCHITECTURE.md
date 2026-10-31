@@ -201,13 +201,13 @@ A Leptos 0.8 app. The `ssr` feature builds the server binary and the server-rend
 | `src/api.rs` (`ssr`) | `POST /api/{*fn_name}`: serves every `#[server]` function, providing the pool, the language and the configuration as context. Behind the session check |
 | `src/access.rs` (`ssr`) | `signed_in` (the pool and the session user id), `role` (the `Role` of a user), `require_admin` (the pool, or a 403), `refuse` (sets 403 and returns the error with its message, shared by every refusal), `store_failure`, `clean` (trimmed, non-empty), `ensure_found`, `data_dir` (the data directory from context), `internal_error` (a status of 500 for a plain HTTP handler) |
 | `src/images/` (`ssr`) | Recipe photos, see below |
-| `src/notice.rs` | How pages show a failed action or load: `failure`, `error_notice` (`.notice.error`), `message` |
+| `src/notice.rs` | How pages show a failed action or load: `failure`, `error_notice` (`.notice.error`, `role="alert"`), `message` |
 | `src/route.rs` | `route_id`: the `:id` of the current route as a number, or `None`. Used by the recipe, cook and ingredient pages |
-| `src/app.rs` | `App`: the `Router` with the Today, Recipes, Plan and Shopping destinations, an active-route navigation, household/account menu, admin links, skip link and no-household explanation on Plan and Shopping; all existing recipe, plan, shopping and admin routes remain. `shell` is the HTML document |
+| `src/app.rs` | `App`: the `Router` with the Today, Recipes, Plan and Shopping destinations, an active-route navigation, household/account menu, admin links, skip link, no-household explanation on Plan and Shopping, and a localized in-app not-found route state. The account menu links household switching, grouped admin pages and sign-out. `shell` is the HTML document |
 | `src/user.rs` | `current_user` server function: `SignedInUser` (name and `is_admin`) |
 | `src/catalog/` | Catalog server functions and their records, see below. `categories.rs` holds the admin endpoints for recipe categories. `types.rs` holds `IngredientRow` and `SectionRow` (both builds), `convert.rs` the store conversions (`ssr`) |
 | `src/recipes/` | Recipes: server functions, records and pages, see below |
-| `src/admin/` | The admin pages: `ingredients/` (`list.rs`: the add form, the search on `q` and one row link per ingredient; `detail.rs`: one ingredient's rename, alternative names, store section, merge and delete, with merge and delete asking first through `?confirm=`), `sections.rs`, `categories.rs` (add, and a card per category with rename and delete), `review.rs`, and `mealie/` (`page.rs`: the URL and password token form and live progress/summary; `runner.rs`: imports Mealie catalog data once, creates pending ingredients and categories, imports recipes in a spawned task, records per-recipe outcomes and skips stored Mealie ids), each showing a not-allowed message to non-admins. `mod.rs` declares them and re-exports the pages |
+| `src/admin/` | Admin pages use a bounded, single-column layout with divider rows, inline create and search controls, explicit loading and failure notices, and a not-allowed alert for non-admins. `ingredients/` (`list.rs`: add, search on `q`, one row link per ingredient; `detail.rs`: rename, alternative names, store section, merge and delete, with merge and delete asking first through `?confirm=`), `sections.rs`, `categories.rs` (add, rename and delete), `review.rs`, and `mealie/` (`page.rs`: URL and password token form, live progress/summary and status-load failure; `runner.rs`: imports Mealie catalog data once, creates pending ingredients and categories, imports recipes in a spawned task, records per-recipe outcomes and skips stored Mealie ids). Server functions enforce admin access independently of page visibility. `mod.rs` declares them and re-exports the pages |
 | `src/auth/` (`ssr`) | Sign-in and sessions, see below. `mod.rs` declares and re-exports; `SessionUser` (the signed-in user id, set in request extensions) is re-exported from the crate root |
 | `src/main.rs` (`ssr`) | Server binary: `--healthcheck` runs the health probe and exits without loading app configuration or starting the server; otherwise reads `Config` from the environment, opens the database in `data_dir` with `crabbage_store::open` (migrations run here), binds `site_addr`, builds `router` and serves it. It starts without the provider. Without `ssr` it is an empty stub |
 
@@ -245,6 +245,8 @@ Pages get their look from `style/main.css` and never from inline styles. The sty
 | `.nav` | The home page admin links as large tappable blocks |
 | `.danger` | A button that deletes |
 | `.secondary` | A button that is not the main action, such as sign-out and remove |
+| `.admin-page`, `.admin-list`, `.admin-row`, `.admin-status` | Bounded administration pages, divider lists and status rows |
+| `.state-card`, `.state-notice`, `.button-link` | Localized not-found and loading states with recovery actions |
 
 Forms stack their fields on phones and sit side by side from 40rem. Message texts come from `t` as everywhere else.
 

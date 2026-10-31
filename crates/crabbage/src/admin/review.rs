@@ -14,7 +14,7 @@ use crate::user::current_user;
 pub(crate) fn ReviewPage() -> impl IntoView {
     let approve = ServerAction::<ApproveIngredient>::new();
     view! {
-        <Suspense fallback=|| ()>
+        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
                 let _version = approve.version().get();
                 Suspend::new(async move { review_page(approve).await })
@@ -28,18 +28,20 @@ async fn review_page(approve: ServerAction<ApproveIngredient>) -> AnyView {
         Ok(user) if user.is_admin => {
             let pending = list_pending_ingredients().await;
             view! {
-                <h1>{t("admin.review.heading")}</h1>
+                <section class="admin-page"><h1>{t("admin.review.heading")}</h1>
                 {move || approve.value().with(|value| failure(value.as_ref()))}
                 {match pending {
                     Ok(rows) if rows.is_empty() => {
                         view! { <p>{t("admin.review.empty")}</p> }.into_any()
                     }
-                    Ok(rows) => rows
+                    Ok(rows) => view! {
+                        <div class="admin-list">
+                        {rows
                         .into_iter()
                         .map(|row| {
                             let id = row.id;
                             view! {
-                                <div class="card">
+                                <div class="admin-row">
                                     <ActionForm action=approve>
                                         <p>{row.name}</p>
                                         <input type="hidden" name="id" value=id/>
@@ -48,10 +50,12 @@ async fn review_page(approve: ServerAction<ApproveIngredient>) -> AnyView {
                                 </div>
                             }
                         })
-                        .collect_view()
-                        .into_any(),
+                        .collect_view()}
+                        </div>
+                    }.into_any(),
                     Err(error) => error_notice(&message(&error)),
                 }}
+                </section>
             }
             .into_any()
         }

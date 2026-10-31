@@ -224,5 +224,11 @@
   "app.switch": "Huishouden wisselen",
   "app.no_household": "Je hebt een huishouden nodig voor de weekplanning en boodschappenlijst.",
   "home.nav": "Vandaag",
-  "admin.nav.label": "Beheer"
+  "admin.nav.label": "Beheer",
+  "admin.loading": "Beheer wordt geladen…",
+  "admin.mealie.status_error": "De migratiestatus kon niet worden geladen. Vernieuw de pagina om het opnieuw te proberen.",
+  "system.loading": "Laden…",
+  "system.not_found.heading": "Pagina niet gevonden",
+  "system.not_found.message": "Deze pagina is niet beschikbaar of is mogelijk verplaatst.",
+  "system.not_found.home": "Naar Vandaag"
 }

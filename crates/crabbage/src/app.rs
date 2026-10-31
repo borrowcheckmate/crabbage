@@ -32,7 +32,7 @@ pub fn App() -> impl IntoView {
                     <PrimaryNavigation/>
                     <main id="main-content">
                         <NoHouseholdNotice/>
-                        <Routes fallback=|| ()>
+                        <Routes fallback=NotFound>
                             <Route path=path!("/") view=Home/>
                             <Route path=path!("/admin/ingredients") view=IngredientsPage/>
                             <Route path=path!("/admin/ingredients/:id") view=IngredientPage/>
@@ -54,6 +54,17 @@ pub fn App() -> impl IntoView {
                 <MobileNavigation/>
             </div>
         </Router>
+    }
+}
+
+#[component]
+fn NotFound() -> impl IntoView {
+    view! {
+        <section class="state-card" role="status">
+            <h1>{t("system.not_found.heading")}</h1>
+            <p>{t("system.not_found.message")}</p>
+            <a class="button-link" href="/">{t("system.not_found.home")}</a>
+        </section>
     }
 }
 
