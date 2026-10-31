@@ -25,17 +25,21 @@ fn input(draft: &RecipeDraft) -> Result<RecipeInput, ServerFnError> {
         return Err(ServerFnError::new(t("recipe.error.title")));
     }
     let servings = servings(&draft.servings)?;
-    let lines = draft
-        .lines
-        .iter()
-        .filter(|line| !is_blank_line(line))
-        .map(line)
-        .collect::<Result<Vec<_>, _>>()?;
+    let mut lines = Vec::new();
+    let mut line_index = Vec::with_capacity(draft.lines.len());
+    for draft_line in &draft.lines {
+        if is_blank_line(draft_line) {
+            line_index.push(None);
+        } else {
+            line_index.push(Some(lines.len()));
+            lines.push(line(draft_line)?);
+        }
+    }
     let steps = draft
         .steps
         .iter()
         .filter(|step| !is_blank_step(step))
-        .map(step)
+        .map(|step| step_input(step, &line_index))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(RecipeInput {
         title: title.to_owned(),
@@ -100,7 +104,10 @@ fn optional(text: &str) -> Option<String> {
     (!text.is_empty()).then(|| text.to_owned())
 }
 
-fn step(draft: &StepDraft) -> Result<StepInput, ServerFnError> {
+/// The step as the store takes it. `line_index` gives each form line's position in the stored lines,
+/// or `None` for a blank line that is not stored, so the links follow the lines that are kept. A link
+/// to a blank or missing line is dropped.
+fn step_input(draft: &StepDraft, line_index: &[Option<usize>]) -> Result<StepInput, ServerFnError> {
     let text = draft.text.trim();
     if text.is_empty() {
         return Err(ServerFnError::new(t("recipe.error.step")));
@@ -108,7 +115,11 @@ fn step(draft: &StepDraft) -> Result<StepInput, ServerFnError> {
     Ok(StepInput {
         text: text.to_owned(),
         duration_seconds: minutes(&draft.minutes)?,
-        line_positions: Vec::new(),
+        line_positions: draft
+            .line_positions
+            .iter()
+            .filter_map(|&position| line_index.get(position).copied().flatten())
+            .collect(),
     })
 }
 
@@ -123,4 +134,20 @@ fn minutes(text: &str) -> Result<Option<i64>, ServerFnError> {
         .and_then(|minutes| minutes.checked_mul(60))
         .map(Some)
         .ok_or_else(|| ServerFnError::new(t("recipe.error.minutes")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse;
+
+    #[test]
+    fn a_link_follows_its_line_past_a_blank_row_and_a_missing_link_is_dropped() {
+        let json = r#"{"title":"Soup","servings":"2",
+            "lines":[{"amount":"","unit":"","ingredient":"","note":""},
+                     {"amount":"1","unit":"piece","ingredient":"Onion","note":""}],
+            "steps":[{"text":"Chop","minutes":"","line_positions":[1,0,5]}]}"#;
+        let input = parse(json).expect("the draft is valid");
+        assert_eq!(input.lines.len(), 1);
+        assert_eq!(input.steps[0].line_positions, [0]);
+    }
 }

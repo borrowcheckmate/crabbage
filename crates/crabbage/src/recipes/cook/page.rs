@@ -6,12 +6,13 @@ use leptos_router::hooks::use_query_map;
 
 use super::links::Place;
 use super::query::{current_step, done_steps};
-use crate::i18n::{t, t_with};
+use crate::i18n::{messages, t, t_with};
 use crate::notice::{error_notice, message};
 use crate::recipes::duration::duration_text;
+use crate::recipes::line_text::line_text;
 use crate::recipes::read::get_recipe;
-use crate::recipes::servings::shown_servings;
-use crate::recipes::types::RecipeDetail;
+use crate::recipes::servings::{scale_lines, shown_servings};
+use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
 use crate::route::route_id;
 
 #[component]
@@ -61,14 +62,16 @@ fn cook(
         id,
         title,
         servings,
+        lines,
         steps,
         ..
     } = recipe;
     let total = steps.len();
     let current = current_step(step, total);
+    let shown = shown_servings(requested, servings);
     let place = Place {
         id,
-        servings: requested.map(|_| shown_servings(requested, servings)),
+        servings: requested.map(|_| shown),
         done: done_steps(done, total),
     };
     let Some(row) = steps.get(current - 1) else {
@@ -92,6 +95,7 @@ fn cook(
         {is_done.then(|| view! { <p class="cook-done">{t("cook.done.mark")}</p> })}
         <p class="cook-step">{row.text.clone()}</p>
         {row.duration_seconds.map(|seconds| view! { <p>{duration_text(seconds)}</p> })}
+        {needed(row, &lines, servings, shown)}
         <a class="button secondary" href=place.toggle(current) aria-pressed=is_done.to_string()>{toggle_label}</a>
         <div class="cook-nav">
             {previous.clone().map(|href| view! { <a class="button secondary" href=href>{t("cook.previous")}</a> })}
@@ -107,6 +111,26 @@ fn cook(
         {dots(&place, total, current)}
     }
     .into_any()
+}
+
+/// The lines the step uses, scaled from the recipe's servings to `shown`, or nothing when it uses none.
+fn needed(step: &StepRow, lines: &[LineRow], servings: i64, shown: i64) -> Option<AnyView> {
+    let used: Vec<LineRow> = step
+        .line_positions
+        .iter()
+        .filter_map(|&position| lines.get(position).cloned())
+        .collect();
+    (!used.is_empty()).then(|| {
+        let items = scale_lines(&used, servings, shown)
+            .iter()
+            .map(|line| view! { <li>{line_text(line, messages())}</li> })
+            .collect_view();
+        view! {
+            <h2>{t("cook.needs")}</h2>
+            <ul>{items}</ul>
+        }
+        .into_any()
+    })
 }
 
 fn dots(place: &Place, total: usize, current: usize) -> AnyView {

@@ -331,3 +331,37 @@ async fn the_forms_offer_a_checkbox_per_category_checked_for_the_recipe() {
     );
     assert!(body.contains("Dinner"), "{body}");
 }
+
+#[tokio::test]
+async fn the_edit_page_offers_each_line_to_each_step_with_the_linked_ones_checked() {
+    let harness = Harness::start("recipe-pages-step-lines").await;
+    let owner = sign_in_as(&harness, OWNER, &[]).await;
+    let id = create(&harness, &owner, "Pancakes").await;
+    let body = page(&harness, &owner, &format!("/recipes/{id}/edit")).await;
+    assert_eq!(
+        body.matches("Ingredients for this step").count(),
+        3,
+        "{body}"
+    );
+    assert_eq!(body.matches("type=\"checkbox\"").count(), 9, "{body}");
+    assert_eq!(body.matches("checked>2 Egg</label>").count(), 1, "{body}");
+    assert_eq!(
+        body.matches("checked>250 g Flour, sifted</label>").count(),
+        1,
+        "{body}"
+    );
+    assert_eq!(
+        body.matches("checked>Salt, to taste</label>").count(),
+        1,
+        "{body}"
+    );
+    assert!(body.contains("&quot;line_positions&quot;:[1]"), "{body}");
+}
+
+#[tokio::test]
+async fn the_new_form_shows_no_step_ingredients_without_lines() {
+    let harness = Harness::start("recipe-pages-step-lines-new").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    let body = page(&harness, &member, "/recipes/new").await;
+    assert!(!body.contains("Ingredients for this step"), "{body}");
+}

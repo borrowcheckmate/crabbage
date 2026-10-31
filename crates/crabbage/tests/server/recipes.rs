@@ -14,7 +14,7 @@ const OTHER: &str = "other";
 const EDITOR: &str = "editor";
 
 /// Posts the form pairs to `endpoint` with `token`, and returns the status and the body.
-async fn call(
+pub(crate) async fn call(
     harness: &Harness,
     token: &str,
     endpoint: &str,
@@ -30,7 +30,8 @@ async fn call(
     (status, body_text(response).await)
 }
 
-/// A recipe with three lines and three steps, as the form sends it.
+/// A recipe with three lines and three steps, as the form sends it. Step 1 uses the egg, step 2 the
+/// flour and the salt.
 pub(crate) fn draft(title: &str) -> String {
     json!({
         "title": title,
@@ -41,9 +42,9 @@ pub(crate) fn draft(title: &str) -> String {
             {"amount": "", "unit": "to taste", "ingredient": "Salt", "note": ""}
         ],
         "steps": [
-            {"text": "Whisk the eggs", "minutes": "2"},
-            {"text": "Stir in the flour", "minutes": ""},
-            {"text": "Fry until golden", "minutes": "4"}
+            {"text": "Whisk the eggs", "minutes": "2", "line_positions": [1]},
+            {"text": "Stir in the flour", "minutes": "", "line_positions": [0, 2]},
+            {"text": "Fry until golden", "minutes": "4", "line_positions": []}
         ]
     })
     .to_string()
@@ -57,7 +58,7 @@ pub(crate) async fn create(harness: &Harness, token: &str, title: &str) -> i64 {
 }
 
 /// The recipe `id` as the page record, as `token` sees it.
-async fn view(harness: &Harness, token: &str, id: i64) -> Value {
+pub(crate) async fn view(harness: &Harness, token: &str, id: i64) -> Value {
     let (status, body) = call(harness, token, "get_recipe", &[("id", &id.to_string())]).await;
     assert_eq!(status, StatusCode::OK, "{body}");
     serde_json::from_str(&body).expect("the record is JSON")

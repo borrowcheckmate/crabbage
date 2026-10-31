@@ -85,6 +85,8 @@ pub(crate) struct StepRow {
     pub(crate) text: String,
     /// How long the step takes, in seconds, if it has a duration.
     pub(crate) duration_seconds: Option<i64>,
+    /// The positions, in the recipe's lines, of the lines this step uses, in line order.
+    pub(crate) line_positions: Vec<usize>,
 }
 
 /// A user's id and name, to pick an editor from.
@@ -128,9 +130,12 @@ pub(crate) struct LineDraft {
 
 /// A step of a recipe form.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub(crate) struct StepDraft {
     /// The instruction, as typed.
     pub(crate) text: String,
     /// The minutes, as typed. Empty for no duration.
     pub(crate) minutes: String,
+    /// The positions, in the form's lines, of the lines this step uses.
+    pub(crate) line_positions: Vec<usize>,
 }
