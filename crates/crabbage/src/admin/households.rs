@@ -75,15 +75,16 @@ async fn load_page() -> PageData {
 }
 
 fn page((user, rows): PageData, rename: ServerAction<RenameHousehold>) -> AnyView {
-    if !matches!(user, Ok(user) if user.is_admin) {
-        return error_notice(t("admin.not_allowed"));
-    }
-    match rows.unwrap_or_else(|| Err(ServerFnError::new("Households unavailable"))) {
+    match user {
+        Err(error) => error_notice(&message(&error)),
+        Ok(user) if !user.is_admin => error_notice(t("admin.not_allowed")),
+        Ok(_) => match rows.unwrap_or_else(|| Err(ServerFnError::new("Households unavailable"))) {
         Ok(rows) => view! { <section class="admin-page"><h1>{t("admin.households.heading")}</h1>
             {move || rename.value().with(|value| failure(value.as_ref()))}
             <div class="admin-list">{rows.into_iter().map(|row| view! { <HouseholdRowView row=row rename=rename/> }).collect_view()}</div>
         </section> }.into_any(),
         Err(error) => error_notice(&message(&error)),
+        },
     }
 }
 

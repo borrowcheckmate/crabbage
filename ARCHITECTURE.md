@@ -325,7 +325,7 @@ Form encoding: the recipe form sends one hidden field, `draft`, holding the whol
 
 Each page loads its data in one `<Suspense>` returning `Suspend`. The step-to-line links (`step_lines`) travel in the JSON draft as positions, so saving the form keeps them. The form has no field names for them: like the rest of the form, they are sent only through the hidden `draft`.
 
-Pages load data in one `<Suspense>` whose closure returns a `Suspend` future that awaits the server functions. Pages do not create `Resource`s: `reactive_graph` keeps the current transition in a process-wide static that `leptos_router` sets around each route, so resources of concurrent server renders can register with another request's transition and never resolve.
+Pages create a `Resource` for server data, then await it from `Suspend` inside one `<Suspense>`. Leptos serializes resolved resource values with the server-rendered HTML so hydration can reuse them without repeating the initial request. Pages that refresh after form actions include action versions in the resource source; a successful action then reloads the data and updates the suspended view.
 
 ### Photos (`src/images/`, `src/recipes/photo.rs`)
 

@@ -20,6 +20,7 @@ pub(crate) struct SignedInUser {
     /// Whether the user may manage the catalog.
     pub(crate) is_admin: bool,
     pub(crate) active_household: Option<String>,
+    pub(crate) active_household_id: Option<i64>,
     pub(crate) households: Vec<(i64, String)>,
 }
 
@@ -51,6 +52,7 @@ pub(crate) async fn current_user() -> Result<SignedInUser, ServerFnError> {
                     &prefix,
                 )
             }),
+        active_household_id: active,
         households: households
             .into_iter()
             .map(|household| {

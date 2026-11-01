@@ -104,7 +104,7 @@ fn HouseholdSwitcher(user: crate::user::SignedInUser) -> impl IntoView {
         <form method="post" action="/household">
             <label>{t("app.switch_household")}<select name="household_id">
                 {user.households.iter().map(|(id, name)| view! {
-                    <option value=id.to_string() selected=user.active_household.as_deref() == Some(name)>{name.clone()}</option>
+                    <option value=id.to_string() selected=user.active_household_id == Some(*id)>{name.clone()}</option>
                 }).collect_view()}
             </select></label>
             <button class="quiet">{t("app.switch")}</button>

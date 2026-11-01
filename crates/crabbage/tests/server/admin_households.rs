@@ -11,7 +11,8 @@ async fn admin_sees_households_and_can_rename_them_for_the_topbar() {
     let token = session_token(&harness.sign_in().await).expect("admin session");
     let page = body_text(harness.get("/admin/households", Some(&token)).await).await;
     assert!(page.contains("Households</h1>"), "{page}");
-    assert!(page.contains("crabbage-household-maple"), "{page}");
+    assert!(page.contains(">maple</strong>"), "{page}");
+    assert!(page.contains("name=\"name\" value=\"\""), "{page}");
     let home = body_text(harness.get("/", Some(&token)).await).await;
     assert!(home.contains(">maple</span>"), "{home}");
     let id: i64 = sqlx::query_scalar("SELECT id FROM households WHERE group_name = ?")
@@ -26,8 +27,26 @@ async fn admin_sees_households_and_can_rename_them_for_the_topbar() {
         .post_form("/api/rename_household", Some(&token), &fields)
         .await;
     assert_eq!(response.status(), StatusCode::OK);
+    let page = body_text(harness.get("/admin/households", Some(&token)).await).await;
+    assert!(page.contains(">Maple Street</strong>"), "{page}");
+    assert!(
+        page.contains("name=\"name\" value=\"Maple Street\""),
+        "{page}"
+    );
     let home = body_text(harness.get("/", Some(&token)).await).await;
     assert!(home.contains(">Maple Street</span>"), "{home}");
+    let clear = url::form_urlencoded::Serializer::new(String::new())
+        .extend_pairs([("id", id.to_string()), ("name", String::new())])
+        .finish();
+    let response = harness
+        .post_form("/api/rename_household", Some(&token), &clear)
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let page = body_text(harness.get("/admin/households", Some(&token)).await).await;
+    assert!(page.contains(">maple</strong>"), "{page}");
+    assert!(page.contains("name=\"name\" value=\"\""), "{page}");
+    let home = body_text(harness.get("/", Some(&token)).await).await;
+    assert!(home.contains(">maple</span>"), "{home}");
 }
 
 #[tokio::test]
@@ -40,6 +59,10 @@ async fn member_sees_admin_only_message_and_cannot_rename() {
         page.contains("You are not allowed to manage the catalog."),
         "{page}"
     );
+    let response = harness
+        .post_form("/api/list_households", Some(&token), "")
+        .await;
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
     let response = harness
         .post_form("/api/rename_household", Some(&token), "id=1&name=Blocked")
         .await;

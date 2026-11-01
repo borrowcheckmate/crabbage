@@ -14,11 +14,48 @@ pub(super) async fn exercise_interactions(
     output: &Path,
     failures: &mut Vec<String>,
 ) -> Result<(), String> {
+    exercise_households(page, base_url, failures).await?;
     exercise_cook(page, base_url, failures).await?;
     exercise_import(page, base_url, output, failures).await?;
     exercise_shopping(page, base_url, output, failures).await?;
     exercise_plan(page, base_url, output, failures).await?;
     Ok(())
+}
+
+async fn exercise_households(
+    page: &Page,
+    base_url: &str,
+    failures: &mut Vec<String>,
+) -> Result<(), String> {
+    goto_hydrated(page, &format!("{base_url}/admin/households")).await?;
+    page.evaluate("(() => { const input=document.querySelector('.admin-row input[name=name]'); if (!input) return false; input.value='Browser Maple'; input.dispatchEvent(new Event('input',Object.fromEntries([['bubbles',true]]))); input.form.requestSubmit(); return true; })()")
+        .await.map_err(|error| error.to_string())?;
+    if !wait_for_household(page, "Browser Maple").await? {
+        failures.push("household rename did not refresh its label and input".to_owned());
+    }
+    page.evaluate("(() => { const input=document.querySelector('.admin-row input[name=name]'); if (!input) return false; input.value=''; input.dispatchEvent(new Event('input',Object.fromEntries([['bubbles',true]]))); input.form.requestSubmit(); return true; })()")
+        .await.map_err(|error| error.to_string())?;
+    if !wait_for_household(page, "maple").await? {
+        failures.push("clearing a household name did not restore its group fallback".to_owned());
+    }
+    Ok(())
+}
+
+async fn wait_for_household(page: &Page, expected: &str) -> Result<bool, String> {
+    let input = if expected == "maple" { "" } else { expected };
+    for _ in 0..40 {
+        let updated: bool = page
+            .evaluate(format!("(() => {{ const row=document.querySelector('.admin-row'); return row?.querySelector('.admin-row-title')?.textContent.trim()==='{expected}' && row?.querySelector('input[name=name]')?.value==='{input}'; }})()"))
+            .await
+            .map_err(|error| error.to_string())?
+            .into_value()
+            .map_err(|error| error.to_string())?;
+        if updated {
+            return Ok(true);
+        }
+        tokio::time::sleep(Duration::from_millis(125)).await;
+    }
+    Ok(false)
 }
 
 async fn exercise_cook(
