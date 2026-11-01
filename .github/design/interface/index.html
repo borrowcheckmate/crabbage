@@ -1,0 +1,138 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Crabbage interface reference</title><script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script><style>body{margin:0;padding:24px;background:light-dark(#eee,#151b17);color:light-dark(#202c25,#eff0e7);color-scheme:light dark;font-family:system-ui}body>header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;max-width:1024px;margin:0 auto 20px}body>header p{font-size:13px}body>header select{font:inherit;min-height:44px;padding:8px;background:light-dark(#fffef9,#27312a);color:inherit;border:1px solid #888;border-radius:8px}#crabbage-concepts>[data-variant]{min-height:0!important}.cursor-interaction{cursor:pointer}@media(max-width:500px){body{padding:12px}}</style></head><body><header><div><strong>Crabbage interface reference</strong><p>Interactive prototype. Synthetic data; external actions are simulated.</p></div><label>Layout <select id="layout"><option>Phone</option><option>Tablet</option><option>Desktop</option></select></label></header><div id="crabbage-concepts" class="reference-carousel" aria-label="Crabbage responsive designs">
+<section data-variant="Phone" aria-label="Crabbage on a phone"><div class="cb-app" data-device="phone" data-screen="today" aria-label="Phone design"></div></section>
+<section data-variant="Tablet" aria-label="Crabbage on a tablet" hidden><div class="cb-app" data-device="tablet" data-screen="plan" aria-label="Tablet design"></div></section>
+<section data-variant="Desktop" aria-label="Crabbage on a desktop" hidden><div class="cb-app" data-device="desktop" data-screen="recipes" aria-label="Desktop design"></div></section>
+</div>
+<style>
+#crabbage-concepts{--cb-bg:light-dark(#f5f3ec,#1d2520);--cb-paper:light-dark(#fffef9,#27312a);--cb-ink:light-dark(#202c25,#eff0e7);--cb-muted:light-dark(#59645c,#b9c3b8);--cb-line:light-dark(#dedfd5,#465147);--cb-green:light-dark(#285442,#b9d4b4);--cb-inverse:light-dark(#fffef9,#1c2d23);--cb-soft:light-dark(#e8edde,#384b3b);--cb-warm:light-dark(#eee6d6,#453e32);--cb-orange:light-dark(#885333,#e6b58c);color-scheme:light dark;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#crabbage-concepts *{box-sizing:border-box}
+#crabbage-concepts>[data-variant]{min-height:1100px}
+#crabbage-concepts [hidden]{display:none!important}
+#crabbage-concepts .cb-app{container-type:inline-size;background:var(--cb-bg);color:var(--cb-ink);border:1px solid var(--cb-line);border-radius:20px;overflow:hidden;margin:0 auto;min-height:780px;font-size:15px;line-height:1.5;--cb-radius:18px}
+#crabbage-concepts .cb-app[data-device="phone"]{max-width:390px}
+#crabbage-concepts .cb-app[data-device="tablet"]{max-width:768px}
+#crabbage-concepts .cb-app[data-device="desktop"]{max-width:1024px}
+#crabbage-concepts button,#crabbage-concepts input{font:inherit;color:inherit}
+#crabbage-concepts button{border:0;background:transparent;min-height:44px;padding:8px 12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px}
+#crabbage-concepts button:focus-visible,#crabbage-concepts input:focus-visible{outline:3px solid var(--cb-green);outline-offset:3px}
+#crabbage-concepts .cb-action{background:var(--cb-green);color:var(--cb-inverse);font-weight:600;padding:12px 18px}
+#crabbage-concepts .cb-secondary{border:1px solid var(--cb-line);background:var(--cb-paper)}
+#crabbage-concepts .cb-icon{width:19px;height:19px;flex:none}
+#crabbage-concepts .cb-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 22px;border-bottom:1px solid var(--cb-line);background:var(--cb-paper)}
+#crabbage-concepts .cb-brand{font:600 26px/1.1 Georgia,serif;letter-spacing:-1px;display:flex;align-items:center;gap:8px}
+#crabbage-concepts .cb-brand .cb-icon{color:var(--cb-green);width:26px;height:26px}
+#crabbage-concepts .cb-house{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--cb-muted);text-align:left}
+#crabbage-concepts .cb-avatar{width:34px;height:34px;border-radius:50%;background:var(--cb-soft);display:grid;place-items:center;color:var(--cb-green);font-size:12px;font-weight:600}
+#crabbage-concepts .cb-frame{display:flex;min-height:710px}
+#crabbage-concepts .cb-side{display:none;width:172px;flex:none;padding:28px 14px;border-right:1px solid var(--cb-line);background:var(--cb-paper)}
+#crabbage-concepts .cb-side button{width:100%;justify-content:flex-start;margin-bottom:7px;color:var(--cb-muted)}
+#crabbage-concepts .cb-side button[aria-current="page"]{background:var(--cb-soft);color:var(--cb-green);font-weight:600}
+#crabbage-concepts .cb-work{flex:1;min-width:0;display:flex;flex-direction:column}
+#crabbage-concepts .cb-content{padding:28px 22px;flex:1;min-width:0}
+#crabbage-concepts .cb-eyebrow{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:650;color:var(--cb-muted);margin:0 0 8px}
+#crabbage-concepts h1{font:400 34px/1.12 Georgia,serif;letter-spacing:-1.2px;margin:0 0 12px}
+#crabbage-concepts h2{font:400 25px/1.2 Georgia,serif;letter-spacing:-.5px;margin:0}
+#crabbage-concepts h3{font-size:15px;line-height:1.35;margin:0;font-weight:600}
+#crabbage-concepts p{margin:0}
+#crabbage-concepts .cb-muted{color:var(--cb-muted);font-size:13px}
+#crabbage-concepts .cb-subtitle{color:var(--cb-muted);margin-bottom:24px}
+#crabbage-concepts .cb-section{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:26px 0 14px}
+#crabbage-concepts .cb-section button{padding:2px 0;color:var(--cb-green);font-size:12px}
+#crabbage-concepts .cb-feature{border-radius:var(--cb-radius);background:var(--cb-paper);overflow:hidden;border:1px solid var(--cb-line)}
+#crabbage-concepts .cb-photo{width:100%;height:220px;object-fit:cover;display:block}
+#crabbage-concepts .cb-feature-copy{padding:19px}
+#crabbage-concepts .cb-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--cb-green);font-weight:650;margin-bottom:10px}
+#crabbage-concepts .cb-meta{display:flex;align-items:center;flex-wrap:wrap;gap:15px;color:var(--cb-muted);font-size:12px;margin:12px 0 18px}
+#crabbage-concepts .cb-meta span{display:flex;align-items:center;gap:5px}
+#crabbage-concepts .cb-meta .cb-icon{width:15px;height:15px}
+#crabbage-concepts .cb-feature .cb-action{width:100%}
+#crabbage-concepts .cb-upcoming{display:grid;gap:0}
+#crabbage-concepts .cb-next{display:flex;align-items:center;gap:15px;padding:14px 0;border-bottom:1px solid var(--cb-line)}
+#crabbage-concepts .cb-date{color:var(--cb-muted);font-size:11px;min-width:38px;text-transform:uppercase;letter-spacing:.5px}
+#crabbage-concepts .cb-next-copy{flex:1;min-width:0}
+#crabbage-concepts .cb-shortcut{display:flex;align-items:center;gap:12px;padding:17px;background:var(--cb-soft);border-radius:14px;margin-top:22px}
+#crabbage-concepts .cb-shortcut button{margin-left:auto;padding:5px;color:var(--cb-green)}
+#crabbage-concepts .cb-bottom{background:var(--cb-paper);display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--cb-line);padding:8px 7px 10px;gap:2px}
+#crabbage-concepts .cb-bottom button{display:flex;flex-direction:column;gap:4px;padding:7px 3px;font-size:11px;color:var(--cb-muted);border-radius:12px}
+#crabbage-concepts .cb-bottom button[aria-current="page"]{color:var(--cb-green);background:var(--cb-soft);font-weight:600}
+#crabbage-concepts .cb-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+#crabbage-concepts .cb-search{display:flex;align-items:center;gap:10px;border:1px solid var(--cb-line);background:var(--cb-paper);border-radius:12px;padding:0 13px;margin:14px 0}
+#crabbage-concepts input{min-width:0;width:100%;border:0;background:transparent;min-height:48px;outline-offset:2px;font-size:16px}
+#crabbage-concepts .cb-filters{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0 23px}
+#crabbage-concepts .cb-filter{border:1px solid var(--cb-line);border-radius:24px;padding:7px 14px;font-size:12px;min-height:36px;background:var(--cb-paper)}
+#crabbage-concepts .cb-filter[aria-pressed="true"]{background:var(--cb-green);border-color:var(--cb-green);color:var(--cb-inverse)}
+#crabbage-concepts .cb-library{display:grid;gap:18px}
+#crabbage-concepts .cb-recipe-row{background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:var(--cb-radius);padding:19px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:145px;gap:8px;text-align:left}
+#crabbage-concepts .cb-recipe-row .cb-icon{color:var(--cb-green)}
+#crabbage-concepts .cb-recipe-row h2{font-size:23px}
+#crabbage-concepts .cb-library .cb-feature button.cb-open{padding:0;display:block;text-align:left;width:100%}
+#crabbage-concepts .cb-week{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--cb-line);border-radius:12px;background:var(--cb-paper);padding:4px;margin:20px 0}
+#crabbage-concepts .cb-day{display:flex;align-items:center;gap:14px;width:100%;border-bottom:1px solid var(--cb-line);border-radius:0;padding:16px 4px;text-align:left;justify-content:flex-start}
+#crabbage-concepts .cb-day[aria-pressed="true"]{background:var(--cb-soft);border-radius:12px;border-color:transparent;padding-left:12px;padding-right:12px}
+#crabbage-concepts .cb-daydate{min-width:34px;text-align:center;font-size:12px;color:var(--cb-muted)}
+#crabbage-concepts .cb-daydate b{display:block;font-size:21px;font-weight:400;color:var(--cb-ink)}
+#crabbage-concepts .cb-day .cb-icon{margin-left:auto;color:var(--cb-muted)}
+#crabbage-concepts .cb-editor{padding:20px;background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:var(--cb-radius);margin-top:20px}
+#crabbage-concepts .cb-editor .cb-action{width:100%;margin-top:18px}
+#crabbage-concepts .cb-editor .cb-photo{height:150px;border-radius:12px;margin:15px 0}
+#crabbage-concepts .cb-editor .cb-row{margin-top:15px}
+#crabbage-concepts .cb-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#crabbage-concepts .cb-row .cb-secondary{flex:1}
+#crabbage-concepts .cb-listline{display:flex;align-items:center;width:100%;gap:13px;padding:14px 0;text-align:left;border-bottom:1px solid var(--cb-line);border-radius:0;justify-content:flex-start}
+#crabbage-concepts .cb-box{width:23px;height:23px;border-radius:7px;border:1.5px solid var(--cb-line);flex:none;display:grid;place-items:center}
+#crabbage-concepts .cb-listline[aria-pressed="true"] .cb-box{background:var(--cb-green);border-color:var(--cb-green);color:var(--cb-inverse)}
+#crabbage-concepts .cb-listline[aria-pressed="true"] .cb-itemname{text-decoration:line-through;color:var(--cb-muted)}
+#crabbage-concepts .cb-itemname{flex:1}
+#crabbage-concepts .cb-qty{font-size:13px;color:var(--cb-muted)}
+#crabbage-concepts .cb-group-label{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--cb-muted);margin:23px 0 6px}
+#crabbage-concepts .cb-summary{background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:var(--cb-radius);padding:20px;margin-top:24px}
+#crabbage-concepts .cb-summary .cb-action{width:100%;margin:16px 0 10px}
+#crabbage-concepts .cb-progress{height:5px;border-radius:3px;background:var(--cb-line);margin:15px 0;overflow:hidden}
+#crabbage-concepts .cb-progress span{display:block;background:var(--cb-green);height:100%}
+#crabbage-concepts .cb-cookstep{font:400 29px/1.45 Georgia,serif;margin:23px 0}
+#crabbage-concepts .cb-ingredients{background:var(--cb-soft);padding:18px;border-radius:14px;margin:20px 0}
+#crabbage-concepts .cb-ingredients p{padding:5px 0}
+#crabbage-concepts .cb-status{font-size:12px;color:var(--cb-green);padding:12px 0;min-height:18px}
+#crabbage-concepts .cb-back{padding:0;color:var(--cb-green);font-size:12px;margin-bottom:16px}
+#crabbage-concepts .cb-detail-photo{height:240px;border-radius:16px;margin:8px 0 22px}
+#crabbage-concepts .cb-note{font-size:11px;color:var(--cb-muted);text-align:center}
+#crabbage-concepts .cb-fieldlabel{display:block;font-size:12px;color:var(--cb-muted);margin-top:15px}
+@container (min-width:560px){#crabbage-concepts .cb-content{padding:32px}#crabbage-concepts h1{font-size:42px}#crabbage-concepts .cb-today-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:25px;align-items:start}#crabbage-concepts .cb-today-layout .cb-section:first-child{margin-top:0}#crabbage-concepts .cb-plan-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px}#crabbage-concepts .cb-editor{margin-top:0}#crabbage-concepts .cb-library{grid-template-columns:1fr 1fr}#crabbage-concepts .cb-library .cb-feature{grid-row:span 2}#crabbage-concepts .cb-shop-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:28px}#crabbage-concepts .cb-summary{margin-top:22px}#crabbage-concepts .cb-cook-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:25px}#crabbage-concepts .cb-detail-layout{display:grid;grid-template-columns:1fr 1.5fr;gap:28px}}
+@container (min-width:900px){#crabbage-concepts .cb-side{display:block}#crabbage-concepts .cb-bottom{display:none}#crabbage-concepts .cb-content{padding:36px}#crabbage-concepts .cb-top{padding:19px 27px}#crabbage-concepts .cb-photo{height:230px}#crabbage-concepts .cb-library{grid-template-columns:1.2fr 1fr}#crabbage-concepts .cb-frame{min-height:700px}}
+@media(max-width:420px){#crabbage-concepts .cb-content{padding:24px 17px}#crabbage-concepts .cb-top{padding:15px 17px}#crabbage-concepts .cb-house .cb-housename{display:none}}
+</style>
+<script>
+(()=>{
+const root=document.getElementById('crabbage-concepts');
+const photo='orzo.jpg';
+const names=['Today','Recipes','Plan','Shopping'];const icons=['sun','book-open','calendar-days','shopping-basket'];
+const meals=['Lemon orzo & roasted tomatoes','Crispy chickpea bowls','Roasted squash soup','Rest day','One-pot tomato pasta','Lemon orzo & roasted tomatoes','Choose a recipe'];
+const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const recipes=[{name:meals[0],type:'Dinner',fav:true},{name:meals[1],type:'Dinner',fav:true},{name:meals[2],type:'Lunch',fav:false}];
+const shopping=[['Cherry tomatoes','500 g','Produce'],['Spinach','200 g','Produce'],['Lemons','2','Produce'],['Fresh basil','1 bunch','Produce'],['Orzo','300 g','Pantry'],['Chickpeas','2 cans','Pantry'],['Parmesan','80 g','Chilled']];
+const icon=n=>`<i data-lucide="${n}" class="cb-icon" aria-hidden="true"></i>`;
+const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nav=(screen,side=false)=>`<nav class="${side?'cb-side':'cb-bottom'}" aria-label="Main navigation">${names.map((n,i)=>`<button type="button" class="cursor-interaction" data-nav="${n.toLowerCase()}" ${screen===n.toLowerCase()?'aria-current="page"':''}>${icon(icons[i])}<span>${n}</span></button>`).join('')}</nav>`;
+function heading(eye,title,sub=''){return `${eye?`<p class="cb-eyebrow">${eye}</p>`:''}<h1>${title}</h1>${sub?`<p class="cb-subtitle">${sub}</p>`:''}`}
+function feature(){return `<article class="cb-feature"><img class="cb-photo" src="${photo}" alt="Lemon orzo with roasted tomatoes and fresh basil"><div class="cb-feature-copy"><span class="cb-tag">Tonight's plan</span><h2>Lemon orzo &<br>roasted tomatoes</h2><div class="cb-meta"><span>${icon('users')} 2 servings</span><span>${icon('heart')} A household favorite</span></div><button type="button" class="cb-action cursor-interaction" data-nav="cook">${icon('cooking-pot')} Start cooking ${icon('arrow-up-right')}</button></div></article>`}
+function today(s){return heading('Saturday, 31 October','Today')+`<div class="cb-today-layout">${feature()}<div><div class="cb-section"><h2>Coming up</h2><button type="button" data-nav="plan" class="cursor-interaction">See the week ${icon('arrow-right')}</button></div><div class="cb-upcoming">${[['Sun','Roasted squash soup','2 servings'],['Mon','Crispy chickpea bowls','2 servings']].map(x=>`<div class="cb-next"><span class="cb-date">${x[0]}</span><div class="cb-next-copy"><h3>${x[1]}</h3><p class="cb-muted">${x[2]}</p></div></div>`).join('')}</div><div class="cb-shortcut">${icon('shopping-basket')}<div><h3>Your shopping list</h3><p class="cb-muted">${shopping.length-s.checked.size+s.extra.length} items to pick up</p></div><button type="button" data-nav="shopping" aria-label="Open shopping list" class="cursor-interaction">${icon('arrow-right')}</button></div></div></div>`}
+function library(s){return heading('','Recipes')+`<label class="cb-search">${icon('search')}<input type="search" data-search aria-label="Search recipes" placeholder="Find a recipe…" value="${escape(s.query)}"></label><div class="cb-filters">${['All recipes','Favorites','Dinner','Lunch'].map(x=>`<button type="button" class="cb-filter cursor-interaction" data-filter="${x}" aria-pressed="${s.filter===x}">${x==='Favorites'?icon('heart'):''}${x}</button>`).join('')}</div><div class="cb-library" data-results>${cards(s)}</div>`}
+function cards(s){const list=recipes.filter(r=>r.name.toLowerCase().includes(s.query.toLowerCase())&&(s.filter!=='Favorites'||r.fav)&&(!['Dinner','Lunch'].includes(s.filter)||r.type===s.filter));return list.length?list.map((r,i)=>r===recipes[0]?`<article class="cb-feature"><button type="button" class="cb-open cursor-interaction" data-nav="detail"><img class="cb-photo" src="${photo}" alt="Lemon orzo with tomatoes"><div class="cb-feature-copy"><span class="cb-tag">Dinner · Favorite</span><h2>${r.name}</h2><p class="cb-muted" style="margin-top:10px">2 servings</p></div></button></article>`:`<button type="button" class="cb-recipe-row cursor-interaction" data-recipe="${escape(r.name)}">${icon('book-open')}<span class="cb-tag">${r.type}${r.fav?' · Favorite':''}</span><h2>${r.name}</h2><span class="cb-muted">2 servings ${icon('arrow-up-right')}</span></button>`).join(''):'<p class="cb-muted" role="status">No recipes found. Try a different search.</p>'}
+function plan(s){return heading('','Weekly plan')+`<div class="cb-week"><button type="button" data-week="-1" aria-label="Previous week" class="cursor-interaction">${icon('chevron-left')}</button><span>${s.week===0?'26 October – 1 November':s.week<0?'19 – 25 October':'2 – 8 November'}</span><button type="button" data-week="1" aria-label="Next week" class="cursor-interaction">${icon('chevron-right')}</button></div><div class="cb-plan-layout"><div>${days.map((d,i)=>`<button type="button" class="cb-day cursor-interaction" data-day="${i}" aria-pressed="${s.day===i}"><span class="cb-daydate">${d}<b>${s.week<0?19+i:s.week>0?2+i:i<6?26+i:1}</b></span><span class="cb-next-copy"><h3>${meals[i]}</h3><span class="cb-muted">${i===3?'No meal planned':i===6?'No recipe selected':'Dinner · 2 servings'}</span></span>${icon('chevron-right')}</button>`).join('')}<button type="button" class="cb-secondary cursor-interaction" data-status="Planning preferences would open here." style="margin-top:18px">${icon('sliders-horizontal')} Planning preferences</button></div><aside class="cb-editor"><p class="cb-eyebrow">${days[s.day]} · Dinner</p><h2>${meals[s.day]}</h2>${[0,5].includes(s.day)?`<img src="${photo}" alt="Lemon orzo" class="cb-photo">`:'<p class="cb-muted" style="margin-top:16px">Select a recipe for this day.</p>'}<div class="cb-row"><span class="cb-muted">Servings</span><button type="button" class="cb-secondary cursor-interaction" data-servings="-1" aria-label="Fewer servings">−</button><span>${s.servings}</span><button type="button" class="cb-secondary cursor-interaction" data-servings="1" aria-label="More servings">+</button></div><button type="button" class="cb-action cursor-interaction" data-status="Recipe picker preview — no plan was changed.">${icon('refresh-cw')} Change recipe</button><button type="button" class="cb-secondary cursor-interaction" data-status="Preview only — the week's ingredients would be added once." style="width:100%;margin-top:9px">${icon('list-plus')} Add week to shopping</button></aside></div>`}
+function shop(s){return heading('','Shopping list',`<span data-count>${shopping.length-s.checked.size+s.extra.length}</span> items left · Shared with your household`)+`<form class="cb-search" data-addform><input name="item" aria-label="Add shopping item" placeholder="Add something to the list…" required><button type="submit" aria-label="Add item" class="cursor-interaction">${icon('plus')}</button></form><div class="cb-shop-layout"><div>${['Produce','Pantry','Chilled'].map(g=>`<h3 class="cb-group-label">${g}</h3>${shopping.map((x,i)=>x[2]===g?`<button type="button" class="cb-listline cursor-interaction" data-check="${i}" aria-pressed="${s.checked.has(i)}"><span class="cb-box">${s.checked.has(i)?icon('check'):''}</span><span class="cb-itemname">${escape(x[0])}</span><span class="cb-qty">${escape(x[1])}</span></button>`:'').join('')}`).join('')}${s.extra.map(x=>`<div class="cb-listline"><span class="cb-box"></span><span>${escape(x)}</span></div>`).join('')}</div><aside class="cb-summary"><span class="cb-tag">Next step</span><h2>Export to Appie</h2><p class="cb-muted" style="margin-top:12px">Choose matching products and check pack sizes before exporting.</p><button type="button" class="cb-action cursor-interaction" data-nav="export">Review products ${icon('arrow-right')}</button><p class="cb-note">Appie integration concept · Preview only</p></aside></div>`}
+function detail(s){return `<button type="button" class="cb-back cursor-interaction" data-nav="recipes">${icon('arrow-left')} Your recipes</button>`+heading('Dinner · A household favorite','Lemon orzo &<br>roasted tomatoes.')+`<img class="cb-photo cb-detail-photo" src="${photo}" alt="Lemon orzo with roasted tomatoes"><div class="cb-detail-layout"><div><h2>Ingredients</h2><div class="cb-row" style="margin:15px 0"><button type="button" class="cb-secondary cursor-interaction" data-servings="-1" aria-label="Fewer servings">−</button><span>${s.servings} servings</span><button type="button" class="cb-secondary cursor-interaction" data-servings="1" aria-label="More servings">+</button></div>${[['Orzo',150],['Cherry tomatoes',250],['Spinach',100]].map(x=>`<div class="cb-listline"><span class="cb-itemname">${x[0]}</span><span class="cb-qty">${x[1]*s.servings/2} g</span></div>`).join('')}</div><div><h2>Method</h2><p style="margin:18px 0;color:var(--cb-muted)">Roast the tomatoes until sweet, then fold them through warm orzo with spinach, lemon and basil.</p><button type="button" class="cb-action cursor-interaction" data-nav="cook">${icon('cooking-pot')} Start cooking</button></div></div>`}
+function cook(s){const steps=['Roast the tomatoes with a little olive oil until soft and blistered.','Cook the orzo in salted water, then save a cup of the cooking water.','Fold in the spinach, tomatoes and lemon. Finish with basil and parmesan.'];return `<button type="button" class="cb-back cursor-interaction" data-nav="detail">${icon('arrow-left')} Back to recipe</button>`+heading('Lemon orzo & roasted tomatoes','Cook')+`<p class="cb-muted">Step ${s.step+1} of 3</p><div class="cb-progress"><span style="width:${(s.step+1)/3*100}%"></span></div><div class="cb-cook-layout"><div><p class="cb-cookstep">${steps[s.step]}</p>${s.step===0?`<button type="button" class="cb-secondary cursor-interaction" data-timer>${icon('timer')} ${s.timer?'Timer running · demo':'Start 20-minute timer'}</button>`:''}<div class="cb-row" style="margin-top:27px"><button type="button" class="cb-secondary cursor-interaction" data-step="-1" ${s.step===0?'disabled':''}>Back</button><button type="button" class="cb-action cursor-interaction" ${s.step===2?'data-nav="today"':'data-step="1"'}>${s.step===2?'Finish cooking':'Next step'} ${icon('arrow-right')}</button></div></div><aside class="cb-ingredients"><p class="cb-eyebrow">For this step · ${s.servings} servings</p><p>${s.step===0?'Cherry tomatoes · '+250*s.servings/2+' g':s.step===1?'Orzo · '+150*s.servings/2+' g':'Spinach · '+100*s.servings/2+' g'}</p><p class="cb-muted">${s.step===0?'Olive oil · a drizzle':s.step===1?'Salt · to taste':'Lemon, basil & parmesan'}</p></aside></div>`}
+function exportReview(){return `<button type="button" class="cb-back cursor-interaction" data-nav="shopping">${icon('arrow-left')} Back to shopping</button>`+heading('Appie','Review products','Preview — no account connected.')+`<div class="cb-summary"><h3>Orzo</h3><p class="cb-muted">Need: 300 g · Example pack: 500 g</p><div class="cb-row" style="margin-top:15px"><span>1 pack</span><span class="cb-muted">200 g left over</span></div></div><div class="cb-summary"><h3>Fresh basil</h3><p class="cb-muted">Choose a product and confirm the pack size.</p><button type="button" class="cb-secondary cursor-interaction" data-status="Product search concept — no live products loaded." style="margin-top:15px">Find a product</button></div><p class="cb-status">1 item still needs your attention</p><button type="button" class="cb-action" disabled style="opacity:.55">Export to Appie</button><p class="cb-note" style="text-align:left;margin-top:12px">Simulation only. Nothing will be added to a real list or cart.</p>`}
+const renderers={today,recipes:library,plan,shopping:shop,detail,cook,export:exportReview};
+root.querySelectorAll('.cb-app').forEach(app=>{
+let s={screen:app.dataset.screen,day:5,servings:2,checked:new Set([5]),extra:[],query:'',filter:'All recipes',week:0,step:0,timer:false,status:''};
+
+function remember(){}
+function draw(){app.dataset.screen=s.screen;const active=['detail','cook'].includes(s.screen)?'recipes':s.screen==='export'?'shopping':s.screen;app.innerHTML=`<header class="cb-top"><span class="cb-brand">${icon('sprout')} crabbage<span style="color:var(--cb-green)">.</span></span><div class="cb-house">${icon('house')}<span class="cb-housename">Our household</span><span class="cb-avatar">K</span></div></header><div class="cb-frame">${nav(active,true)}<div class="cb-work"><main class="cb-content">${renderers[s.screen](s)}<p class="cb-status" aria-live="polite">${escape(s.status)}</p></main>${s.screen==='cook'?'':nav(active)}</div></div>`;if(globalThis.lucide)lucide.createIcons({attrs:{width:19,height:19}});}
+app.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.nav){s.screen=b.dataset.nav;s.status=''}if(b.dataset.day!==undefined)s.day=+b.dataset.day;if(b.dataset.servings)s.servings=Math.max(1,s.servings+(+b.dataset.servings));if(b.dataset.filter)s.filter=b.dataset.filter;if(b.dataset.week)s.week=Math.max(-1,Math.min(1,s.week+(+b.dataset.week)));if(b.dataset.step)s.step=Math.max(0,Math.min(2,s.step+(+b.dataset.step)));if(b.hasAttribute('data-timer'))s.timer=!s.timer;if(b.dataset.check!==undefined){const id=+b.dataset.check;s.checked.has(id)?s.checked.delete(id):s.checked.add(id)}if(b.dataset.status)s.status=b.dataset.status;if(b.dataset.recipe)s.status=b.dataset.recipe+' — recipe detail would open here.';draw();remember()});
+app.addEventListener('input',e=>{if(e.target.hasAttribute('data-search')){s.query=e.target.value;const results=app.querySelector('[data-results]');results.innerHTML=cards(s);if(globalThis.lucide)lucide.createIcons({attrs:{width:19,height:19}})}});
+app.addEventListener('submit',e=>{e.preventDefault();const field=e.target.querySelector('input[name="item"]');if(field&&field.value.trim()){s.extra.push(field.value.trim());s.status='Added to this preview only.';draw()}});draw();
+});
+})();
+</script>
+<script>document.getElementById('layout').addEventListener('change',e=>{document.querySelectorAll('[data-variant]').forEach(el=>el.hidden=el.dataset.variant!==e.target.value)});</script></body></html>
