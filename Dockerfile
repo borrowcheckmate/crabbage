@@ -26,7 +26,8 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/src/target,id=site-target \
     cargo leptos build --release --frontend-only --cargo-locked \
     && install -d /out \
-    && cp -r target/site /out/site
+    && cp -r target/site /out/site \
+    && cp target/release/hash.txt /out/hash.txt
 
 FROM tools AS server
 ARG TARGETARCH
@@ -47,10 +48,12 @@ RUN install -d -o 65532 -g 65532 -m 0700 /data
 FROM scratch
 COPY --from=data --chown=65532:65532 /data /data
 COPY --from=site /out/site /site
+COPY --from=site /out/hash.txt /hash.txt
 COPY --from=server /out/crabbage /crabbage
 ENV CRABBAGE_DATA_DIR=/data \
     LEPTOS_SITE_ROOT=/site \
     LEPTOS_OUTPUT_NAME=crabbage \
+    LEPTOS_HASH_FILES=true \
     LEPTOS_SITE_ADDR=0.0.0.0:3000
 EXPOSE 3000
 VOLUME /data

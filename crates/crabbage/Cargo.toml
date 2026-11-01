@@ -61,6 +61,7 @@ output-name = "crabbage"
 site-root = "target/site"
 site-addr = "0.0.0.0:3000"
 style-file = "style/main.css"
+hash-files = true
 bin-features = ["ssr"]
 bin-default-features = false
 lib-features = ["hydrate"]
