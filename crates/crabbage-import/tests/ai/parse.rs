@@ -105,10 +105,6 @@ fn invalid_drafts_are_refused_with_the_reason() {
             "photo crop is outside",
         ),
         (
-            edited(|v| v["lines"][0]["unit"] = json!("handful")),
-            "unknown unit: handful",
-        ),
-        (
             edited(|v| v["lines"][0]["amount"] = json!(-2)),
             "ingredient 1 has an invalid amount",
         ),
@@ -131,6 +127,15 @@ fn invalid_drafts_are_refused_with_the_reason() {
             other => panic!("{content}: {other:?}"),
         }
     }
+}
+
+#[test]
+fn unknown_units_are_preserved_in_a_valid_draft() {
+    let content = edited(|value| value["lines"][0]["unit"] = json!("handful"));
+    assert_eq!(
+        parse(&content).expect("draft").lines[0].unit.as_deref(),
+        Some("handful")
+    );
 }
 
 #[test]

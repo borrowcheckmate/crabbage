@@ -61,12 +61,14 @@ async fn load_today_data(
     day: i64,
     date: String,
 ) -> Result<TodayData, ServerFnError> {
-    let household_name: String =
-        sqlx::query_scalar("SELECT group_name FROM households WHERE id = ?")
+    let (group_name, name): (String, Option<String>) =
+        sqlx::query_as("SELECT group_name, name FROM households WHERE id = ?")
             .bind(household)
             .fetch_one(pool)
             .await
             .map_err(|error| ServerFnError::new(error.to_string()))?;
+    let prefix = crate::access::config()?.household_group_prefix.clone();
+    let household_name = crate::household::household_label(name.as_deref(), &group_name, &prefix);
     let dates = (day..=day + 3)
         .map(crabbage_domain::dates::format_iso_date)
         .collect::<Option<Vec<_>>>()

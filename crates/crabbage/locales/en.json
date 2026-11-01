@@ -380,6 +380,10 @@
   "recipe.ingredients.many": "{count} ingredients",
   "import.steps.one": "· {count} step",
   "import.steps.many": "· {count} steps",
+  "admin.nav.households": "Households",
+  "admin.households.heading": "Households",
+  "admin.households.name": "Name for {household}",
+  "admin.households.save": "Save name",
   "admin.settings.mistral": "Mistral",
   "admin.settings.load_models": "Load models",
   "admin.settings.models_failed": "Could not load models."
