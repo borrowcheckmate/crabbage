@@ -36,6 +36,13 @@ pub(crate) fn RecipesPage() -> impl IntoView {
             <div class="row"><a class="button" href="/recipes/new">{t("recipes.new")}</a>
             <a class="button secondary" href="/recipes/import">{t("recipes.import")}</a></div>
         </header>
+        <div class="recipe-list-content">
+            {move || query.with(|map| search_form(&Filters {
+                category: map.get("category").and_then(|id| id.parse().ok()),
+                favourites: map.get("favourites").as_deref() == Some("1"),
+                search: map.get("q").unwrap_or_default().trim().to_owned(),
+            }))}
+        </div>
         <Suspense fallback=|| ()>
             {move || {
                 Suspend::new(async move { recipe_list(data.await) })
@@ -79,7 +86,6 @@ fn recipe_list((filters, result): RecipeListData) -> AnyView {
             let empty = empty_text(&filters);
             view! {
                 <div class="recipe-list-content">
-                {search_form(&filters)}
                 {filter_links(categories, &filters)}
                 {if rows.is_empty() {
                     view! { <p class="recipe-empty">{empty}</p> }.into_any()
@@ -126,7 +132,7 @@ fn empty_text(filters: &Filters) -> String {
 
 /// The search form: a search box for `q`, and hidden fields that keep the category and favourites
 /// filters when the search is submitted.
-fn search_form(filters: &Filters) -> impl IntoView {
+fn search_form(filters: &Filters) -> impl IntoView + use<> {
     let category = filters
         .category
         .map(|id| view! { <input type="hidden" name="category" value=id/> });
