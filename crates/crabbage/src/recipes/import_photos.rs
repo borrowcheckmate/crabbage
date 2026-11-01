@@ -7,7 +7,7 @@ use std::time::Instant;
 
 use axum::Extension;
 use axum::Router;
-use axum::extract::{DefaultBodyLimit, Multipart, State};
+use axum::extract::{DefaultBodyLimit, Form, Multipart, State};
 use axum::http::StatusCode;
 use axum::response::Redirect;
 use axum::routing::post;
@@ -15,6 +15,7 @@ use crabbage_import::ai::{AiClient, Image};
 use crabbage_import::pipeline::from_photos;
 use crabbage_store::catalog::ingredients::list;
 use crabbage_store::settings;
+use serde::Deserialize;
 
 use super::import::{candidates, preview};
 use super::photo::MAX_UPLOAD_BYTES;
@@ -26,14 +27,49 @@ use crate::state::AppState;
 
 const MAX_PHOTOS: usize = 4;
 const FRAMING_BYTES: usize = 64 * 1024;
+const MAX_TEXT_BYTES: usize = 64 * 1024;
 
 pub(crate) fn routes() -> Router<AppState> {
-    Router::new().route(
-        "/recipes/import/photos",
-        post(upload).layer(DefaultBodyLimit::max(
-            MAX_PHOTOS * MAX_UPLOAD_BYTES + FRAMING_BYTES,
-        )),
-    )
+    Router::new()
+        .route(
+            "/recipes/import/photos",
+            post(upload).layer(DefaultBodyLimit::max(
+                MAX_PHOTOS * MAX_UPLOAD_BYTES + FRAMING_BYTES,
+            )),
+        )
+        .route(
+            "/recipes/import/text",
+            post(upload_text).layer(DefaultBodyLimit::max(MAX_TEXT_BYTES)),
+        )
+}
+
+#[derive(Deserialize)]
+struct TextForm {
+    text: String,
+    source_url: Option<String>,
+}
+
+async fn upload_text(
+    State(state): State<AppState>,
+    Extension(user): Extension<SessionUser>,
+    Form(form): Form<TextForm>,
+) -> Result<Redirect, StatusCode> {
+    if form.text.trim().is_empty() {
+        return Ok(back("source=text&photo_error=text_invalid"));
+    }
+    let source = form.source_url.as_deref().unwrap_or_default().trim();
+    let preview = super::import::read_text(&state.pool, &state.config, &form.text, source)
+        .await
+        .map_err(|_error| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let token = state
+        .photo_drafts
+        .insert(user.0, preview, None, Instant::now())
+        .map_err(|_error| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let mut query = url::form_urlencoded::Serializer::new(format!("text={token}"));
+    if !source.is_empty() {
+        query.append_pair("source_url", source);
+    }
+    Ok(back(&query.finish()))
 }
 
 async fn upload(
