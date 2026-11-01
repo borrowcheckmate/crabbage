@@ -27,6 +27,9 @@ pub struct AiDraft {
     /// The finished dish photo bounds in the submitted page, when present.
     #[serde(default)]
     pub photo: Option<AiPhoto>,
+    /// The recipe categories selected from the household's categories.
+    #[serde(default)]
+    pub categories: Vec<i64>,
 }
 
 /// A normalized crop box on one submitted page.

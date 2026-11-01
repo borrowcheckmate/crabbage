@@ -5,5 +5,6 @@ mod fields;
 mod page;
 
 pub(super) use draft::{Draft, LineSignals, StepSignals};
+pub(crate) use fields::CategoryBoxes;
 pub(super) use fields::unit_select;
 pub(crate) use page::{RecipeEditPage, RecipeNewPage};

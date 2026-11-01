@@ -92,11 +92,37 @@ impl Parts {
             self.name = name;
             self.unit = Some(Unit::ToTaste);
         }
+        if self.unit != Some(Unit::ToTaste) {
+            if let Some((name, note)) = OPTIONAL
+                .iter()
+                .find_map(|phrase| strip_suffix(&self.name, phrase).map(|name| (name, *phrase)))
+            {
+                self.name = name;
+                self.note = Some(join_note(self.note.take(), note));
+            } else if let Some((note, optional)) = self.note.as_deref().and_then(|note| {
+                OPTIONAL
+                    .iter()
+                    .find_map(|phrase| strip_suffix(note, phrase).map(|note| (note, *phrase)))
+            }) {
+                self.note = Some(format!("{note}, {optional}"));
+            }
+        }
         self
     }
 }
 
+fn join_note(existing: Option<String>, note: &str) -> String {
+    existing.map_or_else(|| note.to_owned(), |existing| format!("{existing}, {note}"))
+}
+
 const TO_TASTE: [&str; 2] = ["to taste", "naar smaak"];
+const OPTIONAL: [&str; 5] = [
+    "naar keuze",
+    "of choice",
+    "optioneel",
+    "optional",
+    "(optioneel)",
+];
 
 fn is_to_taste(text: &str) -> bool {
     TO_TASTE

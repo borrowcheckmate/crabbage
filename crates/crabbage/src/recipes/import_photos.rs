@@ -91,10 +91,23 @@ async fn upload(
     }
     let count = images.len().to_string();
     let ingredients = list(&state.pool).await.map_err(internal_error)?;
+    let categories = crabbage_store::catalog::categories::list(&state.pool)
+        .await
+        .map_err(internal_error)?;
+    let category_refs: Vec<(i64, &str)> = categories
+        .iter()
+        .map(|category| (category.id, category.name.as_str()))
+        .collect();
     let client = AiClient::new(base_url, ai.api_key, ai.model);
     let language = state.config.language.code();
-    let Ok(imported) =
-        from_photos(images.clone(), &candidates(&ingredients), &client, language).await
+    let Ok(imported) = from_photos(
+        images.clone(),
+        &candidates(&ingredients),
+        &category_refs,
+        &client,
+        language,
+    )
+    .await
     else {
         return Ok(back("photo_error=ai"));
     };
@@ -107,9 +120,14 @@ async fn upload(
     };
     let source = t_with("import.photos_count", &[("count", &count)]);
     let now = Instant::now();
+    let mut preview = preview(&imported, &source, true);
+    preview.categories = categories
+        .into_iter()
+        .map(crate::catalog::CategoryRow::from)
+        .collect();
     let token = state
         .photo_drafts
-        .insert(user.0, preview(&imported, &source, true), photo, now)
+        .insert(user.0, preview, photo, now)
         .map_err(internal_error)?;
     Ok(back(&format!("photos={token}")))
 }

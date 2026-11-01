@@ -12,7 +12,12 @@ use super::{Imported, ImportedLine, ImportedStep};
 /// the photo is always the reading's. Every amount is metric afterwards. A line keeps the AI's
 /// ingredient id only when it is one of the candidates' ids, otherwise it is matched by name again.
 #[must_use]
-pub fn merge(ai: &AiDraft, base: &Imported, candidates: &[Candidate<'_>]) -> Imported {
+pub fn merge(
+    ai: &AiDraft,
+    base: &Imported,
+    candidates: &[Candidate<'_>],
+    categories: &[i64],
+) -> Imported {
     let lines: Vec<ImportedLine> = ai
         .lines
         .iter()
@@ -36,11 +41,22 @@ pub fn merge(ai: &AiDraft, base: &Imported, candidates: &[Candidate<'_>]) -> Imp
         servings: ai.servings.or(base.servings),
         image: base.image.clone(),
         photo: ai.photo,
+        categories: valid_categories(&ai.categories, categories),
         unmatched: match_all(&names, candidates).unmatched,
         lines,
         steps,
         ai_error: None,
     }
+}
+
+fn valid_categories(selected: &[i64], available: &[i64]) -> Vec<i64> {
+    let mut valid = Vec::new();
+    for id in selected {
+        if available.contains(id) && !valid.contains(id) {
+            valid.push(*id);
+        }
+    }
+    valid
 }
 
 fn merged_line(line: &AiLine, candidates: &[Candidate<'_>]) -> ImportedLine {
