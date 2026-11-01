@@ -9,7 +9,7 @@ use super::draft::{Draft, LineSignals, StepSignals};
 use crate::catalog::CategoryRow;
 use crate::i18n::{messages, t};
 use crate::recipes::types::{LineDraft, StepDraft};
-use crate::recipes::units::unit_text;
+use crate::recipes::units::unit_option_text;
 
 /// The fields of the recipe form. The names fill the suggestions of the ingredient fields. A row
 /// whose ingredient is in `unresolved` carries the class `unresolved` while it keeps that name.
@@ -108,18 +108,26 @@ fn category_box(draft: Draft, category: CategoryRow) -> impl IntoView {
     }
 }
 
+/// The unit picker of an ingredient line, labelled in the current language.
+pub(crate) fn unit_select(line: LineSignals) -> AnyView {
+    view! {
+        <label>{t("recipe.label.unit")}
+            <select on:change=move |ev| line.unit.set(event_target_value(&ev))>
+                <option value="" selected=move || line.unit.get().is_empty()>{t("recipe.unit.none")}</option>
+                {Unit::ALL.into_iter().map(|unit| view! {
+                    <option value=unit.symbol() selected=move || line.unit.get() == unit.symbol()>{unit_option_text(messages(), unit)}</option>
+                }).collect_view()}
+            </select>
+        </label>
+    }
+    .into_any()
+}
+
 fn line_row(draft: Draft, line: LineSignals, unresolved: Vec<String>) -> AnyView {
     view! {
         <section class="card recipe-row" class:unresolved=move || unresolved.contains(&line.ingredient.get())>
             <label>{t("recipe.label.amount")} <input type="number" min="0" step="any" value=move || line.amount.get() on:input=move |ev| line.amount.set(event_target_value(&ev))/></label>
-            <label>{t("recipe.label.unit")}
-                <select on:change=move |ev| line.unit.set(event_target_value(&ev))>
-                    <option value="" selected=move || line.unit.get().is_empty()>{t("recipe.unit.none")}</option>
-                    {Unit::ALL.into_iter().map(|unit| view! {
-                        <option value=unit.symbol() selected=move || line.unit.get() == unit.symbol()>{unit_text(messages(), unit.symbol())}</option>
-                    }).collect_view()}
-                </select>
-            </label>
+            {unit_select(line)}
             <label>{t("recipe.label.ingredient")} <input list="ingredient-names" value=move || line.ingredient.get() on:input=move |ev| line.ingredient.set(event_target_value(&ev))/></label>
             <label>{t("recipe.label.note")} <input value=move || line.note.get() on:input=move |ev| line.note.set(event_target_value(&ev))/></label>
             <button type="button" class="secondary row-remove" aria-label=t("recipe.button.remove_ingredient") on:click=move |_| draft.remove_line(line.key)>

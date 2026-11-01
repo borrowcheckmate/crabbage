@@ -1,5 +1,4 @@
-//! The unit words the recipe pages show: each unit's symbol or word from the locale files. A symbol
-//! that is not a unit shows as it is.
+//! The unit labels shown to people, in the current language.
 
 use crabbage_domain::quantity::Unit;
 
@@ -13,6 +12,14 @@ pub(crate) fn unit_text(messages: &Messages, symbol: &str) -> String {
     )
 }
 
+pub(crate) fn unit_option_text(messages: &Messages, unit: Unit) -> String {
+    if unit == Unit::Piece {
+        messages.get("unit.piece_option").to_owned()
+    } else {
+        messages.get(message_key(unit)).to_owned()
+    }
+}
+
 const fn message_key(unit: Unit) -> &'static str {
     match unit {
         Unit::Gram => "unit.g",
@@ -21,7 +28,7 @@ const fn message_key(unit: Unit) -> &'static str {
         Unit::Litre => "unit.l",
         Unit::Teaspoon => "unit.tsp",
         Unit::Tablespoon => "unit.tbsp",
-        Unit::Piece => "unit.piece",
+        Unit::Piece => "unit.piece_label",
         Unit::Pinch => "unit.pinch",
         Unit::ToTaste => "unit.to_taste",
     }

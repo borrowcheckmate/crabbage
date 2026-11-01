@@ -9,7 +9,8 @@
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::i18n::{t, t_with};
+use crate::i18n::{Messages, messages, t, t_with};
+use crate::recipes::unit_text;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct ShoppingRow {
@@ -72,14 +73,14 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
     let sections = RwSignal::new(Vec::<(i64, String)>::new());
     let load_failed = RwSignal::new(false);
     #[cfg(feature = "hydrate")]
-    connect_events(rows, load_failed);
+    connect_events(rows, load_failed, messages());
     view! {
         <h1>{t("shopping.heading")}</h1>
         <Suspense fallback=|| ()>
             {move || Suspend::new(async move {
                 match resource.await {
                     Ok((items, names)) => {
-                        rows.set(merge_rows(items));
+                        rows.set(merge_rows(items, messages()));
                         sections.set(names);
                     }
                     Err(_) => load_failed.set(true),
@@ -184,10 +185,10 @@ fn grouped_rows(mut rows: Vec<ShoppingRow>, sections: &[(i64, String)]) -> Vec<G
     groups
 }
 
-fn merge_rows(rows: Vec<ShoppingRow>) -> Vec<ShoppingRow> {
+fn merge_rows(rows: Vec<ShoppingRow>, messages: &Messages) -> Vec<ShoppingRow> {
     row_groups(rows)
         .into_iter()
-        .filter_map(|group| merge_group(&group))
+        .filter_map(|group| merge_group(&group, messages))
         .collect()
 }
 
@@ -217,7 +218,7 @@ fn row_groups(rows: Vec<ShoppingRow>) -> Vec<Vec<ShoppingRow>> {
     groups
 }
 
-fn merge_group(group: &[ShoppingRow]) -> Option<ShoppingRow> {
+fn merge_group(group: &[ShoppingRow], messages: &Messages) -> Option<ShoppingRow> {
     use crabbage_domain::quantity::{Quantity, Unit};
     use crabbage_domain::shopping::{Item, merge};
     let first = group.first()?.clone();
@@ -226,10 +227,10 @@ fn merge_group(group: &[ShoppingRow]) -> Option<ShoppingRow> {
         .as_deref()
         .is_some_and(|unit| Unit::from_symbol(unit).is_none())
     {
-        return Some(singleton_row(first));
+        return Some(singleton_row(first, messages));
     }
     let Some(id) = first.ingredient_id else {
-        return Some(singleton_row(first));
+        return Some(singleton_row(first, messages));
     };
     let merged = merge(group.iter().map(|row| {
         let amount = row.amount.and_then(|amount| {
@@ -267,12 +268,12 @@ fn merge_group(group: &[ShoppingRow]) -> Option<ShoppingRow> {
     let mut result = first;
     result.ids = ids;
     result.amounts = amounts;
-    result.quantity = quantities_text(&result.amounts);
+    result.quantity = quantities_text(&result.amounts, messages);
     result.label = result.ingredient.clone().unwrap_or_default();
     Some(result)
 }
 
-fn singleton_row(mut row: ShoppingRow) -> ShoppingRow {
+fn singleton_row(mut row: ShoppingRow, messages: &Messages) -> ShoppingRow {
     let name = row
         .ingredient
         .as_deref()
@@ -282,12 +283,12 @@ fn singleton_row(mut row: ShoppingRow) -> ShoppingRow {
         .amount
         .map(|amount| vec![(amount, row.unit.clone().unwrap_or_default())])
         .unwrap_or_default();
-    row.quantity = quantities_text(&row.amounts);
+    row.quantity = quantities_text(&row.amounts, messages);
     row.label = name.to_owned();
     row
 }
 
-fn quantities_text(amounts: &[(f64, String)]) -> String {
+fn quantities_text(amounts: &[(f64, String)], messages: &Messages) -> String {
     amounts
         .iter()
         .map(|(amount, unit)| {
@@ -295,10 +296,11 @@ fn quantities_text(amounts: &[(f64, String)]) -> String {
                 .trim_end_matches('0')
                 .trim_end_matches('.')
                 .to_owned();
-            if unit.is_empty() {
+            let label = unit_text(messages, unit);
+            if label.is_empty() {
                 value
             } else {
-                format!("{value} {unit}")
+                format!("{value} {label}")
             }
         })
         .collect::<Vec<_>>()
@@ -315,11 +317,15 @@ fn remaining_text(count: usize) -> String {
 }
 
 #[cfg(feature = "hydrate")]
-fn connect_events(rows: RwSignal<Vec<ShoppingRow>>, error: RwSignal<bool>) {
+fn connect_events(
+    rows: RwSignal<Vec<ShoppingRow>>,
+    error: RwSignal<bool>,
+    messages: &'static Messages,
+) {
     let Ok(source) = web_sys::EventSource::new("/shopping/events") else {
         return;
     };
-    let list_callback = list_listener(rows, error);
+    let list_callback = list_listener(rows, error, messages);
     let error_callback = error_listener(error);
     listen_for_updates(&source, &list_callback, &error_callback);
     replace_event_source((source, list_callback, error_callback));
@@ -327,9 +333,15 @@ fn connect_events(rows: RwSignal<Vec<ShoppingRow>>, error: RwSignal<bool>) {
 }
 
 #[cfg(feature = "hydrate")]
-fn list_listener(rows: RwSignal<Vec<ShoppingRow>>, error: RwSignal<bool>) -> ShoppingListener {
+fn list_listener(
+    rows: RwSignal<Vec<ShoppingRow>>,
+    error: RwSignal<bool>,
+    messages: &'static Messages,
+) -> ShoppingListener {
     use wasm_bindgen::prelude::Closure;
-    Closure::<dyn FnMut(web_sys::Event)>::new(move |event| update_from_event(event, rows, error))
+    Closure::<dyn FnMut(web_sys::Event)>::new(move |event| {
+        update_from_event(event, rows, error, messages);
+    })
 }
 
 #[cfg(feature = "hydrate")]
@@ -337,6 +349,7 @@ fn update_from_event(
     event: web_sys::Event,
     rows: RwSignal<Vec<ShoppingRow>>,
     error: RwSignal<bool>,
+    messages: &'static Messages,
 ) {
     use wasm_bindgen::JsCast;
     let Ok(message) = event.dyn_into::<web_sys::MessageEvent>() else {
@@ -348,7 +361,10 @@ fn update_from_event(
     let Ok(items) = serde_json::from_str::<Vec<ShoppingEventRow>>(&json) else {
         return;
     };
-    rows.set(merge_rows(items.into_iter().map(event_row).collect()));
+    rows.set(merge_rows(
+        items.into_iter().map(event_row).collect(),
+        messages,
+    ));
     error.set(false);
 }
 

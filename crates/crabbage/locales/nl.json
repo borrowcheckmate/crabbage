@@ -201,7 +201,8 @@
   "unit.l": "l",
   "unit.tsp": "tl",
   "unit.tbsp": "el",
-  "unit.piece": "stuk",
+  "unit.piece_label": "",
+  "unit.piece_option": "stuks",
   "unit.pinch": "een snufje",
   "unit.to_taste": "naar smaak",
   "unit.minutes": "min",
@@ -377,5 +378,8 @@
   "recipe.ingredients.one": "{count} ingrediënt",
   "recipe.ingredients.many": "{count} ingrediënten",
   "import.steps.one": "· {count} stap",
-  "import.steps.many": "· {count} stappen"
+  "import.steps.many": "· {count} stappen",
+  "admin.settings.mistral": "Mistral",
+  "admin.settings.load_models": "Modellen laden",
+  "admin.settings.models_failed": "Modellen konden niet worden geladen."
 }
