@@ -708,11 +708,11 @@ button.danger, button.destructive { color:var(--on-danger); }
 }
 @media (max-width:420px) { main { padding:24px 17px calc(96px + env(safe-area-inset-bottom)); } .topbar { padding:15px 17px; } .household-name { display:none; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
-@media (max-width:899px) and (max-height:500px) { .mobile-nav { position:static; } main { padding-bottom:1rem; } }
+@media (max-width:899px) and (max-height:500px) { .mobile-nav { position:static; } main { min-height:100dvh; padding-bottom:1rem; } }
 
 /* Administration */
 .admin-page { width:100%; max-width:52rem; margin:0 auto; display:grid; gap:.85rem; align-content:start; text-align:left; }
-.admin-page > p > a,.admin-detail .actions a { display:inline-flex; align-items:center; min-height:44px; }
+.admin-page > p > a,.admin-detail .actions a { display:inline-flex; align-items:center; min-width:44px; min-height:44px; }
 .admin-page h1 { margin:0 0 .25rem; }
 .admin-page h2,.admin-page h3 { margin:0; }
 .admin-page form { display:grid; grid-template-columns:minmax(0,1fr); gap:.55rem; margin:0; }
@@ -907,7 +907,7 @@ button.danger, button.destructive { color:var(--on-danger); }
 .recipe-card-favourite { display:inline-flex; align-items:center; gap:.3rem; }
 .recipe-card h2 { margin:.35rem 0 .4rem; font-family:Georgia,serif; font-size:1.45rem; line-height:1.2; }
 .recipe-card h2 a { display:inline-block; min-height:44px; padding-block:8px; color:var(--text); text-decoration:none; overflow-wrap:anywhere; }
-.recipe-edit-actions > a:not(.button) { display:inline-flex; align-items:center; min-height:44px; }
+.recipe-edit-actions > a:not(.button) { display:inline-flex; align-items:center; min-width:44px; min-height:44px; }
 .recipe-card-copy p { margin:.25rem 0 0; color:var(--muted); }
 .recipe-card-copy .recipe-card-rating { font-size:.9rem; }
 .recipe-empty { padding:1.25rem; border:1px dashed var(--border); border-radius:var(--radius-panel); color:var(--muted); }

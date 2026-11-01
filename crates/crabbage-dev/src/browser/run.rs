@@ -153,7 +153,7 @@ async fn start_browser(
     page.execute(chromiumoxide::cdp::browser_protocol::network::SetCacheDisabledParams::new(true))
         .await
         .map_err(|error| error.to_string())?;
-    page.evaluate_on_new_document("window.__crabbageCls=0; new PerformanceObserver(list=>{for(const entry of list.getEntries()){if(!entry.hadRecentInput)window.__crabbageCls+=entry.value}}).observe({type:'layout-shift',buffered:true})")
+    page.evaluate_on_new_document("window.__crabbageCls=0; new PerformanceObserver(list=>{for(const entry of list.getEntries()){if(!entry.hadRecentInput){window.__crabbageCls+=entry.value;window.__crabbageShifts=(window.__crabbageShifts||[]).concat((entry.sources||[]).map(s=>s.node?(s.node.nodeName+'.'+(s.node.className||'')).toLowerCase():'?'))}}}).observe({type:'layout-shift',buffered:true})")
         .await.map_err(|error| error.to_string())?;
     page.goto(base_url)
         .await
@@ -286,9 +286,6 @@ async fn navigate_and_set_view(page: &Page, settings: &CheckSettings<'_>) -> Res
         ..
     } = settings;
     let url = format!("{base_url}{route}?lang={language}");
-    page.goto(url.as_str())
-        .await
-        .map_err(|error| error.to_string())?;
     let viewport = SetDeviceMetricsOverrideParams::builder()
         .width(*width)
         .height(*height)
@@ -302,6 +299,9 @@ async fn navigate_and_set_view(page: &Page, settings: &CheckSettings<'_>) -> Res
         .features(vec![MediaFeature::new("prefers-color-scheme", *theme)])
         .build();
     page.execute(media)
+        .await
+        .map_err(|error| error.to_string())?;
+    page.goto(url.as_str())
         .await
         .map_err(|error| error.to_string())?;
     wait_for_hydration(page).await?;
@@ -365,7 +365,7 @@ async fn record_metrics(
         language,
         ..
     } = settings;
-    let metrics: Value = page.evaluate("({cls: window.__crabbageCls||0, bytes: performance.getEntriesByType('resource').reduce((n,e)=>n+(e.transferSize||0),0)})").await.map_err(|error| error.to_string())?.into_value().map_err(|error| error.to_string())?;
+    let metrics: Value = page.evaluate("({cls: window.__crabbageCls||0, shifts: [...new Set(window.__crabbageShifts||[])].slice(0,4).join(', '), bytes: performance.getEntriesByType('resource').reduce((n,e)=>n+(e.transferSize||0),0)})").await.map_err(|error| error.to_string())?.into_value().map_err(|error| error.to_string())?;
     let cls = metrics
         .get("cls")
         .and_then(Value::as_f64)
@@ -375,7 +375,11 @@ async fn record_metrics(
         .and_then(Value::as_u64)
         .unwrap_or_default();
     if cls >= 0.1 {
-        failures.push(format!("{route}: CLS {cls:.3} >= 0.1"));
+        let shifts = metrics
+            .get("shifts")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        failures.push(format!("{route}: CLS {cls:.3} >= 0.1 ({shifts})"));
     }
     writeln!(
         report,
