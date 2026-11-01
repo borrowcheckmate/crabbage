@@ -12,28 +12,66 @@ use crate::i18n::t;
 use crate::notice::{error_notice, failure, message};
 use crate::user::current_user;
 
+type IngredientListRows = (
+    Result<Vec<IngredientRow>, ServerFnError>,
+    Result<Vec<SectionRow>, ServerFnError>,
+);
+type IngredientListData = (
+    String,
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<IngredientListRows>,
+);
+
 /// The ingredient list page. Admins see the add form, the search and the rows, everyone else a
 /// message. The data is loaded inside one suspense, and the search reads `q` from the address.
 #[component]
 pub(crate) fn IngredientsPage() -> impl IntoView {
     let create = ServerAction::<CreateIngredient>::new();
     let query = use_query_map();
+    let data = Resource::new(
+        move || {
+            (
+                query.with(|map| map.get("q")).unwrap_or_default(),
+                create.version().get(),
+            )
+        },
+        |(search, _)| load_ingredient_page(search),
+    );
     view! {
         <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
-                let _version = create.version().get();
-                let search = query.with(|map| map.get("q")).unwrap_or_default();
-                Suspend::new(async move { ingredient_page(create, search).await })
+                Suspend::new(async move { ingredient_page(data.await, create) })
             }}
         </Suspense>
     }
 }
 
-async fn ingredient_page(create: ServerAction<CreateIngredient>, search: String) -> AnyView {
-    match current_user().await {
+async fn load_ingredient_page(
+    search: String,
+) -> (
+    String,
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<(
+        Result<Vec<IngredientRow>, ServerFnError>,
+        Result<Vec<SectionRow>, ServerFnError>,
+    )>,
+) {
+    let user = current_user().await;
+    let rows = if user.as_ref().is_ok_and(|user| user.is_admin) {
+        Some((list_ingredients().await, list_sections().await))
+    } else {
+        None
+    };
+    (search, user, rows)
+}
+
+fn ingredient_page(
+    (search, user, rows): IngredientListData,
+    create: ServerAction<CreateIngredient>,
+) -> AnyView {
+    match user {
         Ok(user) if user.is_admin => {
-            let rows = list_ingredients().await;
-            let sections = list_sections().await;
+            let (rows, sections) = rows.unwrap_or_else(|| (Ok(Vec::new()), Ok(Vec::new())));
             view! {
                 <section class="admin-page">
                 <h1>{t("admin.ingredients.heading")}</h1>

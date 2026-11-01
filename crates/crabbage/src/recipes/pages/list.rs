@@ -12,11 +12,24 @@ use crate::recipes::list::list_recipes;
 use crate::recipes::rating_text::rating_text;
 use crate::recipes::types::RecipeSummaryRow;
 
+type RecipeListResult = Result<(Vec<CategoryRow>, Vec<RecipeSummaryRow>), ServerFnError>;
+type RecipeListData = (Filters, RecipeListResult);
+
 /// The recipe list. Every signed-in user sees every recipe, narrowed by the `category`,
 /// `favourites` and `q` values in the address.
 #[component]
 pub(crate) fn RecipesPage() -> impl IntoView {
     let query = use_query_map();
+    let data = Resource::new(
+        move || {
+            query.with(|map| Filters {
+                category: map.get("category").and_then(|id| id.parse().ok()),
+                favourites: map.get("favourites").as_deref() == Some("1"),
+                search: map.get("q").unwrap_or_default().trim().to_owned(),
+            })
+        },
+        load,
+    );
     view! {
         <header class="recipe-list-heading">
             <h1>{t("recipes.heading")}</h1>
@@ -25,19 +38,14 @@ pub(crate) fn RecipesPage() -> impl IntoView {
         </header>
         <Suspense fallback=|| ()>
             {move || {
-                let filters = query.with(|map| Filters {
-                    category: map.get("category").and_then(|id| id.parse().ok()),
-                    favourites: map.get("favourites").as_deref() == Some("1"),
-                    search: map.get("q").unwrap_or_default().trim().to_owned(),
-                });
-                Suspend::new(async move { recipe_list(filters).await })
+                Suspend::new(async move { recipe_list(data.await) })
             }}
         </Suspense>
     }
 }
 
 /// The filters the address names: a category, the favourites alone and a search text.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 struct Filters {
     category: Option<i64>,
     favourites: bool,
@@ -65,8 +73,8 @@ impl Filters {
     }
 }
 
-async fn recipe_list(filters: Filters) -> AnyView {
-    match load(&filters).await {
+fn recipe_list((filters, result): RecipeListData) -> AnyView {
+    match result {
         Ok((categories, rows)) => {
             let empty = empty_text(&filters);
             view! {
@@ -86,9 +94,12 @@ async fn recipe_list(filters: Filters) -> AnyView {
     }
 }
 
-async fn load(
-    filters: &Filters,
-) -> Result<(Vec<CategoryRow>, Vec<RecipeSummaryRow>), ServerFnError> {
+async fn load(filters: Filters) -> RecipeListData {
+    let result = load_rows(&filters).await;
+    (filters, result)
+}
+
+async fn load_rows(filters: &Filters) -> RecipeListResult {
     Ok((
         list_recipe_categories().await?,
         list_recipes(

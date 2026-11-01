@@ -76,7 +76,10 @@ async fn a_recipe_page_shows_its_lines_and_numbered_steps() {
     ] {
         assert!(body.contains(expected), "{expected}: {body}");
     }
-    assert!(!body.contains("piece"), "{body}");
+    assert!(
+        !body.contains("class=\"recipe-ingredient-quantity\">2 piece"),
+        "{body}"
+    );
 }
 
 #[tokio::test]

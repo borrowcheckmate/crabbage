@@ -17,6 +17,14 @@ use crate::notice::{error_notice, failure, message};
 use crate::route::route_id;
 use crate::user::current_user;
 
+type IngredientDetailData = (
+    Option<i64>,
+    Option<String>,
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<Vec<IngredientRow>, ServerFnError>>,
+    Option<Result<Vec<SectionRow>, ServerFnError>>,
+);
+
 /// The actions the ingredient page can send.
 #[derive(Clone, Copy)]
 struct IngredientActions {
@@ -41,6 +49,19 @@ pub(crate) fn IngredientPage() -> impl IntoView {
         delete: ServerAction::new(),
         merge: ServerAction::new(),
     };
+    let data = Resource::new(
+        move || {
+            (
+                id(),
+                query.with(|map| map.get("confirm")),
+                actions.rename.version().get(),
+                actions.add_alias.version().get(),
+                actions.remove_alias.version().get(),
+                actions.set_section.version().get(),
+            )
+        },
+        |(id, confirm, ..)| load_ingredient_page(id, confirm),
+    );
     let navigate = use_navigate();
     Effect::new(move |_| {
         let deleted = actions
@@ -58,39 +79,54 @@ pub(crate) fn IngredientPage() -> impl IntoView {
     view! {
         <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
-                let _versions = (
-                    actions.rename.version().get(),
-                    actions.add_alias.version().get(),
-                    actions.remove_alias.version().get(),
-                    actions.set_section.version().get(),
-                );
-                let id = id();
-                let confirm = query.with(|map| map.get("confirm"));
-                Suspend::new(async move { ingredient_page(id, confirm, actions).await })
+                Suspend::new(async move { ingredient_page(data.await, actions) })
             }}
         </Suspense>
     }
 }
 
-async fn ingredient_page(
+async fn load_ingredient_page(
     id: Option<i64>,
     confirm: Option<String>,
+) -> (
+    Option<i64>,
+    Option<String>,
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<Vec<IngredientRow>, ServerFnError>>,
+    Option<Result<Vec<SectionRow>, ServerFnError>>,
+) {
+    let user = current_user().await;
+    if !matches!(user, Ok(ref user) if user.is_admin) {
+        return (id, confirm, user, None, None);
+    }
+    let rows = list_ingredients().await;
+    let sections = if rows.is_ok() {
+        Some(list_sections().await)
+    } else {
+        None
+    };
+    (id, confirm, user, Some(rows), sections)
+}
+
+fn ingredient_page(
+    (id, confirm, user, rows, sections): IngredientDetailData,
     actions: IngredientActions,
 ) -> AnyView {
-    if !matches!(current_user().await, Ok(user) if user.is_admin) {
+    if !matches!(user, Ok(user) if user.is_admin) {
         return error_notice(t("admin.not_allowed"));
     }
     let Some(id) = id else {
         return error_notice(t("catalog.error.missing"));
     };
-    let rows = match list_ingredients().await {
+    let rows = match rows.unwrap_or_else(|| Err(ServerFnError::new("Ingredients unavailable"))) {
         Ok(rows) => rows,
         Err(error) => return error_notice(&message(&error)),
     };
     let Some(row) = rows.iter().find(|row| row.id == id).cloned() else {
         return error_notice(t("catalog.error.missing"));
     };
-    let sections = match list_sections().await {
+    let sections = match sections.unwrap_or_else(|| Err(ServerFnError::new("Sections unavailable")))
+    {
         Ok(sections) => sections,
         Err(error) => return error_notice(&message(&error)),
     };

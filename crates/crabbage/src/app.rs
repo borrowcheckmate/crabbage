@@ -73,9 +73,10 @@ fn NotFound() -> impl IntoView {
 
 #[component]
 fn AccountMenu() -> impl IntoView {
+    let user = Resource::new(|| (), |()| current_user());
     view! {
         <Suspense fallback=|| ()>
-            {move || Suspend::new(async move {account_view(current_user().await.ok())})}
+            {move || Suspend::new(async move {account_view(user.await.ok())})}
         </Suspense>
     }
 }
@@ -151,11 +152,12 @@ fn navigation(class: &'static str) -> impl IntoView {
 #[component]
 fn NoHouseholdNotice() -> impl IntoView {
     let location = use_location();
+    let user = Resource::new(|| (), |()| current_user());
     view! {
         <Show when=move || location.pathname.get().starts_with("/plan") || location.pathname.get().starts_with("/shopping")>
             <Suspense fallback=|| ()>
                 {move || Suspend::new(async move {
-                    current_user().await.is_ok_and(|user| user.active_household.is_none())
+                    user.await.is_ok_and(|user| user.active_household.is_none())
                         .then(|| view! { <p class="notice">{t("app.no_household")}</p> })
                 })}
             </Suspense>

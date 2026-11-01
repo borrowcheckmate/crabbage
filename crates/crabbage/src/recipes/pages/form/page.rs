@@ -19,10 +19,21 @@ use crate::recipes::read::get_recipe;
 use crate::recipes::write::{CreateRecipe, UpdateRecipe};
 use crate::route::route_id;
 
+type EditFormData = Result<
+    Option<(
+        crate::recipes::types::RecipeDetail,
+        Vec<String>,
+        Vec<crate::recipes::types::PersonRow>,
+        Vec<CategoryRow>,
+    )>,
+    ServerFnError,
+>;
+
 /// The page for a new recipe. Saving opens the recipe.
 #[component]
 pub(crate) fn RecipeNewPage() -> impl IntoView {
     let create = ServerAction::<CreateRecipe>::new();
+    let data = Resource::new(|| (), |()| load_new_form());
     let navigate = use_navigate();
     Effect::new(move |_| {
         create.value().with(|value| {
@@ -34,14 +45,17 @@ pub(crate) fn RecipeNewPage() -> impl IntoView {
     view! {
         <h1>{t("recipe.new_heading")}</h1>
         <Suspense fallback=|| view! { <p class="notice" role="status">{t("recipe.form.loading")}</p> }>
-            {move || Suspend::new(async move { new_form(create).await })}
+            {move || Suspend::new(async move { new_form(data.await, create) })}
         </Suspense>
         {move || create.value().with(|value| failure(value.as_ref()))}
     }
 }
 
-async fn new_form(create: ServerAction<CreateRecipe>) -> AnyView {
-    match load_new_form().await {
+fn new_form(
+    result: Result<(Vec<String>, Vec<CategoryRow>), ServerFnError>,
+    create: ServerAction<CreateRecipe>,
+) -> AnyView {
+    match result {
         Ok((names, categories)) => {
             let draft = Draft::blank();
             view! {
@@ -69,6 +83,12 @@ async fn load_new_form() -> Result<(Vec<String>, Vec<CategoryRow>), ServerFnErro
 pub(crate) fn RecipeEditPage() -> impl IntoView {
     let id = route_id();
     let save = ServerAction::<UpdateRecipe>::new();
+    let data = Resource::new(id, |id| async move {
+        match id {
+            Some(id) => Some(load_edit_form(id).await),
+            None => None,
+        }
+    });
     let navigate = use_navigate();
     Effect::new(move |_| {
         save.value().with(|value| {
@@ -81,40 +101,27 @@ pub(crate) fn RecipeEditPage() -> impl IntoView {
         <h1>{t("recipe.edit_heading")}</h1>
         <Suspense fallback=|| view! { <p class="notice" role="status">{t("recipe.form.loading")}</p> }>
             {move || {
-                let id = id();
-                Suspend::new(async move { edit_form(id, save).await })
+                Suspend::new(async move { edit_form(data.await, save) })
             }}
         </Suspense>
         {move || save.value().with(|value| failure(value.as_ref()))}
     }
 }
 
-async fn edit_form(id: Option<i64>, save: ServerAction<UpdateRecipe>) -> AnyView {
-    let Some(id) = id else {
+fn edit_form(data: Option<EditFormData>, save: ServerAction<UpdateRecipe>) -> AnyView {
+    let Some(data) = data else {
         return error_notice(t("catalog.error.missing"));
     };
-    match load_edit_form(id, save).await {
-        Ok(view) => view,
-        Err(error) => error_notice(&message(&error)),
-    }
-}
-
-async fn load_edit_form(
-    id: i64,
-    save: ServerAction<UpdateRecipe>,
-) -> Result<AnyView, ServerFnError> {
-    let recipe = get_recipe(id).await?;
-    if !recipe.can_edit {
-        return Ok(error_notice(t("recipe.not_allowed")));
-    }
-    let names = ingredient_names().await?;
-    let users = list_users().await?;
-    let categories = list_recipe_categories().await?;
+    let (recipe, names, users, categories) = match data {
+        Ok(Some(data)) => data,
+        Ok(None) => return error_notice(t("recipe.not_allowed")),
+        Err(error) => return error_notice(&message(&error)),
+    };
     let draft = Draft::of(&recipe);
     let can_manage_editors = recipe.can_manage_editors;
     let photo = photo_card(recipe.id, &recipe.title, recipe.image.as_deref());
     let editors = recipe.editors;
-    Ok(view! {
+    view! {
         <ActionForm action=save attr:class="recipe-form">
             <input type="hidden" name="id" value=recipe.id/>
             <DraftFields draft names/>
@@ -125,9 +132,17 @@ async fn load_edit_form(
             </button>
         </ActionForm>
         {photo}
-        {can_manage_editors.then(|| view! {
-            <EditorsSection recipe_id=recipe.id editors users/>
-        })}
+        {can_manage_editors.then(|| view! { <EditorsSection recipe_id=recipe.id editors users/> })}
+    }.into_any()
+}
+
+async fn load_edit_form(id: i64) -> EditFormData {
+    let recipe = get_recipe(id).await?;
+    if !recipe.can_edit {
+        return Ok(None);
     }
-    .into_any())
+    let names = ingredient_names().await?;
+    let users = list_users().await?;
+    let categories = list_recipe_categories().await?;
+    Ok(Some((recipe, names, users, categories)))
 }

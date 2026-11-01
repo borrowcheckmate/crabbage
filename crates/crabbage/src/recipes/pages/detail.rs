@@ -20,12 +20,41 @@ use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
 use crate::recipes::write::DeleteRecipe;
 use crate::route::route_id;
 
+type RecipePageData = (
+    Option<i64>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<Result<RecipeDetail, ServerFnError>>,
+);
+
 /// One recipe, loaded inside one suspense. Deleting it returns to the list.
 #[component]
 pub(crate) fn RecipePage() -> impl IntoView {
     let id = route_id();
     let query = use_query_map();
     let delete = ServerAction::<DeleteRecipe>::new();
+    let data = Resource::new(
+        move || {
+            (
+                id(),
+                query.with(|map| (map.get("confirm"), map.get("servings"), map.get("return"))),
+            )
+        },
+        |(id, (confirm, servings, return_to))| async move {
+            let recipe = id.map(get_recipe);
+            (
+                id,
+                confirm,
+                servings,
+                return_to,
+                match recipe {
+                    Some(call) => Some(call.await),
+                    None => None,
+                },
+            )
+        },
+    );
     let navigate = use_navigate();
     Effect::new(move |_| {
         delete.value().with(|value| {
@@ -37,35 +66,29 @@ pub(crate) fn RecipePage() -> impl IntoView {
     view! {
         <Suspense fallback=|| ()>
             {move || {
-                let id = id();
-                let confirm = query.with(|map| map.get("confirm"));
-                let servings = query.with(|map| map.get("servings"));
-                let return_to = query.with(|map| map.get("return"));
-                Suspend::new(async move { detail(id, confirm, servings, return_to, delete).await })
+                Suspend::new(async move { detail(data.await, delete) })
             }}
         </Suspense>
     }
 }
 
-async fn detail(
-    id: Option<i64>,
-    confirm: Option<String>,
-    servings: Option<String>,
-    return_to: Option<String>,
+fn detail(
+    (id, confirm, servings, return_to, recipe): RecipePageData,
     delete: ServerAction<DeleteRecipe>,
 ) -> AnyView {
-    let Some(id) = id else {
+    if id.is_none() {
         return error_notice(t("catalog.error.missing"));
-    };
-    match get_recipe(id).await {
-        Ok(recipe) => recipe_view(
+    }
+    match recipe {
+        Some(Ok(recipe)) => recipe_view(
             recipe,
             confirm.as_deref(),
             servings.as_deref(),
             return_to.as_deref(),
             delete,
         ),
-        Err(error) => error_notice(&message(&error)),
+        Some(Err(error)) => error_notice(&message(&error)),
+        None => error_notice(t("catalog.error.missing")),
     }
 }
 

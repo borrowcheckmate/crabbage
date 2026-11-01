@@ -291,18 +291,46 @@ pub(crate) fn SettingsPage() -> impl IntoView {
     let save = ServerAction::<SaveSettings>::new();
     let remove = ServerAction::<RemoveSavedKey>::new();
     let test = ServerAction::<TestConnection>::new();
-    view! { <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>{move || Suspend::new(async move { page(save, remove, test).await })}</Suspense> }
+    let data = Resource::new(
+        move || {
+            (
+                save.version().get(),
+                remove.version().get(),
+                test.version().get(),
+            )
+        },
+        |_| load_page(),
+    );
+    view! { <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>{move || Suspend::new(async move { page(data.await, save, remove, test) })}</Suspense> }
 }
 
-async fn page(
+async fn load_page() -> (
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<PublicSettings, ServerFnError>>,
+) {
+    let user = current_user().await;
+    let settings = if user.as_ref().is_ok_and(|user| user.is_admin) {
+        Some(load_settings().await)
+    } else {
+        None
+    };
+    (user, settings)
+}
+
+fn page(
+    (user, settings): (
+        Result<crate::user::SignedInUser, ServerFnError>,
+        Option<Result<PublicSettings, ServerFnError>>,
+    ),
     save: ServerAction<SaveSettings>,
     remove: ServerAction<RemoveSavedKey>,
     test: ServerAction<TestConnection>,
 ) -> AnyView {
-    if !matches!(current_user().await, Ok(user) if user.is_admin) {
+    if !matches!(user, Ok(user) if user.is_admin) {
         return error_notice(t("admin.not_allowed"));
     }
-    let settings = match load_settings().await {
+    let settings = match settings.unwrap_or_else(|| Err(ServerFnError::new("Settings unavailable")))
+    {
         Ok(settings) => settings,
         Err(error) => return error_notice(&message(&error)),
     };

@@ -16,47 +16,64 @@ use crate::recipes::servings::{scale_lines, shown_servings};
 use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
 use crate::route::route_id;
 
+type CookPageData = (
+    Option<i64>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<Result<RecipeDetail, ServerFnError>>,
+);
+
 #[component]
 pub(crate) fn CookPage() -> impl IntoView {
     let id = route_id();
     let query = use_query_map();
     let timers = RwSignal::new(Vec::<Timer>::new());
     let now = RwSignal::new(0.0_f64);
+    let data = Resource::new(
+        move || {
+            (
+                id(),
+                query.with(|map| (map.get("step"), map.get("servings"), map.get("done"))),
+            )
+        },
+        |(id, (step, servings, done))| async move {
+            let recipe = match id {
+                Some(id) => Some(get_recipe(id).await),
+                None => None,
+            };
+            (id, step, servings, done, recipe)
+        },
+    );
     #[cfg(feature = "hydrate")]
     super::wake_client::attach();
     view! {
         <Suspense fallback=|| ()>
             {move || {
-                let id = id();
-                let step = query.with(|map| map.get("step"));
-                let servings = query.with(|map| map.get("servings"));
-                let done = query.with(|map| map.get("done"));
-                Suspend::new(async move { cook_view(id, step, servings, done, timers).await })
+                Suspend::new(async move { cook_view(data.await, timers) })
             }}
         </Suspense>
         <TimerTray timers now/>
     }
 }
 
-async fn cook_view(
-    id: Option<i64>,
-    step: Option<String>,
-    servings: Option<String>,
-    done: Option<String>,
+fn cook_view(
+    (id, step, servings, done, recipe): CookPageData,
     timers: RwSignal<Vec<Timer>>,
 ) -> AnyView {
-    let Some(id) = id else {
+    if id.is_none() {
         return error_notice(t("catalog.error.missing"));
-    };
-    match get_recipe(id).await {
-        Ok(recipe) => cook(
+    }
+    match recipe {
+        Some(Ok(recipe)) => cook(
             recipe,
             step.as_deref(),
             servings.as_deref(),
             done.as_deref(),
             timers,
         ),
-        Err(error) => error_notice(&message(&error)),
+        Some(Err(error)) => error_notice(&message(&error)),
+        None => error_notice(t("catalog.error.missing")),
     }
 }
 
