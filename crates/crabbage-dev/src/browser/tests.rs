@@ -4,7 +4,8 @@ use super::run::ROUTES;
 fn route_table_covers_every_application_route() {
     let router = include_str!("../../../crabbage/src/app.rs");
     for (_, route) in ROUTES {
-        if *route == "/browser-test-not-found" {
+        let route = route.split('?').next().unwrap_or(route);
+        if route == "/browser-test-not-found" {
             assert!(router.contains("fallback=NotFound"));
             continue;
         }
@@ -21,14 +22,14 @@ fn route_table_covers_every_application_route() {
                 .collect::<Vec<_>>()
                 .join("/")
         } else {
-            (*route).to_owned()
+            route.to_owned()
         };
         assert!(
             router.contains(&format!("path!(\"{path}\")")),
             "missing route {path}"
         );
     }
-    assert_eq!(ROUTES.len(), 18);
+    assert_eq!(ROUTES.len(), 19);
 }
 
 #[test]

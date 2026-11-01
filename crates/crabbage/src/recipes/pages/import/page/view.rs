@@ -15,8 +15,11 @@ use crate::recipes::types::ImportPreview;
 
 #[path = "fields.rs"]
 mod fields;
+#[path = "pending.rs"]
+mod pending;
 
 use fields::import_fields;
+use pending::{ImportPending, ImportProgress};
 
 type ImportReviewResult = Option<Result<(ImportPreview, Vec<String>), ServerFnError>>;
 type ImportPageData = (
@@ -44,7 +47,10 @@ pub(crate) fn RecipeImportPage() -> impl IntoView {
         |(url, photos, text)| load_content(url, photos, text),
     );
     view! {
-        <Suspense fallback=|| view! { <p class="notice" role="status">{t("import.pending")}</p> }>
+        <Suspense fallback=|| view! {
+            <ImportProgress current=RwSignal::new(1)/>
+            <ImportPending message=t("import.pending")/>
+        }>
             {move || {
                 let (error, source) = query.with(|map| (
                     map.get("photo_error")
@@ -100,6 +106,7 @@ fn content(
 }
 
 fn source_page(source: &str, photo_available: bool, error: &str) -> AnyView {
+    let stage = RwSignal::new(0);
     let website = source == "website";
     let problem = match error {
         "invalid" => Some(t("import.photo_error.invalid")),
@@ -109,7 +116,7 @@ fn source_page(source: &str, photo_available: bool, error: &str) -> AnyView {
     };
     view! {
         <a class="import-back" href="/recipes"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M9 12h12"/></svg>{t("import.back")}</a>
-        <ImportProgress current=0/>
+        <ImportProgress current=stage/>
         <header class="import-heading">
             <h1>{t("import.heading")}</h1>
             <p>{t("import.choose_help")}</p>
@@ -125,57 +132,64 @@ fn source_page(source: &str, photo_available: bool, error: &str) -> AnyView {
                 <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3.5h6M9 9h6M9 13h6M9 17h4"/></svg>{t("import.source.text")}
             </a>
         </nav>
-        {if website { website_form().into_any() } else if source == "text" { text_form().into_any() } else if photo_available { photo_source().into_any() } else { unavailable_notice() }}
+        {if website { website_form(stage).into_any() } else if source == "text" { text_form(stage).into_any() } else if photo_available { photo_source(stage).into_any() } else { unavailable_notice() }}
         {problem.map(|text| view! { <p class="notice error" role="alert">{text}</p> })}
         <a class="import-manual" href="/recipes/new"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></svg>{t("import.manual")}</a>
     }.into_any()
 }
 
-fn text_form() -> impl IntoView {
+fn text_form(stage: RwSignal<u8>) -> impl IntoView {
+    let pending = RwSignal::new(false);
     view! {
-        <form method="post" action="/recipes/import/text" class="import-source-card">
+        <form method="post" action="/recipes/import/text" class="import-source-card" on:submit=move |_| { pending.set(true); stage.set(1); }>
             <h2>{t("import.text_heading")}</h2>
             <label>{t("import.text_label")}<textarea name="text" required rows="12"></textarea></label>
             <label>{t("import.source_url_label")}<input type="url" name="source_url" placeholder="https://"/></label>
-            <button class="import-primary">{t("import.text_button")}</button>
+            <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")>{t("import.text_button")}</button>
+            {move || pending.get().then(|| view! { <ImportPending message=t("import.pending")/> })}
         </form>
     }
 }
 
-fn website_form() -> impl IntoView {
+fn website_form(stage: RwSignal<u8>) -> impl IntoView {
+    let pending = RwSignal::new(false);
     view! {
-        <form method="get" action="/recipes/import" class="import-source-card">
+        <form method="get" action="/recipes/import" class="import-source-card" on:submit=move |_| { pending.set(true); stage.set(1); }>
             <input type="hidden" name="source" value="website"/>
             <h2>{t("import.website_heading")}</h2>
             <label>{t("import.url_label")}<input type="url" name="url" required placeholder="https://"/></label>
             <p>{t("import.url_hint")}</p>
-            <button class="import-primary"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>{t("import.button")}</button>
+            <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>{t("import.button")}</button>
+            {move || pending.get().then(|| view! { <ImportPending message=t("import.fetching")/> })}
         </form>
     }
 }
 
-fn photo_source() -> impl IntoView {
+fn photo_source(stage: RwSignal<u8>) -> impl IntoView {
+    let pending = RwSignal::new(false);
     view! {
         <section class="import-source-card">
             <h2>{t("import.photos_heading")}</h2>
             <p>{t("import.photos_hint")}</p>
-            <form method="post" action="/recipes/import/photos" enctype="multipart/form-data" class="import-file-form">
+            <form method="post" action="/recipes/import/photos" enctype="multipart/form-data" class="import-file-form" on:submit=move |_| { pending.set(true); stage.set(1); }>
                 <label class="import-file import-camera"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 4h-4L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="12" r="3"/></svg>{t("import.take_photo")}
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" capture="environment" required/>
                 </label>
+                <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")>{t("import.photos_button")}</button>
             </form>
-            <form method="post" action="/recipes/import/photos" enctype="multipart/form-data" class="import-file-form">
+            <form method="post" action="/recipes/import/photos" enctype="multipart/form-data" class="import-file-form" on:submit=move |_| { pending.set(true); stage.set(1); }>
                 <label class="import-file"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>{t("import.choose_photos")}
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" multiple required/>
                 </label>
+                <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")>{t("import.photos_button")}</button>
             </form>
+            {move || pending.get().then(|| view! { <ImportPending message=t("import.pending")/> })}
             <p class="import-file-hint">{t("import.photos_limits")}</p>
             <p class="import-config-note">{t("import.ai_service")}</p>
         </section>
         <section class="import-source-advice"><h3>{t("import.photo_tips_heading")}</h3><p>{t("import.photo_tips")}</p></section>
     }
 }
-
 fn unavailable_notice() -> AnyView {
     view! {
         <section class="import-unavailable" role="status">
@@ -264,7 +278,7 @@ struct ReviewForm {
 fn ReviewHeader() -> impl IntoView {
     view! {
         <a class="import-back" href="/recipes/import"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M9 12h12"/></svg>{t("import.back_review")}</a>
-        <ImportProgress current=2/>
+        <ImportProgress current=RwSignal::new(2)/>
         <header class="import-heading"><h1>{t("import.review.heading")}</h1><p>{t("import.review.help")}</p></header>
     }
 }
@@ -371,24 +385,6 @@ fn review_notices(unresolved: &[String], ai_error: Option<String>) -> AnyView {
 }
 
 #[component]
-fn ImportProgress(current: u8) -> impl IntoView {
-    let stages = [
-        "import.stage.source",
-        "import.stage.read",
-        "import.stage.review",
-    ];
-    view! {
-        <ol class="import-progress" aria-label=t("import.progress_label")>
-            {stages.into_iter().enumerate().map(|(index, key)| view! {
-            <li class:current=index == usize::from(current) class:complete=index < usize::from(current) aria-current=(index == usize::from(current)).then_some("step")>
-                    <span>{if index < usize::from(current) { view! { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg> }.into_any() } else { (index + 1).to_string().into_any() }}</span>{t(key)}
-                </li>
-            }).collect_view()}
-        </ol>
-    }
-}
-
-#[component]
 fn SourceCard(
     source: String,
     url: String,
@@ -428,7 +424,7 @@ pub(super) fn count_label(one: &str, many: &str, count: usize) -> String {
 fn import_failure(message: &str, url: &str, expired: bool) -> AnyView {
     if message == t("import.error.blocked_site") {
         return view! {
-            <ImportProgress current=1/>
+            <ImportProgress current=RwSignal::new(1)/>
             <h1>{t("import.failure_heading")}</h1>
             <div class="import-warning" role="alert"><p>{message}</p></div>
             <a class="import-primary" href="/recipes/import?source=text">{t("import.source.text")}</a>
@@ -447,7 +443,7 @@ fn import_failure(message: &str, url: &str, expired: bool) -> AnyView {
     };
     view! {
         <a class="import-back" href="/recipes/import"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M9 12h12"/></svg>{t("import.back_review")}</a>
-        <ImportProgress current=1/>
+        <ImportProgress current=RwSignal::new(1)/>
         <h1>{heading}</h1>
         <div class="import-warning" role="alert"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3z"/><path d="M12 9v4m0 4h.01"/></svg><div><strong>{message}</strong><p>{if expired { t("import.expired_help") } else { t("import.failure_help") }}</p></div></div>
         <a class="import-primary import-retry" href=recover>{t("import.retry")}</a>

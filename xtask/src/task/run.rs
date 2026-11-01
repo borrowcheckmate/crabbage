@@ -70,6 +70,12 @@ fn browser_language(
     runtime
         .block_on(crabbage_dev::load_demo(&data_dir, language))
         .map_err(|error| error.to_string())?;
+    runtime
+        .block_on(crabbage_dev::enable_demo_ai(
+            &data_dir,
+            "http://127.0.0.1:1/v1",
+        ))
+        .map_err(|error| error.to_string())?;
     let mut server = Process::new("cargo");
     server
         .args(["leptos", "serve", "--release"])

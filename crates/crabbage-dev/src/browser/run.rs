@@ -29,6 +29,7 @@ pub(super) const ROUTES: &[(&str, &str)] = &[
     ("recipes", "/recipes"),
     ("recipe-new", "/recipes/new"),
     ("recipe-import", "/recipes/import"),
+    ("recipe-import-photos", "/recipes/import?source=photos"),
     ("recipe", "/recipes/1"),
     ("cook", "/recipes/1/cook"),
     ("recipe-edit", "/recipes/1/edit"),
@@ -115,26 +116,56 @@ pub async fn run(
     output: &Path,
 ) -> Result<(), String> {
     fs::create_dir_all(output).map_err(|error| error.to_string())?;
-    let (mut browser, page, handler_task) = start_browser(chrome, base_url).await?;
-    sign_in(&page).await?;
-    let (mut failures, report) = check_routes(&page, base_url, language, output).await?;
-    exercise_interactions(&page, base_url, output, &mut failures).await?;
-    fs::write(output.join("report.csv"), report).map_err(|error| error.to_string())?;
-    browser.close().await.map_err(|error| error.to_string())?;
-    handler_task.abort();
-    if failures.is_empty() {
-        Ok(())
-    } else {
-        Err(failures.join("\n"))
+    let profile = std::env::temp_dir().join(format!(
+        "crabbage-chromiumoxide-runner-{}",
+        std::process::id()
+    ));
+    match fs::remove_dir_all(&profile) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(error.to_string()),
     }
+    let (mut browser, page, handler_task) = match start_browser(chrome, base_url, &profile).await {
+        Ok(browser) => browser,
+        Err(error) => {
+            drop(fs::remove_dir_all(&profile));
+            return Err(error);
+        }
+    };
+    let result = async {
+        sign_in(&page).await?;
+        let (mut failures, report) = check_routes(&page, base_url, language, output).await?;
+        exercise_interactions(&page, base_url, output, &mut failures).await?;
+        fs::write(output.join("report.csv"), report).map_err(|error| error.to_string())?;
+        if failures.is_empty() {
+            Ok(())
+        } else {
+            Err(failures.join("\n"))
+        }
+    }
+    .await;
+    let close_result = browser.close().await.map_err(|error| error.to_string());
+    let wait_result = browser
+        .wait()
+        .await
+        .map(|_| ())
+        .map_err(|error| error.to_string());
+    handler_task.abort();
+    let cleanup_result = fs::remove_dir_all(&profile).map_err(|error| error.to_string());
+    result?;
+    close_result?;
+    wait_result?;
+    cleanup_result
 }
 
 async fn start_browser(
     chrome: &Path,
     base_url: &str,
+    profile: &Path,
 ) -> Result<(Browser, Page, tokio::task::JoinHandle<()>), String> {
     let config = BrowserConfig::builder()
         .chrome_executable(chrome)
+        .user_data_dir(profile)
         .no_sandbox()
         .build()?;
     let (browser, mut handler) = Browser::launch(config)
@@ -286,7 +317,8 @@ async fn navigate_and_set_view(page: &Page, settings: &CheckSettings<'_>) -> Res
         language,
         ..
     } = settings;
-    let url = format!("{base_url}{route}?lang={language}");
+    let separator = if route.contains('?') { '&' } else { '?' };
+    let url = format!("{base_url}{route}{separator}lang={language}");
     let viewport = SetDeviceMetricsOverrideParams::builder()
         .width(*width)
         .height(*height)

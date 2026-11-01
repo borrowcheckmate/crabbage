@@ -1,7 +1,9 @@
 use std::path::Path;
 use std::time::Duration;
 
-use chromiumoxide::cdp::browser_protocol::emulation::{MediaFeature, SetEmulatedMediaParams};
+use chromiumoxide::cdp::browser_protocol::emulation::{
+    MediaFeature, SetDeviceMetricsOverrideParams, SetEmulatedMediaParams,
+};
 use chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat;
 use chromiumoxide::page::{Page, ScreenshotParams};
 use serde_json::Value;
@@ -272,7 +274,146 @@ async fn exercise_import(
     if !photo_tab {
         failures.push("photo import tab did not become active".to_owned());
     }
-    save_interaction_screenshot(page, output, "recipes-import").await
+    exercise_photo_pending(page, base_url, output, failures).await
+}
+
+async fn exercise_photo_pending(
+    page: &Page,
+    base_url: &str,
+    output: &Path,
+    failures: &mut Vec<String>,
+) -> Result<(), String> {
+    if !photo_forms_are_idle(page).await? {
+        failures.push("photo upload buttons are not idle before submit".to_owned());
+    }
+    submit_photo_form(page).await?;
+    if let Err(error) = wait_for_photo_pending(page).await {
+        failures.push(error);
+    }
+    check_photo_progress_widths(page, failures).await?;
+    tokio::time::timeout(
+        Duration::from_secs(10),
+        save_interaction_screenshot(page, output, "recipes-import"),
+    )
+    .await
+    .map_err(|error| format!("photo import pending screenshot timed out: {error}"))?
+    .map_err(|error| format!("photo import pending screenshot failed: {error}"))?;
+    goto_hydrated(page, &format!("{base_url}/recipes/import?source=photos"))
+        .await
+        .map_err(|error| format!("photo import page reload after pending submit failed: {error}"))
+}
+
+async fn photo_forms_are_idle(page: &Page) -> Result<bool, String> {
+    page
+        .evaluate("(() => { const forms=[...document.querySelectorAll('.import-file-form')]; return forms.length===2 && forms.every(form=>{const button=form.querySelector('button'); return button && !button.disabled && button.getAttribute('aria-busy')===null;}); })()")
+        .await
+        .map_err(|error| error.to_string())?
+        .into_value()
+        .map_err(|error| error.to_string())
+}
+
+async fn check_photo_progress_widths(
+    page: &Page,
+    failures: &mut Vec<String>,
+) -> Result<(), String> {
+    for width in [390, 1440] {
+        page.execute(
+            SetDeviceMetricsOverrideParams::builder()
+                .width(width)
+                .height(900)
+                .device_scale_factor(1.0)
+                .mobile(width <= 600)
+                .build()?,
+        )
+        .await
+        .map_err(|error| error.to_string())?;
+        let fits: bool = page
+            .evaluate("document.documentElement.scrollWidth <= innerWidth")
+            .await
+            .map_err(|error| error.to_string())?
+            .into_value()
+            .map_err(|error| error.to_string())?;
+        if !fits {
+            failures.push(format!("photo import progress overflows at {width}px"));
+        }
+    }
+    page.execute(
+        SetDeviceMetricsOverrideParams::builder()
+            .width(390)
+            .height(900)
+            .device_scale_factor(1.0)
+            .mobile(true)
+            .build()?,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+async fn submit_photo_form(page: &Page) -> Result<(), String> {
+    let submitted: bool = tokio::time::timeout(
+        Duration::from_secs(5),
+        page.evaluate("(() => { const form=document.querySelector('.import-file-form'); const input=form?.querySelector('input[type=file]'); if (!form || !input) return false; const prevent=event=>event.preventDefault(); const options=Object.create(null); options.once=true; form.addEventListener('submit',prevent,options); const files=new DataTransfer(); files.items.add(new File([new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,17,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,0,0,0,15,73,68,65,84,120,156,99,96,0,2,0,0,5,0,1,122,94,171,63,0,0,0,4,73,69,78,68,174,66,96,130])],'photo.png',{type:'image/png'})); input.files=files.files; form.requestSubmit(); return true; })()"),
+    )
+        .await
+        .map_err(|error| format!("photo import submit evaluation timed out: {error}"))?
+        .map_err(|error| error.to_string())?
+        .into_value()
+        .map_err(|error| error.to_string())?;
+    if !submitted {
+        return Err("photo import form could not be submitted".to_owned());
+    }
+    Ok(())
+}
+
+async fn wait_for_photo_pending(page: &Page) -> Result<(), String> {
+    let mut observed = Value::Null;
+    for _ in 0..50 {
+        observed = page
+            .evaluate("(() => { const forms=[...document.querySelectorAll('.import-file-form')]; const pending=[...document.querySelectorAll('.import-source-card > .import-pending[role=status]')]; const bars=[...document.querySelectorAll('.import-source-card > .import-pending [role=progressbar]')]; const current=document.querySelector('.import-progress li[aria-current=step]'); const stages=[...document.querySelectorAll('.import-progress li')]; return {formCount:forms.length,buttons:forms.map(form=>({disabled:Boolean(form.querySelector('button')?.disabled),busy:form.querySelector('button')?.getAttribute('aria-busy')})),statusCount:pending.length,statusText:pending.map(status=>status.textContent.trim()),progressBarCount:bars.length,progressBarValues:bars.map(bar=>bar.getAttribute('aria-valuenow')),currentStage:current?.textContent.trim(),currentStageIndex:stages.indexOf(current)}; })()")
+            .await
+            .map_err(|error| error.to_string())?
+            .into_value()
+            .map_err(|error| error.to_string())?;
+        if photo_pending_state_is_valid(&observed) {
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    Err(format!(
+        "photo upload pending state did not settle: {observed}"
+    ))
+}
+
+fn photo_pending_state_is_valid(state: &Value) -> bool {
+    state.get("formCount").and_then(Value::as_u64) == Some(2)
+        && state
+            .get("buttons")
+            .and_then(Value::as_array)
+            .is_some_and(|buttons| {
+                buttons.len() == 2
+                    && buttons.iter().all(|button| {
+                        button.get("disabled").and_then(Value::as_bool) == Some(true)
+                            && button.get("busy").and_then(Value::as_str) == Some("true")
+                    })
+            })
+        && state.get("statusCount").and_then(Value::as_u64) == Some(1)
+        && state
+            .get("statusText")
+            .and_then(Value::as_array)
+            .is_some_and(|statuses| {
+                statuses.len() == 1
+                    && statuses
+                        .first()
+                        .and_then(Value::as_str)
+                        .is_some_and(|text| !text.trim().is_empty())
+            })
+        && state.get("progressBarCount").and_then(Value::as_u64) == Some(1)
+        && state
+            .get("progressBarValues")
+            .and_then(Value::as_array)
+            .is_some_and(|values| values.len() == 1 && values.first().is_some_and(Value::is_null))
+        && state.get("currentStageIndex").and_then(Value::as_i64) == Some(1)
 }
 
 async fn exercise_shopping(
