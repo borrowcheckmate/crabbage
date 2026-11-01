@@ -617,6 +617,7 @@ dependencies = [
  "getrandom 0.4.3",
  "http-body-util",
  "image",
+ "js-sys",
  "leptos",
  "leptos_axum",
  "leptos_meta",

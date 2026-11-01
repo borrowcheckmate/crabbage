@@ -35,6 +35,13 @@ mod catalog;
 
 mod notice;
 
+#[expect(
+    unreachable_pub,
+    clippy::same_name_method,
+    reason = "the #[component] props builder adds pub methods"
+)]
+mod navigation;
+
 mod route;
 
 #[expect(

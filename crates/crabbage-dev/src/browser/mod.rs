@@ -2,6 +2,8 @@
 
 mod assets;
 mod interactions;
+mod navigation;
+mod no_javascript;
 mod run;
 
 #[cfg(test)]
