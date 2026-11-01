@@ -2,8 +2,7 @@
 
 use leptos::form::ActionForm;
 use leptos::prelude::*;
-use leptos_router::NavigateOptions;
-use leptos_router::hooks::{use_navigate, use_query_map};
+use leptos_router::hooks::use_query_map;
 
 use super::super::super::form::Draft;
 use crate::i18n::{t, t_with};
@@ -29,14 +28,6 @@ type ImportPageData = (
 #[component]
 pub(crate) fn RecipeImportPage() -> impl IntoView {
     let save = ServerAction::<SaveImport>::new();
-    let navigate = use_navigate();
-    Effect::new(move |_| {
-        save.value().with(|value| {
-            if let Some(Ok(id)) = value {
-                navigate(&format!("/recipes/{id}"), NavigateOptions::default());
-            }
-        });
-    });
     let query = use_query_map();
     let data = Resource::new(
         move || {

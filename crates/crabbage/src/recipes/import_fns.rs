@@ -80,5 +80,6 @@ pub(crate) async fn save_import(
             drop(crate::images::remove(&config.data_dir, &name).await);
         }
     }
+    leptos_axum::redirect(&format!("/recipes/{id}"));
     Ok(id)
 }
