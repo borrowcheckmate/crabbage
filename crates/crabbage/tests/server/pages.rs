@@ -264,3 +264,12 @@ async fn categories_page_lists_the_categories_for_admins() {
     assert!(body.contains("Breakfast"), "{body}");
     assert!(!body.contains("not allowed"), "{body}");
 }
+
+#[tokio::test]
+async fn pages_load_the_wasm_file_the_site_serves() {
+    let harness = Harness::start("pages-wasm-name").await;
+    let token = token_for(&harness, &[]).await;
+    let body = body_text(harness.get("/", Some(&token)).await).await;
+    assert!(body.contains("/pkg/crabbage.wasm"), "{body}");
+    assert!(!body.contains("crabbage_bg.wasm"), "{body}");
+}

@@ -4,5 +4,6 @@
 !rust-toolchain.toml
 !crates
 !xtask
+!.cargo
 **/*.profraw
 **/target

@@ -1,2 +1,5 @@
 [alias]
 xtask = "run --quiet --package xtask --"
+
+[env]
+LEPTOS_OUTPUT_NAME = "crabbage"
