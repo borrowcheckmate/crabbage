@@ -25,6 +25,7 @@ pub(super) const ROUTES: &[(&str, &str)] = &[
     ("review", "/admin/review"),
     ("mealie", "/admin/mealie"),
     ("settings", "/admin/settings"),
+    ("households", "/admin/households"),
     ("recipes", "/recipes"),
     ("recipe-new", "/recipes/new"),
     ("recipe-import", "/recipes/import"),

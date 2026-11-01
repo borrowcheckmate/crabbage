@@ -379,6 +379,10 @@
   "recipe.ingredients.many": "{count} ingrediënten",
   "import.steps.one": "· {count} stap",
   "import.steps.many": "· {count} stappen",
+  "admin.nav.households": "Huishoudens",
+  "admin.households.heading": "Huishoudens",
+  "admin.households.name": "Naam voor {household}",
+  "admin.households.save": "Naam opslaan",
   "admin.settings.mistral": "Mistral",
   "admin.settings.load_models": "Modellen laden",
   "admin.settings.models_failed": "Modellen konden niet worden geladen."

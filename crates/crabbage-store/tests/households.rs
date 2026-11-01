@@ -9,7 +9,7 @@ mod common;
 
 use common::database;
 use crabbage_store::households::{
-    active_household, households_of, set_active_household, sync_membership,
+    active_household, households_of, list, rename, set_active_household, sync_membership,
 };
 use crabbage_store::users::upsert_user;
 use sqlx::sqlite::SqlitePool;
@@ -140,4 +140,29 @@ async fn the_chosen_household_survives_a_sync_that_keeps_it() {
         .await
         .unwrap();
     assert_eq!(active_household(&pool, user).await.unwrap(), Some(b));
+}
+
+#[tokio::test]
+async fn households_can_be_listed_and_renamed_or_cleared() {
+    let (_dir, pool) = database("households-rename").await;
+    let user = upsert_user(&pool, "subject", "Name").await.unwrap();
+    sync_membership(&pool, user, false, &groups(&["b", "a"]))
+        .await
+        .unwrap();
+    let rows = list(&pool).await.unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|row| row.group_name.as_str())
+            .collect::<Vec<_>>(),
+        ["a", "b"]
+    );
+    let a = rows[0].id;
+    assert!(rename(&pool, a, Some("  Maple Street  ")).await.unwrap());
+    assert_eq!(
+        list(&pool).await.unwrap()[0].name.as_deref(),
+        Some("Maple Street")
+    );
+    assert!(rename(&pool, a, Some("  ")).await.unwrap());
+    assert_eq!(list(&pool).await.unwrap()[0].name, None);
+    assert!(!rename(&pool, -1, Some("Missing")).await.unwrap());
 }

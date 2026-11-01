@@ -163,6 +163,42 @@ async fn a_user_in_two_households_switches_and_the_choice_persists() {
 }
 
 #[tokio::test]
+async fn duplicate_friendly_labels_select_only_the_active_household() {
+    let harness = Harness::start("household-duplicate-labels").await;
+    harness
+        .issuer
+        .set_groups(&["crabbage-household-jones", "crabbage-household-smith"]);
+    let token = session_token(&harness.sign_in().await).expect("sign-in sets a session");
+    let user = harness.user_id().await;
+    let active = active_household(&harness.pool, user)
+        .await
+        .expect("active household reads")
+        .expect("user has an active household");
+    let households = households_of(&harness.pool, user)
+        .await
+        .expect("households read");
+    for household in &households {
+        crabbage_store::households::rename(&harness.pool, household.id, Some("Shared"))
+            .await
+            .expect("household renames");
+    }
+
+    let page = body_text(harness.get("/", Some(&token)).await).await;
+    for household in households {
+        let option = format!("<option value=\"{}\"", household.id);
+        let rendered = page
+            .split_once(&option)
+            .expect("household option renders")
+            .1
+            .split_once("</option>")
+            .expect("household option closes")
+            .0;
+        assert_eq!(household.id == active, rendered.contains("selected"));
+        assert!(rendered.contains("Shared"));
+    }
+}
+
+#[tokio::test]
 async fn switching_to_a_household_the_user_is_not_in_is_forbidden() {
     let harness = Harness::start("household-forbidden").await;
     harness.issuer.set_groups(&["crabbage-household-smith"]);

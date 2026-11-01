@@ -32,3 +32,39 @@ async fn switch(
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
+
+pub(crate) fn household_label(name: Option<&str>, group_name: &str, prefix: &str) -> String {
+    if let Some(name) = name.map(str::trim).filter(|name| !name.is_empty()) {
+        return name.to_owned();
+    }
+    group_name
+        .strip_prefix(prefix)
+        .filter(|suffix| !suffix.is_empty())
+        .unwrap_or(group_name)
+        .to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::household_label;
+
+    #[test]
+    fn uses_a_non_empty_custom_name() {
+        assert_eq!(household_label(Some(" Maple "), "g", "p"), "Maple");
+    }
+
+    #[test]
+    fn strips_the_prefix_when_no_custom_name_exists() {
+        assert_eq!(household_label(None, "prefix-maple", "prefix-"), "maple");
+        assert_eq!(
+            household_label(Some(" "), "prefix-maple", "prefix-"),
+            "maple"
+        );
+    }
+
+    #[test]
+    fn keeps_the_group_when_prefix_does_not_match_or_strips_to_empty() {
+        assert_eq!(household_label(None, "maple", "prefix-"), "maple");
+        assert_eq!(household_label(None, "prefix-", "prefix-"), "prefix-");
+    }
+}

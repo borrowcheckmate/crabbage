@@ -5,8 +5,8 @@ use leptos_router::hooks::use_location;
 use leptos_router::path;
 
 use crate::admin::{
-    CategoriesPage, IngredientPage, IngredientsPage, MealiePage, ReviewPage, SectionsPage,
-    SettingsPage,
+    CategoriesPage, HouseholdsPage, IngredientPage, IngredientsPage, MealiePage, ReviewPage,
+    SectionsPage, SettingsPage,
 };
 use crate::i18n::{current_language, t};
 use crate::plan_page::PlanPage;
@@ -43,6 +43,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/admin/review") view=ReviewPage/>
                             <Route path=path!("/admin/mealie") view=MealiePage/>
                             <Route path=path!("/admin/settings") view=SettingsPage/>
+                            <Route path=path!("/admin/households") view=HouseholdsPage/>
                             <Route path=path!("/recipes") view=RecipesPage/>
                             <Route path=path!("/recipes/new") view=RecipeNewPage/>
                             <Route path=path!("/recipes/import") view=RecipeImportPage/>
@@ -103,7 +104,7 @@ fn HouseholdSwitcher(user: crate::user::SignedInUser) -> impl IntoView {
         <form method="post" action="/household">
             <label>{t("app.switch_household")}<select name="household_id">
                 {user.households.iter().map(|(id, name)| view! {
-                    <option value=id.to_string() selected=user.active_household.as_deref() == Some(name)>{name.clone()}</option>
+                    <option value=id.to_string() selected=user.active_household_id == Some(*id)>{name.clone()}</option>
                 }).collect_view()}
             </select></label>
             <button class="quiet">{t("app.switch")}</button>
@@ -123,6 +124,7 @@ fn AdminLinks(is_admin: bool) -> impl IntoView {
                 <a href="/admin/review" aria-current=move || (location.pathname.get() == "/admin/review").then_some("page")>{t("admin.nav.review")}</a>
                 <a href="/admin/mealie" aria-current=move || (location.pathname.get() == "/admin/mealie").then_some("page")>{t("admin.nav.mealie")}</a>
                 <a href="/admin/settings" aria-current=move || (location.pathname.get() == "/admin/settings").then_some("page")>{t("admin.nav.settings")}</a>
+                <a href="/admin/households" aria-current=move || (location.pathname.get() == "/admin/households").then_some("page")>{t("admin.nav.households")}</a>
             </nav>
         }
     })

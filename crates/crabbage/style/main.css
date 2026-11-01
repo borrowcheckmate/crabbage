@@ -734,6 +734,7 @@ button.danger, button.destructive { color:var(--on-danger); }
 .admin-list { display:grid; border-top:1px solid var(--border); }
 .admin-row { display:grid; grid-template-columns:minmax(0,1fr); gap:.65rem; padding:.85rem 0; border:0; border-bottom:1px solid var(--border); border-radius:0; background:transparent; text-align:left; }
 .admin-row-title { color:var(--text); font-weight:650; }
+.admin-row-title + small { display:block; }
 .admin-row form > p { margin:0; align-self:center; color:var(--text); font-weight:650; }
 .admin-row form > button,.admin-row-actions button { width:auto; min-width:4.5rem; }
 .admin-row .row { display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; }

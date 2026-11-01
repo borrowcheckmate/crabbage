@@ -11,6 +11,8 @@ pub struct Household {
     pub id: i64,
     /// The full name of the identity provider group.
     pub group_name: String,
+    /// The optional friendly name chosen by an administrator.
+    pub name: Option<String>,
 }
 
 /// Stores a login's admin flag and households in one transaction.
@@ -86,7 +88,7 @@ pub async fn sync_membership(
 /// Returns an error if the query fails.
 pub async fn households_of(pool: &SqlitePool, user_id: i64) -> Result<Vec<Household>, StoreError> {
     let households = sqlx::query_as(
-        "SELECT h.id, h.group_name FROM households h \
+        "SELECT h.id, h.group_name, h.name FROM households h \
          JOIN user_households uh ON uh.household_id = h.id \
          WHERE uh.user_id = ? ORDER BY h.group_name",
     )
@@ -94,6 +96,36 @@ pub async fn households_of(pool: &SqlitePool, user_id: i64) -> Result<Vec<Househ
     .fetch_all(pool)
     .await?;
     Ok(households)
+}
+
+/// Lists every household in group-name order.
+///
+/// # Errors
+///
+/// Returns an error if the query fails.
+pub async fn list(pool: &SqlitePool) -> Result<Vec<Household>, StoreError> {
+    let households =
+        sqlx::query_as("SELECT id, group_name, name FROM households ORDER BY group_name")
+            .fetch_all(pool)
+            .await?;
+    Ok(households)
+}
+
+/// Sets a household's friendly name, clearing it when the trimmed name is empty.
+///
+/// Returns `false` when no household has `id`.
+///
+/// # Errors
+///
+/// Returns an error if the update fails.
+pub async fn rename(pool: &SqlitePool, id: i64, name: Option<&str>) -> Result<bool, StoreError> {
+    let name = name.map(str::trim).filter(|name| !name.is_empty());
+    let result = sqlx::query("UPDATE households SET name = ? WHERE id = ?")
+        .bind(name)
+        .bind(id)
+        .execute(pool)
+        .await?;
+    Ok(result.rows_affected() > 0)
 }
 
 /// The active household of a user, if they have one.
