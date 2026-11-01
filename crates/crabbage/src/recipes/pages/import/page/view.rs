@@ -411,6 +411,7 @@ fn SourceCard(
 }
 
 pub(super) fn format_amount(amount: &str, unit: &str) -> String {
+    let unit = crate::recipes::unit_text(crate::i18n::messages(), unit.trim());
     match (amount.trim(), unit.trim()) {
         ("", "") => t("import.unspecified").to_owned(),
         ("", unit) => unit.to_owned(),
@@ -491,7 +492,8 @@ mod tests {
 
     #[test]
     fn ingredient_amounts_keep_units_and_unspecified_values() {
-        assert_eq!(format_amount("2", "piece"), "2 piece");
+        assert_eq!(format_amount("2", "piece"), "2");
+        assert_eq!(format_amount("2", "tbsp"), "2 tbsp");
         assert_eq!(format_amount("", "to taste"), "to taste");
         assert_eq!(format_amount("", ""), "Unspecified");
     }
