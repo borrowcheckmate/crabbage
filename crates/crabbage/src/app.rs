@@ -114,14 +114,15 @@ fn HouseholdSwitcher(user: crate::user::SignedInUser) -> impl IntoView {
 #[component]
 fn AdminLinks(is_admin: bool) -> impl IntoView {
     is_admin.then(|| {
+        let location = use_location();
         view! {
             <nav aria-label=t("admin.nav.label")>
-                <a href="/admin/ingredients">{t("admin.nav.ingredients")}</a>
-                <a href="/admin/sections">{t("admin.nav.sections")}</a>
-                <a href="/admin/categories">{t("admin.nav.categories")}</a>
-                <a href="/admin/review">{t("admin.nav.review")}</a>
-                <a href="/admin/mealie">{t("admin.nav.mealie")}</a>
-                <a href="/admin/settings">{t("admin.nav.settings")}</a>
+                <a href="/admin/ingredients" aria-current=move || location.pathname.get().starts_with("/admin/ingredients").then_some("page")>{t("admin.nav.ingredients")}</a>
+                <a href="/admin/sections" aria-current=move || (location.pathname.get() == "/admin/sections").then_some("page")>{t("admin.nav.sections")}</a>
+                <a href="/admin/categories" aria-current=move || (location.pathname.get() == "/admin/categories").then_some("page")>{t("admin.nav.categories")}</a>
+                <a href="/admin/review" aria-current=move || (location.pathname.get() == "/admin/review").then_some("page")>{t("admin.nav.review")}</a>
+                <a href="/admin/mealie" aria-current=move || (location.pathname.get() == "/admin/mealie").then_some("page")>{t("admin.nav.mealie")}</a>
+                <a href="/admin/settings" aria-current=move || (location.pathname.get() == "/admin/settings").then_some("page")>{t("admin.nav.settings")}</a>
             </nav>
         }
     })

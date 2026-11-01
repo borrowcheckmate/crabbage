@@ -348,6 +348,7 @@ The upload route's body limit is `DefaultBodyLimit` of 10 MiB (`MAX_UPLOAD_BYTES
 | Path | Responsibility |
 | --- | --- |
 | `tests/server/main.rs` | `healthz`, the rendered shell for a signed-in user in English and in Dutch (`lang`, title, sign-out text), the stylesheet link, and the shared harness module declarations |
+| `crabbage-dev/src/browser/run.rs`, `crabbage-dev/src/browser/interactions.rs`, `crabbage-dev/src/browser/tests.rs` | Chrome DevTools checks against the hydrated demo app: all 16 application routes plus the fallback, responsive viewport captures (320, 390, 600, 768, 844×390, 900, 1024 and 1440), English and Dutch server variants, emulated light and dark schemes, landmarks, labels, target sizes, focus and overflow checks, contrast checks, cook timers, import tabs, shopping check-off, plan navigation, CLS and transferred-resource reporting, route-table and contrast-math unit tests. Automated checks do not establish accessibility conformance; screenshot artifacts need human visual review |
 | `tests/stylesheet.rs` | String checks on `style/main.css`: the dark colour scheme, a 44px minimum height for inputs and buttons, a `max-width` on `body`, `overflow-wrap: anywhere` on `body`, `max-width: 100%` on `img`, and no fixed `width` in px above 360 |
 | `tests/strings.rs` | No string literal is used as text in a `view!` block under `src/`. Tests the heuristic on inline samples |
 | `tests/server/login.rs` | Unauthenticated redirects, the authorization request, the callback (cookie attributes, unknown state, single use, wrong nonce), the stored name (`name`, `preferred_username`, subject, changes on the next login) |
@@ -374,12 +375,16 @@ The upload route's body limit is `DefaultBodyLimit` of 10 MiB (`MAX_UPLOAD_BYTES
 ## xtask
 
 `cargo xtask demo` starts the shared fake issuer, loads localized demo data through `crabbage-store` and serves the SSR app. The loader in `crates/crabbage-dev/src/demo.rs` creates recipes and gradient PNGs, ratings and favourites, current and next week planner entries and a checked shopping list; a database marker makes repeat loads a no-op.
+`cargo xtask browser` builds the frontend, runs the local app with fake issuer and demo data in English and Dutch, drives Chrome through the issuer sign-in page, and writes PNG captures plus a CSV metrics report under `target/browser-shots`. It finds Chrome from `CHROME`, common installation paths or `PATH`; it is separate from `cargo xtask ci`. The `browser` CI job uploads those artifacts. Browser checks are regression aids, not accessibility certification.
 
 | Module | Responsibility |
 | --- | --- |
 | `cli.rs` | Command definitions (clap) |
 | `task/plan.rs` | Maps a command to a list of actions. Composite commands (`ci`, `pre-commit`) live here |
 | `task/run.rs` | Executes actions and reports violations |
+| `crabbage-dev/src/browser/run.rs` | Browser route table, viewport checks, screenshots and metrics |
+| `crabbage-dev/src/browser/tests.rs` | Route-table and contrast helper tests |
+| `crabbage-dev/src/browser/interactions.rs` | Hydrated cook timer, import tab, shopping check-off, plan navigation and reduced-motion interaction checks |
 | `task/smoke.rs` | Container smoke test for `cargo xtask docker`: the hardened `docker run` step, `/healthz` polling over a raw HTTP/1.1 `GET` (30 s), and the status-line parser. `run.rs` always runs `docker rm -f` afterwards |
 | `task/step.rs` | An external process invocation |
 | `policy/repository.rs` | Applies every file rule to the tracked files |

@@ -103,7 +103,7 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
                                 <form class="shopping-row" class:checked=item.checked method="post" action="/shopping/checked">
                                     <input type="hidden" name="ids" value={item.ids.iter().map(ToString::to_string).collect::<Vec<_>>().join(",")}/>
                                     <input type="hidden" name="on" value=if item.checked { "false" } else { "true" }/>
-                                    <button class="shopping-item" aria-pressed=item.checked>
+                                    <button class="shopping-item" aria-pressed=item.checked.to_string()>
                                         <span class="shopping-check" aria-hidden="true">{if item.checked { "✓" } else { "" }}</span>
                                         <span class="shopping-name">{item.label.clone()}</span>
                                         <span class="shopping-quantity">{item.quantity.clone()}</span>

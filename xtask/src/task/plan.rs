@@ -5,6 +5,7 @@ use super::smoke::IMAGE;
 use super::step::Step;
 
 const COVERAGE_THRESHOLD: &str = "90";
+const BROWSER_DRIVER_FILES: &str = r"crabbage-dev/src/browser/(run|interactions)\.rs$";
 const SSR_FEATURE: &str = "crabbage/ssr";
 
 pub(crate) fn plan(command: &Command) -> Vec<Action> {
@@ -42,7 +43,7 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
             "git",
             &["config", "core.hooksPath", ".githooks"],
         ))],
-        Command::Demo { .. } => Vec::new(),
+        Command::Demo { .. } | Command::Browser => Vec::new(),
     }
 }
 
@@ -98,6 +99,8 @@ fn coverage() -> Action {
         "--workspace",
         "--exclude",
         "xtask",
+        "--ignore-filename-regex",
+        BROWSER_DRIVER_FILES,
         "--features",
         SSR_FEATURE,
         "--locked",

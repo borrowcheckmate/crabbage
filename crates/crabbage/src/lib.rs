@@ -117,4 +117,11 @@ pub fn hydrate() {
         provide_context(language);
         App()
     });
+    let _marked = leptos::prelude::document()
+        .document_element()
+        .map(|element| {
+            element
+                .set_attribute("data-crabbage-hydrated", "true")
+                .is_ok()
+        });
 }

@@ -71,7 +71,7 @@ async fn seed_users(pool: &SqlitePool) -> DemoResult<()> {
         true,
         &[
             "crabbage-household-maple".to_owned(),
-            "crabbage-household-birch".to_owned(),
+            "crabbage-household-oak".to_owned(),
         ],
     )
     .await?;

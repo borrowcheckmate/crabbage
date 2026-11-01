@@ -13,6 +13,7 @@ repository = "https://github.com/borrowcheckmate/crabbage"
 clap = { version = "4.6.7", default-features = false, features = ["std", "derive", "help", "usage", "error-context"] }
 axum = { version = "0.8.9", default-features = false, features = ["form", "http1", "multipart", "query", "tokio"] }
 base64 = { version = "0.23.1", default-features = false, features = ["alloc"] }
+chromiumoxide = { version = "0.9.1", default-features = false }
 futures-util = { version = "0.3.32", default-features = false, features = ["std"] }
 fastrand = { version = "2.5.0", default-features = false }
 getrandom = { version = "0.4.3", default-features = false }

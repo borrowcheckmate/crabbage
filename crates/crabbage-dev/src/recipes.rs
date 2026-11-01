@@ -46,9 +46,9 @@ impl DemoRecipe {
         let steps = vec![
             StepInput {
                 text: if language == "nl" {
-                    "Bereid de ingrediënten voor en verwarm een pan."
+                    "Bereid de ingrediënten voor en bak 5 minuten in een warme pan."
                 } else {
-                    "Prepare the ingredients and warm a pan."
+                    "Prepare the ingredients and cook for 5 minutes in a warm pan."
                 }
                 .to_owned(),
                 duration_seconds: Some(300),
@@ -56,9 +56,9 @@ impl DemoRecipe {
             },
             StepInput {
                 text: if language == "nl" {
-                    "Voeg alles samen, breng op smaak en serveer warm."
+                    "Voeg alles samen, laat 10 minuten sudderen en serveer warm."
                 } else {
-                    "Combine everything, season to taste and serve warm."
+                    "Combine everything, simmer for 10 minutes, and serve warm."
                 }
                 .to_owned(),
                 duration_seconds: Some(600),

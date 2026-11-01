@@ -1,7 +1,8 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
-use std::path::Path;
+use std::net::{TcpListener, TcpStream};
+use std::path::{Path, PathBuf};
 use std::process::Command as Process;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -25,9 +26,133 @@ pub(crate) fn run(command: &Command) -> Result<(), String> {
     {
         return demo(&root, *port, *keep, language, ai.as_deref());
     }
+    if matches!(command, Command::Browser) {
+        return browser(&root);
+    }
     plan(command)
         .iter()
         .try_for_each(|action| execute(action, &root))
+}
+
+fn browser(root: &Path) -> Result<(), String> {
+    let chrome = chrome_executable()?;
+    run_step(&Step::cargo(&["leptos", "build", "--release"]), root)?;
+    let runtime = tokio::runtime::Runtime::new().map_err(|error| error.to_string())?;
+    let mut failures = Vec::new();
+    for language in ["en", "nl"] {
+        if let Err(error) = browser_language(root, &chrome, &runtime, language) {
+            failures.push(format!("{language}: {error}"));
+        }
+    }
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(failures.join("\n"))
+    }
+}
+
+fn browser_language(
+    root: &Path,
+    chrome: &Path,
+    runtime: &tokio::runtime::Runtime,
+    language: &str,
+) -> Result<(), String> {
+    let port = free_port()?;
+    let data_dir = env::temp_dir().join(format!(
+        "crabbage-browser-{}-{language}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| error.to_string())?
+            .as_nanos()
+    ));
+    let issuer = runtime.block_on(crabbage_dev::FakeIssuer::start());
+    runtime
+        .block_on(crabbage_dev::load_demo(&data_dir, language))
+        .map_err(|error| error.to_string())?;
+    let mut server = Process::new("cargo");
+    server
+        .args(["leptos", "serve", "--release"])
+        .current_dir(root)
+        .env("OIDC_ISSUER_URL", issuer.url())
+        .env("OIDC_CLIENT_ID", "crabbage")
+        .env("OIDC_CLIENT_SECRET", "browser-test-secret")
+        .env("CRABBAGE_PUBLIC_URL", format!("http://localhost:{port}"))
+        .env("CRABBAGE_DATA_DIR", &data_dir)
+        .env("CRABBAGE_LANGUAGE", language)
+        .env("LEPTOS_SITE_ADDR", format!("127.0.0.1:{port}"));
+    let mut child = server
+        .spawn()
+        .map_err(|error| format!("cannot start cargo leptos serve: {error}"))?;
+    let result = wait_for_server(port).and_then(|()| {
+        runtime.block_on(crabbage_dev::browser::run(
+            chrome,
+            &format!("http://localhost:{port}"),
+            language,
+            &root.join("target/browser-shots").join(language),
+        ))
+    });
+    let killed = child.kill().map_err(|error| error.to_string());
+    let waited = child.wait().map(|_| ()).map_err(|error| error.to_string());
+    let removed = fs::remove_dir_all(data_dir).map_err(|error| error.to_string());
+    result?;
+    killed?;
+    waited?;
+    removed
+}
+
+fn chrome_executable() -> Result<PathBuf, String> {
+    if let Ok(path) = env::var("CHROME") {
+        let path = PathBuf::from(path);
+        if path.is_file() {
+            return Ok(path);
+        }
+        return Err(format!(
+            "CHROME does not name a browser executable: {}",
+            path.display()
+        ));
+    }
+    for path in [
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/opt/pw-browsers/chromium",
+    ] {
+        let path = PathBuf::from(path);
+        if path.is_file() {
+            return Ok(path);
+        }
+    }
+    for program in ["google-chrome", "chromium", "chromium-browser"] {
+        if let Ok(output) = Process::new("which").arg(program).output()
+            && output.status.success()
+            && let Ok(path) = String::from_utf8(output.stdout)
+        {
+            let path = PathBuf::from(path.trim());
+            if path.is_file() {
+                return Ok(path);
+            }
+        }
+    }
+    Err("Chrome/Chromium not found; set CHROME to its executable path".to_owned())
+}
+
+fn free_port() -> Result<u16, String> {
+    TcpListener::bind("127.0.0.1:0")
+        .and_then(|listener| listener.local_addr())
+        .map(|address| address.port())
+        .map_err(|error| error.to_string())
+}
+
+fn wait_for_server(port: u16) -> Result<(), String> {
+    for _ in 0..120 {
+        if TcpStream::connect(("127.0.0.1", port)).is_ok() {
+            return Ok(());
+        }
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+    Err("cargo leptos serve did not start within 60 seconds".to_owned())
 }
 
 fn demo(
