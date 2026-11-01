@@ -17,8 +17,8 @@ use sqlx::sqlite::SqlitePool;
 #[tokio::test]
 async fn created_ingredients_are_listed_by_name_and_approved() {
     let (_dir, pool) = database("ingredient-create").await;
-    create(&pool, "Onion").await.unwrap();
-    create(&pool, "Carrot").await.unwrap();
+    create(&pool, "onion").await.unwrap();
+    create(&pool, "carrot").await.unwrap();
     let names: Vec<String> = list(&pool)
         .await
         .unwrap()

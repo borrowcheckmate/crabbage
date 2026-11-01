@@ -4,6 +4,7 @@ use sqlx::{SqliteConnection, sqlite::SqlitePool};
 
 use super::model::{LineInput, RecipeInput};
 use crate::StoreError;
+use crate::catalog::names::capitalized;
 
 /// Creates a recipe owned by `owner_id`, created at `now` (unix seconds), and returns its id.
 ///
@@ -180,7 +181,7 @@ async fn ingredient_id(conn: &mut SqliteConnection, name: &str) -> Result<i64, S
     let id = sqlx::query_scalar(
         "INSERT INTO ingredients (name, pending_review) VALUES (?, 1) RETURNING id",
     )
-    .bind(name)
+    .bind(capitalized(name))
     .fetch_one(conn)
     .await?;
     Ok(id)
