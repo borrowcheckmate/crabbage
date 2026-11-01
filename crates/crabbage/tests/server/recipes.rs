@@ -2,7 +2,10 @@
 //! them, the owner and admins delete them and manage the editors, and invalid input is refused in
 //! words.
 
+use axum::body::Body;
+use axum::http::Request;
 use axum::http::StatusCode;
+use axum::http::header::{ACCEPT, CONTENT_TYPE};
 use serde_json::{Value, json};
 use sqlx::sqlite::SqlitePool;
 
@@ -23,9 +26,18 @@ pub(crate) async fn call(
     let body = url::form_urlencoded::Serializer::new(String::new())
         .extend_pairs(pairs)
         .finish();
-    let response = harness
-        .post_form(&format!("/api/{endpoint}"), Some(token), &body)
-        .await;
+    let request = Request::builder()
+        .method("POST")
+        .uri(format!("/api/{endpoint}"))
+        .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
+        .header(ACCEPT, "application/json")
+        .header(
+            "cookie",
+            format!("{}={token}", crate::common::SESSION_COOKIE),
+        )
+        .body(Body::from(body))
+        .expect("request builds");
+    let response = harness.send(request).await;
     let status = response.status();
     (status, body_text(response).await)
 }
