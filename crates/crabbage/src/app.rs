@@ -166,6 +166,13 @@ fn NoHouseholdNotice() -> impl IntoView {
     }
 }
 
+// NOTE: without this at compile time, HydrationScripts asks for `crabbage_bg.wasm`, which the site
+// does not have. cargo-leptos sets it; plain cargo builds get it from .cargo/config.toml.
+const _: () = assert!(
+    option_env!("LEPTOS_OUTPUT_NAME").is_some(),
+    "LEPTOS_OUTPUT_NAME must be set at compile time"
+);
+
 /// The HTML document around [`App`], used for server rendering. Its `lang` attribute is the
 /// language provided to the render.
 #[must_use]
