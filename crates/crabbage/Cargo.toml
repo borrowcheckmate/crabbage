@@ -30,11 +30,11 @@ hydrate = ["leptos/hydrate", "dep:wasm-bindgen", "dep:web-sys"]
 [dependencies]
 axum = { workspace = true, optional = true }
 base64 = { workspace = true, optional = true }
-crabbage-domain = { version = "0.1.0", path = "../crabbage-domain" }
-crabbage-import = { version = "0.1.0", path = "../crabbage-import", optional = true }
+crabbage-domain = { version = "0.2.0", path = "../crabbage-domain" }
+crabbage-import = { version = "0.2.0", path = "../crabbage-import", optional = true }
 futures-util = { workspace = true, optional = true }
 fastrand = { workspace = true, features = ["std"] }
-crabbage-store = { version = "0.1.0", path = "../crabbage-store", optional = true }
+crabbage-store = { version = "0.2.0", path = "../crabbage-store", optional = true }
 getrandom = { workspace = true, optional = true }
 image = { workspace = true, optional = true }
 leptos.workspace = true
@@ -53,7 +53,7 @@ web-sys = { workspace = true, features = ["AudioContext", "AudioDestinationNode"
 [dev-dependencies]
 http-body-util.workspace = true
 rsa.workspace = true
-crabbage-dev = { version = "0.1.0", path = "../crabbage-dev" }
+crabbage-dev = { version = "0.2.0", path = "../crabbage-dev" }
 tower.workspace = true
 
 [package.metadata.leptos]
