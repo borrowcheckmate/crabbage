@@ -335,6 +335,7 @@
   "import.text_error.invalid": "Plak de recepttekst om verder te gaan.",
   "import.review.heading": "Recept controleren",
   "import.pending": "Recept lezen…",
+  "import.fetching": "Pagina ophalen…",
   "import.retry": "Opnieuw proberen",
   "import.manual": "Recept handmatig invoeren",
   "import.photos.unavailable": "AI staat uit, dus foto’s lezen is niet beschikbaar. Gebruik een websiteadres of voer het recept handmatig in.",

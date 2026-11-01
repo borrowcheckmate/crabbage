@@ -140,6 +140,7 @@ async fn the_photo_form_is_offered_only_when_the_ai_is_configured() {
     assert!(body.contains("capture=\"environment\""), "{body}");
     assert!(body.contains("Take photo"), "{body}");
     assert!(body.contains("Choose photos"), "{body}");
+    assert_eq!(body.matches("Read photos").count(), 2, "{body}");
 
     let off = Harness::start("photo-import-off").await;
     let token = sign_in_as(&off, MEMBER, &[]).await;

@@ -335,6 +335,7 @@
   "import.text_error.invalid": "Paste the recipe text to continue.",
   "import.review.heading": "Review recipe",
   "import.pending": "Reading recipe…",
+  "import.fetching": "Fetching page…",
   "import.retry": "Try again",
   "import.manual": "Enter recipe manually",
   "import.photos.unavailable": "AI is off, so photo reading is unavailable. Use a website address or enter the recipe manually.",

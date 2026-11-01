@@ -113,10 +113,15 @@ async fn the_import_page_asks_for_an_address_and_the_list_links_to_it() {
         body.contains("AI is off, so photo reading is unavailable"),
         "{body}"
     );
+    assert!(!body.contains("role=\"status\"></"), "{body}");
     assert!(!body.contains("unresolved"), "{body}");
     let website = page(&harness, &token, "/recipes/import?source=website").await;
     assert!(website.contains("action=\"/recipes/import\""), "{website}");
     assert!(website.contains("name=\"url\""), "{website}");
+    assert!(
+        website.contains("aria-label=\"Import progress\""),
+        "{website}"
+    );
     let list = page(&harness, &token, "/recipes").await;
     assert!(list.contains("href=\"/recipes/import\""), "{list}");
 }
