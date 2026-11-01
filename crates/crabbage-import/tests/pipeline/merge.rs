@@ -68,6 +68,18 @@ fn a_measure_without_an_amount_has_no_unit() {
 }
 
 #[test]
+fn an_unknown_unit_becomes_a_note_and_keeps_its_amount() {
+    let mut line = ai_line(Some(1.0), Some("pakken"), "lange vingers");
+    line.note = None;
+    let ai = ai_draft(vec![line], vec![step("Add them.", vec![0])]);
+    let result = merge(&ai, &complete_recipe(), &[], &[]);
+    assert_eq!(result.lines[0].amount, Some(1.0));
+    assert_eq!(result.lines[0].unit, None);
+    assert_eq!(result.lines[0].name, "lange vingers");
+    assert_eq!(result.lines[0].note.as_deref(), Some("pakken"));
+}
+
+#[test]
 fn domain_units_and_amounts_are_kept() {
     let ai = ai_draft(
         vec![
@@ -205,4 +217,17 @@ fn each_line_keeps_its_text_as_metric_with_its_note() {
     let result = merge(&ai, &complete_recipe(), &[], &[]);
     assert_eq!(result.lines[0].original, "240 ml milk, warm");
     assert_eq!(result.lines[0].note.as_deref(), Some("warm"));
+}
+
+#[test]
+fn an_unknown_unit_precedes_an_existing_note() {
+    let mut line = ai_line(Some(1.0), Some("pakken"), "lange vingers");
+    line.note = Some("gebroken".to_owned());
+    let ai = ai_draft(vec![line], vec![step("Add them.", vec![0])]);
+    let result = merge(&ai, &complete_recipe(), &[], &[]);
+    assert_eq!(result.lines[0].note.as_deref(), Some("pakken, gebroken"));
+    assert_eq!(
+        result.lines[0].original,
+        "1 lange vingers, pakken, gebroken"
+    );
 }
