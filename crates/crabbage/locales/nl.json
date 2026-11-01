@@ -377,5 +377,9 @@
   "recipe.ingredients.one": "{count} ingrediënt",
   "recipe.ingredients.many": "{count} ingrediënten",
   "import.steps.one": "· {count} stap",
-  "import.steps.many": "· {count} stappen"
+  "import.steps.many": "· {count} stappen",
+  "admin.nav.households": "Huishoudens",
+  "admin.households.heading": "Huishoudens",
+  "admin.households.name": "Naam voor {household}",
+  "admin.households.save": "Naam opslaan"
 }

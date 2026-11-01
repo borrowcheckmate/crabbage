@@ -108,11 +108,13 @@ async fn home_links_to_the_admin_pages_only_for_admins() {
     assert!(body.contains("href=\"/admin/ingredients\""), "{body}");
     assert!(body.contains("href=\"/admin/categories\""), "{body}");
     assert!(body.contains("href=\"/admin/mealie\""), "{body}");
+    assert!(body.contains("href=\"/admin/households\""), "{body}");
 
     let member = token_for(&harness, &[]).await;
     let body = body_text(harness.get("/", Some(&member)).await).await;
     assert!(!body.contains("/admin/ingredients"), "{body}");
     assert!(!body.contains("/admin/mealie"), "{body}");
+    assert!(!body.contains("/admin/households"), "{body}");
 }
 
 #[tokio::test]

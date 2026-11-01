@@ -1,5 +1,6 @@
 //! Checks the HTTP routes: the health endpoint, the server-rendered shell and sign-in.
 
+mod admin_households;
 mod admin_settings;
 #[expect(
     clippy::expect_used,

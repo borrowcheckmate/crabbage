@@ -75,6 +75,11 @@ async fn seed_users(pool: &SqlitePool) -> DemoResult<()> {
         ],
     )
     .await?;
+    let maple: i64 = sqlx::query_scalar("SELECT id FROM households WHERE group_name = ?")
+        .bind("crabbage-household-maple")
+        .fetch_one(pool)
+        .await?;
+    crabbage_store::households::rename(pool, maple, Some("Maple Street")).await?;
     let member = crabbage_store::users::upsert_user(pool, "demo-member", "Demo Member").await?;
     crabbage_store::households::sync_membership(
         pool,

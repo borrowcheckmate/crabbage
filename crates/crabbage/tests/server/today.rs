@@ -66,7 +66,7 @@ async fn today_shows_household_meal_upcoming_preview_and_shopping_count() {
     assert_eq!(response.status(), StatusCode::OK);
     let body = body_text(response).await;
     for expected in [
-        HOME,
+        "today-home",
         "Tonight’s plan",
         "Planned dinner",
         "Start cooking",

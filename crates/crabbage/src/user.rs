@@ -37,16 +37,32 @@ pub(crate) async fn current_user() -> Result<SignedInUser, ServerFnError> {
     let active = crabbage_store::households::active_household(&pool, user)
         .await
         .map_err(|error| crate::access::store_failure(&error))?;
+    let prefix = crate::access::config()?.household_group_prefix.clone();
     Ok(SignedInUser {
         name: found.name,
         is_admin: found.is_admin,
         active_household: households
             .iter()
             .find(|household| Some(household.id) == active)
-            .map(|household| household.group_name.clone()),
+            .map(|household| {
+                crate::household::household_label(
+                    household.name.as_deref(),
+                    &household.group_name,
+                    &prefix,
+                )
+            }),
         households: households
             .into_iter()
-            .map(|household| (household.id, household.group_name))
+            .map(|household| {
+                (
+                    household.id,
+                    crate::household::household_label(
+                        household.name.as_deref(),
+                        &household.group_name,
+                        &prefix,
+                    ),
+                )
+            })
             .collect(),
     })
 }

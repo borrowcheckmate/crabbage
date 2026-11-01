@@ -28,7 +28,7 @@ fn route_table_covers_every_application_route() {
             "missing route {path}"
         );
     }
-    assert_eq!(ROUTES.len(), 17);
+    assert_eq!(ROUTES.len(), 18);
 }
 
 #[test]
