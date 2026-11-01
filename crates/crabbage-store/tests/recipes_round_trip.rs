@@ -8,7 +8,7 @@
 mod common;
 
 use common::database;
-use crabbage_store::catalog::ingredients::{add_alias, create as create_ingredient};
+use crabbage_store::catalog::ingredients::{add_alias, create as create_ingredient, list_pending};
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput, create, get, list};
 use crabbage_store::users::upsert_user;
 
@@ -179,4 +179,19 @@ async fn a_step_linking_a_missing_line_is_refused_and_nothing_is_saved() {
         list(&pool, None, false, None, owner).await.unwrap().len(),
         0
     );
+}
+
+#[tokio::test]
+async fn a_new_ingredient_waits_for_review_with_a_capital_first_letter() {
+    let (_dir, pool) = database("recipes-capital").await;
+    let owner = upsert_user(&pool, "cook", "Cook").await.unwrap();
+    let input = pancakes(vec![line(2.0, "tbsp", "ahornsiroop", None)], vec![]);
+    create(&pool, owner, &input, 0).await.unwrap();
+    let pending: Vec<String> = list_pending(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|ingredient| ingredient.name)
+        .collect();
+    assert_eq!(pending, ["Ahornsiroop"]);
 }

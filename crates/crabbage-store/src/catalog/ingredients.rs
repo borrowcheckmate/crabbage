@@ -2,7 +2,7 @@
 
 use sqlx::sqlite::SqlitePool;
 
-use super::names::{ensure_not_a_name, ensure_not_an_alias, unique_or_database};
+use super::names::{capitalized, ensure_not_a_name, ensure_not_an_alias, unique_or_database};
 use crate::StoreError;
 
 /// An ingredient with its aliases.
@@ -70,10 +70,11 @@ async fn load(pool: &SqlitePool, sql: &'static str) -> Result<Vec<Ingredient>, S
 ///
 /// Returns [`StoreError::Conflict`] if `name` is already a name or alias, or a database error.
 pub async fn create(pool: &SqlitePool, name: &str) -> Result<i64, StoreError> {
+    let capitalized_name = capitalized(name);
     let mut tx = crate::begin_write(pool).await?;
     ensure_not_an_alias(&mut tx, name).await?;
     let id = sqlx::query_scalar("INSERT INTO ingredients (name) VALUES (?) RETURNING id")
-        .bind(name)
+        .bind(capitalized_name)
         .fetch_one(&mut *tx)
         .await
         .map_err(unique_or_database(name))?;
@@ -91,12 +92,13 @@ pub async fn create_pending_with_aliases(
     name: &str,
     aliases: &[String],
 ) -> Result<i64, StoreError> {
+    let capitalized_name = capitalized(name);
     let mut tx = crate::begin_write(pool).await?;
     ensure_not_an_alias(&mut tx, name).await?;
     let id = sqlx::query_scalar(
         "INSERT INTO ingredients (name, pending_review) VALUES (?, 1) RETURNING id",
     )
-    .bind(name)
+    .bind(capitalized_name)
     .fetch_one(&mut *tx)
     .await
     .map_err(unique_or_database(name))?;

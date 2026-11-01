@@ -20,7 +20,7 @@ async fn mealie_recipe_ids_and_pending_ingredient_aliases_are_persisted() {
     create(&pool, "Onion").await.unwrap();
     let ingredient = create_pending_with_aliases(
         &pool,
-        "Okra",
+        "okra",
         &["Lady finger".to_owned(), "Onion".to_owned()],
     )
     .await
