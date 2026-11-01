@@ -1,5 +1,6 @@
 //! Development-only identity provider shared by the app tests and demo.
 
+pub mod browser;
 mod demo;
 #[expect(
     clippy::expect_used,

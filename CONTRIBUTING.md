@@ -24,6 +24,7 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 ## Tasks
 
 `cargo xtask demo` builds and serves a local demo instance. It accepts `--port`, `--language en|nl`, `--ai <base-url>`, and `--keep` to retain its database under `target/demo-data`.
+`cargo xtask browser` needs a local Chrome or Chromium executable (`CHROME` may select its path); it builds the frontend and saves hydrated page captures and metrics under `target/browser-shots`. Browser checks run separately from `cargo xtask ci`.
 
 | Command | Purpose |
 | --- | --- |
@@ -38,6 +39,7 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 | `cargo xtask wasm` | Clippy on the WASM (hydrate) build, warnings denied |
 | `cargo xtask docker` | Build the container image and smoke-test `/healthz` (needs Docker) |
 | `cargo xtask ci` | Everything CI runs except coverage and docker, plus the release frontend build (about 2 extra minutes on a cold cache) |
+| `cargo xtask browser` | Hydrated Chrome checks and screenshot artifacts (needs Chrome or Chromium) |
 
 ## Commits
 

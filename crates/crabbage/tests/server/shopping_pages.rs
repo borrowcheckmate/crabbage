@@ -73,6 +73,11 @@ async fn list_groups_items_in_section_order_and_posts_checked_forms() {
     assert!(unchecked_at < checked_at, "{body}");
     assert_completed_action_follows_rows(&body, checked_at);
     assert!(body.contains("action=\"/shopping/checked\""), "{body}");
+    assert!(
+        body.contains("<button aria-pressed=\"true\" class=\"shopping-item\">")
+            && body.contains("<button aria-pressed=\"false\" class=\"shopping-item\">"),
+        "{body}"
+    );
     assert!(body.contains("name=\"on\" value=\"false\""), "{body}");
     assert!(body.contains("name=\"on\" value=\"true\""), "{body}");
     assert!(body.contains("Paper towels"), "{body}");

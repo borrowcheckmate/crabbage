@@ -48,6 +48,8 @@ skip = [
     { crate = "getrandom@0.2.17", reason = "rand_core 0.6 (openidconnect, rsa) needs getrandom 0.2" },
     { crate = "itertools@0.10.5", reason = "openidconnect 4 needs itertools 0.10; the rest of the tree uses 0.14" },
     { crate = "windows-sys@0.52.0", reason = "ring (rustls) needs windows-sys 0.52 on Windows targets; the rest of the tree uses 0.61" },
+    { crate = "tungstenite@0.28.0", reason = "chromiumoxide 0.9.1 uses async-tungstenite 0.32 and tungstenite 0.28; axum requires tungstenite 0.29" },
+    { crate = "reqwest@0.13.5", reason = "chromiumoxide 0.9.1 requires reqwest 0.13; the application and OpenID Connect use reqwest 0.12" },
 ]
 
 [sources]

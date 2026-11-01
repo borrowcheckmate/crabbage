@@ -99,6 +99,8 @@ Sign-in uses the OpenID Connect provider (Pocket ID). Register `{CRABBAGE_PUBLIC
 
 Run `cargo xtask demo` to build and serve the app on `http://localhost:3000` with demo users and generated recipe, planner and shopping data. Sign in with the admin, household member or solo member link on the local issuer page. Use `--port 3100`, `--language nl`, `--ai http://localhost:8080/v1`, or `--keep` to reuse `target/demo-data`.
 
+Run `cargo xtask browser` to exercise the hydrated demo app in local Chrome or Chromium and save screenshot review artifacts and layout metrics under `target/browser-shots`. Set `CHROME` when the executable is not on a common path. These automated checks help find layout and interaction regressions; they do not establish accessibility conformance or replace visual review.
+
 ## Development
 
 Open the repository in the devcontainer, or install the toolchain from `rust-toolchain.toml`.

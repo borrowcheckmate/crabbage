@@ -42,7 +42,7 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
             "git",
             &["config", "core.hooksPath", ".githooks"],
         ))],
-        Command::Demo { .. } => Vec::new(),
+        Command::Demo { .. } | Command::Browser => Vec::new(),
     }
 }
 

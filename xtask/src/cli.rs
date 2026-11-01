@@ -59,6 +59,8 @@ pub(crate) enum Command {
         #[arg(long)]
         ai: Option<String>,
     },
+    /// Run hydrated browser checks and save screenshots under target/browser-shots.
+    Browser,
 }
 
 #[cfg(test)]
@@ -103,6 +105,10 @@ mod tests {
                 language: "nl".to_owned(),
                 ai: Some("http://127.0.0.1:8080/v1".to_owned()),
             }
+        );
+        assert_eq!(
+            Cli::try_parse_from(["xtask", "browser"]).unwrap().command,
+            Command::Browser
         );
     }
 }

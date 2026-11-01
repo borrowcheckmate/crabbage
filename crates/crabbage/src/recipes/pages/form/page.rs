@@ -63,7 +63,7 @@ fn new_form(
                     <DraftFields draft names/>
                     <CategoryBoxes draft categories/>
                     <input type="hidden" name="draft" value=move || draft.json()/>
-                    <button disabled=move || create.pending().get() aria-busy=move || create.pending().get()>
+                    <button disabled=move || create.pending().get() aria-busy=move || create.pending().get().to_string()>
                         {move || if create.pending().get() { t("recipe.form.saving") } else { t("recipe.button.save") }}
                     </button>
                 </ActionForm>
@@ -127,7 +127,7 @@ fn edit_form(data: Option<EditFormData>, save: ServerAction<UpdateRecipe>) -> An
             <DraftFields draft names/>
             <CategoryBoxes draft categories/>
             <input type="hidden" name="draft" value=move || draft.json()/>
-            <button disabled=move || save.pending().get() aria-busy=move || save.pending().get()>
+            <button disabled=move || save.pending().get() aria-busy=move || save.pending().get().to_string()>
                 {move || if save.pending().get() { t("recipe.form.saving") } else { t("recipe.button.save") }}
             </button>
         </ActionForm>
