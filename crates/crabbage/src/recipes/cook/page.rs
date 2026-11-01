@@ -10,7 +10,6 @@ use super::timers::{Timer, step_durations};
 use super::tray::{TimerTray, start_button};
 use crate::i18n::{messages, t, t_with};
 use crate::notice::{error_notice, message};
-use crate::recipes::duration::duration_text;
 use crate::recipes::line_text::line_text;
 use crate::recipes::read::get_recipe;
 use crate::recipes::servings::{scale_lines, shown_servings};
@@ -89,39 +88,98 @@ fn cook(
     };
     let previous = (current > 1).then(|| place.step(current - 1));
     let next = (current < total).then(|| place.step(current + 1));
-    let forward_href = next.clone().unwrap_or_else(|| place.finish());
+    let is_done = place.is_done(current);
+    let content = step_content(
+        row,
+        current,
+        &place,
+        previous.clone(),
+        next.as_deref(),
+        timers,
+        is_done,
+    );
+    view! {
+        <section class="cook-mode" aria-label=t("cook.mode.label")>
+            <a class="cook-return" href=format!("/recipes/{id}")>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M9 12h12"/></svg>
+                {t("cook.back")}
+            </a>
+            <p class="cook-recipe-name">{title}</p>
+            <h1 class="cook-title">{t("cook.heading")}</h1>
+            <div class="cook-progress" aria-live="polite">
+                <p>{t_with("cook.progress", &[("step", &current.to_string()), ("total", &total.to_string())])}</p>
+                <progress value=current.to_string() max=total.to_string() aria-label=t("cook.progress.label")></progress>
+            </div>
+            <div class="cook-layout">
+                {card(previous, next, content)}
+                {needed(row, &lines, servings, shown)}
+            </div>
+            <a class="cook-toggle" href=place.toggle(current) aria-pressed=is_done.to_string()>
+                {done_label(is_done)}
+            </a>
+            {dots(&place, total, current)}
+        </section>
+    }
+    .into_any()
+}
+
+fn needed_text(line: &LineRow) -> String {
+    let ingredient = line.ingredient.as_deref().unwrap_or_default();
+    if line.amount.is_none() {
+        return line_text(line, messages());
+    }
+    let mut quantity_line = line.clone();
+    quantity_line.ingredient = None;
+    quantity_line.note = None;
+    let quantity = line_text(&quantity_line, messages());
+    let note = line.note.as_deref().unwrap_or_default();
+    let label = if ingredient.is_empty() {
+        quantity
+    } else {
+        format!("{ingredient} · {quantity}")
+    };
+    if note.is_empty() {
+        label
+    } else {
+        format!("{label}, {note}")
+    }
+}
+
+fn step_content(
+    row: &StepRow,
+    current: usize,
+    place: &Place,
+    previous: Option<String>,
+    next: Option<&str>,
+    timers: RwSignal<Vec<Timer>>,
+    is_done: bool,
+) -> AnyView {
+    let forward_href = next.map_or_else(|| place.finish(), str::to_owned);
     let forward_label = if next.is_some() {
-        t("cook.next")
+        t("cook.next_step")
     } else {
         t("cook.finish")
     };
-    let is_done = place.is_done(current);
-    let toggle_label = if is_done {
+    view! {
+        {is_done.then(|| view! { <p class="cook-done">{t("cook.done.mark")}</p> })}
+        <p class="cook-step">{row.text.clone()}</p>
+        {timer_starts(row, current, timers)}
+        <div class="cook-nav">
+            <a class="button secondary" href=previous.unwrap_or_else(|| place.finish())>{t("cook.previous")}</a>
+            <a class="button" href=forward_href>
+                {forward_label}
+                {next.map(|_| view! { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg> })}
+            </a>
+        </div>
+    }.into_any()
+}
+
+fn done_label(is_done: bool) -> &'static str {
+    if is_done {
         t("cook.mark_not_done")
     } else {
         t("cook.mark_done")
-    };
-    let content = view! {
-        {is_done.then(|| view! { <p class="cook-done">{t("cook.done.mark")}</p> })}
-        <p class="cook-step">{row.text.clone()}</p>
-        {row.duration_seconds.map(|seconds| view! { <p>{duration_text(seconds)}</p> })}
-        {timer_starts(row, current, timers)}
-        {needed(row, &lines, servings, shown)}
-        <a class="button secondary" href=place.toggle(current) aria-pressed=is_done.to_string()>{toggle_label}</a>
-        <div class="cook-nav">
-            {previous.clone().map(|href| view! { <a class="button secondary" href=href>{t("cook.previous")}</a> })}
-            <a class="button" href=forward_href>{forward_label}</a>
-        </div>
     }
-    .into_any();
-    view! {
-        <h1 class="cook-title">{title}</h1>
-        <p>{t_with("cook.progress", &[("step", &current.to_string()), ("total", &total.to_string())])}</p>
-        <progress value=current.to_string() max=total.to_string() aria-label=t("cook.progress.label")></progress>
-        {card(previous, next, content)}
-        {dots(&place, total, current)}
-    }
-    .into_any()
 }
 
 /// One start button per duration the step names, for step number `step`.
@@ -143,11 +201,13 @@ fn needed(step: &StepRow, lines: &[LineRow], servings: i64, shown: i64) -> Optio
     (!used.is_empty()).then(|| {
         let items = scale_lines(&used, servings, shown)
             .iter()
-            .map(|line| view! { <li>{line_text(line, messages())}</li> })
+            .map(|line| view! { <li>{needed_text(line)}</li> })
             .collect_view();
         view! {
-            <h2>{t("cook.needs")}</h2>
-            <ul>{items}</ul>
+            <section class="cook-needs">
+                <h2>{t_with("cook.needs", &[("servings", &shown.to_string())])}</h2>
+                <ul>{items}</ul>
+            </section>
         }
         .into_any()
     })
@@ -177,9 +237,15 @@ fn dots(place: &Place, total: usize, current: usize) -> AnyView {
 
 fn no_steps(title: String, place: &Place) -> AnyView {
     view! {
-        <h1 class="cook-title">{title}</h1>
-        <p>{t("cook.no_steps")}</p>
-        <a class="button secondary" href=place.finish()>{t("cook.back")}</a>
+        <section class="cook-mode" aria-label=t("cook.mode.label")>
+            <a class="cook-return" href=place.finish()>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M9 12h12"/></svg>
+                {t("cook.back")}
+            </a>
+            <p class="cook-recipe-name">{title}</p>
+            <h1 class="cook-title">{t("cook.heading")}</h1>
+            <p>{t("cook.no_steps")}</p>
+        </section>
     }
     .into_any()
 }
@@ -191,5 +257,6 @@ fn card(previous: Option<String>, next: Option<String>, content: AnyView) -> Any
 
 #[cfg(not(feature = "hydrate"))]
 fn card(previous: Option<String>, next: Option<String>, content: AnyView) -> AnyView {
-    view! { <div class="cook-card" data-prev=previous data-next=next>{content}</div> }.into_any()
+    view! { <div class="cook-instruction" data-prev=previous data-next=next>{content}</div> }
+        .into_any()
 }
