@@ -844,7 +844,7 @@ button.danger, button.destructive { color:var(--on-danger); }
 .plan-day-summary { min-width: 0; }
 .plan-day-summary strong { display: block; overflow-wrap:anywhere; font-size: .9rem; }
 .plan-day-summary small { display: block; margin-top: .12rem; color: var(--muted); font-size: .78rem; }
-.plan-settings { justify-self: start; margin-top: 1rem; padding: .65rem .8rem; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); }
+.plan-settings { width: 100%; margin-top: 1rem; padding: .65rem .8rem; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); }
 .plan-settings summary { cursor: pointer; font-size: .9rem; }
 .plan-settings form { display: grid; gap: .75rem; margin-top: .8rem; }
 .plan-editor { padding: 1.1rem; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
@@ -866,12 +866,12 @@ button.danger, button.destructive { color:var(--on-danger); }
   .today-layout { grid-template-columns: minmax(0, 1.2fr) minmax(17rem, 1fr); align-items: start; gap: 1.6rem; }
   .today-side .today-section-heading { margin-top: 0; }
   .today-feature > img, .today-photo-fallback { height: 14.4rem; }
-  .plan-layout { grid-template-columns: minmax(17rem, 1fr) minmax(17rem, .95fr); align-items: start; gap: 1.25rem; }
+  .plan-layout { grid-template-columns: minmax(0, 1fr) minmax(0, .95fr); align-items: start; gap: 1.25rem; }
   .plan-editor { position: sticky; top: 1rem; }
 }
 @container main-workspace (min-width: 900px) {
   .today-feature > img, .today-photo-fallback { height: 14.4rem; }
-  .plan-layout { grid-template-columns: minmax(19rem, .95fr) minmax(22rem, 1.05fr); gap: 1.5rem; }
+  .plan-layout { grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: 1.5rem; }
 }
 @media (max-width: 420px) {
   .plan-heading { display: block; }

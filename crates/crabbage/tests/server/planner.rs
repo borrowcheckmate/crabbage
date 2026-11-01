@@ -175,6 +175,7 @@ async fn settings_round_trip(harness: &Harness, token: &str, home: i64) {
     );
     let planned = body_text(harness.get("/plan?week=2024-03-04", Some(token)).await).await;
     assert!(planned.contains("<strong>Rest day</strong>"), "{planned}");
+    assert!(!planned.contains("<small>Rest day</small>"), "{planned}");
 }
 
 #[tokio::test]

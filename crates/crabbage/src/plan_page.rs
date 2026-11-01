@@ -189,7 +189,7 @@ fn PlanAgenda(data: PlanData, selected_date: String) -> impl IntoView {
             <For each=move || days.get_value() key=|day| day.date.clone() let(day)>
                 <a class="plan-day" aria-current=(selected_date == day.date).then_some("date") href=format!("/plan?week={}&day={}", week.clone(), day.date)>
                     <span class="plan-day-date"><b>{t(weekday_short_key(day.weekday))}</b><time datetime=day.date.clone()>{day_number(&day.date)}</time></span>
-                    <span class="plan-day-summary"><strong>{day_title(&day)}</strong><small>{day_subtitle(&day)}</small></span>
+                    <span class="plan-day-summary"><strong>{day_title(&day)}</strong>{(!day.is_rest).then(|| view! { <small>{day_subtitle(&day)}</small> })}</span>
                     <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
                 </a>
             </For>
@@ -348,7 +348,7 @@ fn day_subtitle(day: &PlanDay) -> String {
             "recipe.servings.many",
             &[("count", &day.servings.to_string())],
         ),
-        None if day.is_rest => t("plan.rest").to_owned(),
+        None if day.is_rest => String::new(),
         None => t("plan.no_recipe").to_owned(),
     }
 }
