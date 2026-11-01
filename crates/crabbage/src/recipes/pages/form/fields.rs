@@ -9,7 +9,7 @@ use super::draft::{Draft, LineSignals, StepSignals};
 use crate::catalog::CategoryRow;
 use crate::i18n::{messages, t};
 use crate::recipes::types::{LineDraft, StepDraft};
-use crate::recipes::units::unit_text;
+use crate::recipes::units::unit_option_text;
 
 /// The fields of the recipe form. The names fill the suggestions of the ingredient fields. A row
 /// whose ingredient is in `unresolved` carries the class `unresolved` while it keeps that name.
@@ -116,7 +116,7 @@ fn line_row(draft: Draft, line: LineSignals, unresolved: Vec<String>) -> AnyView
                 <select on:change=move |ev| line.unit.set(event_target_value(&ev))>
                     <option value="" selected=move || line.unit.get().is_empty()>{t("recipe.unit.none")}</option>
                     {Unit::ALL.into_iter().map(|unit| view! {
-                        <option value=unit.symbol() selected=move || line.unit.get() == unit.symbol()>{unit_text(messages(), unit.symbol())}</option>
+                        <option value=unit.symbol() selected=move || line.unit.get() == unit.symbol()>{unit_option_text(messages(), unit)}</option>
                     }).collect_view()}
                 </select>
             </label>
