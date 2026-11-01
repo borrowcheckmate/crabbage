@@ -14,6 +14,7 @@ use chromiumoxide::page::{Page, ScreenshotParams};
 use futures_util::StreamExt;
 use serde_json::Value;
 
+use super::assets::verify_hashed_assets;
 use super::interactions::exercise_interactions;
 
 pub(super) const ROUTES: &[(&str, &str)] = &[
@@ -134,6 +135,7 @@ pub async fn run(
     };
     let result = async {
         sign_in(&page).await?;
+        verify_hashed_assets(&page).await?;
         let (mut failures, report) = check_routes(&page, base_url, language, output).await?;
         exercise_interactions(&page, base_url, output, &mut failures).await?;
         fs::write(output.join("report.csv"), report).map_err(|error| error.to_string())?;

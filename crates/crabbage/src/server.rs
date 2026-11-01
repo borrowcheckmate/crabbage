@@ -103,8 +103,8 @@ pub fn router(
         .with_state(state))
 }
 
-/// Makes browsers revalidate the stylesheet and app bundle, whose names do not change between
-/// releases, so a deploy reaches them on the next load.
+/// Makes browsers revalidate the stylesheet and app bundle. Release builds give them hashed names,
+/// but a build without the hash file serves them under fixed names.
 async fn revalidate_assets(request: Request, next: Next) -> Response {
     let is_asset = request.uri().path().starts_with("/pkg/");
     let mut response = next.run(request).await;

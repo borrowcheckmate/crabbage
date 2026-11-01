@@ -86,7 +86,8 @@ fn browser_language(
         .env("CRABBAGE_PUBLIC_URL", format!("http://localhost:{port}"))
         .env("CRABBAGE_DATA_DIR", &data_dir)
         .env("CRABBAGE_LANGUAGE", language)
-        .env("LEPTOS_SITE_ADDR", format!("127.0.0.1:{port}"));
+        .env("LEPTOS_SITE_ADDR", format!("127.0.0.1:{port}"))
+        .env("LEPTOS_HASH_FILES", "true");
     let mut child = server
         .spawn()
         .map_err(|error| format!("cannot start cargo leptos serve: {error}"))?;
