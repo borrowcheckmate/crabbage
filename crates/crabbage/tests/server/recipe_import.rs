@@ -347,18 +347,26 @@ async fn saving_creates_the_recipe_for_the_importer_with_their_edits_and_the_pho
         .expect("ingredient");
     let token = sign_in_as(&harness, MEMBER, &[]).await;
     let base = serve().await;
-    let (status, body) = call(
-        &harness,
-        &token,
-        "save_import",
-        &[
-            ("draft", &edited_draft()),
-            ("image", &format!("{base}/photo.png")),
-        ],
-    )
-    .await;
-    assert_eq!(status, StatusCode::OK, "{body}");
-    let id: i64 = body.trim().parse().expect("the id");
+    let body = url::form_urlencoded::Serializer::new(String::new())
+        .append_pair("draft", &edited_draft())
+        .append_pair("image", &format!("{base}/photo.png"))
+        .finish();
+    let response = harness
+        .post_form_html("/api/save_import", Some(&token), &body)
+        .await;
+    assert_eq!(response.status(), StatusCode::FOUND);
+    let location = response
+        .headers()
+        .get(LOCATION)
+        .expect("redirect location")
+        .to_str()
+        .expect("location is text");
+    let id: i64 = location
+        .strip_prefix("/recipes/")
+        .expect("recipe path")
+        .parse()
+        .expect("recipe id");
+    assert_eq!(location, format!("/recipes/{id}"));
     let user = importer(&harness).await;
     let recipe = get_recipe(&harness.pool, id, user)
         .await

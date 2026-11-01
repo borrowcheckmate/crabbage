@@ -2,8 +2,6 @@
 
 use leptos::form::ActionForm;
 use leptos::prelude::*;
-use leptos_router::NavigateOptions;
-use leptos_router::hooks::use_navigate;
 
 use super::draft::Draft;
 use super::fields::{CategoryBoxes, DraftFields};
@@ -34,14 +32,6 @@ type EditFormData = Result<
 pub(crate) fn RecipeNewPage() -> impl IntoView {
     let create = ServerAction::<CreateRecipe>::new();
     let data = Resource::new(|| (), |()| load_new_form());
-    let navigate = use_navigate();
-    Effect::new(move |_| {
-        create.value().with(|value| {
-            if let Some(Ok(id)) = value {
-                navigate(&format!("/recipes/{id}"), NavigateOptions::default());
-            }
-        });
-    });
     view! {
         <h1>{t("recipe.new_heading")}</h1>
         <Suspense fallback=|| view! { <p class="notice" role="status">{t("recipe.form.loading")}</p> }>
@@ -88,14 +78,6 @@ pub(crate) fn RecipeEditPage() -> impl IntoView {
             Some(id) => Some(load_edit_form(id).await),
             None => None,
         }
-    });
-    let navigate = use_navigate();
-    Effect::new(move |_| {
-        save.value().with(|value| {
-            if let (Some(Ok(())), Some(id)) = (value, id()) {
-                navigate(&format!("/recipes/{id}"), NavigateOptions::default());
-            }
-        });
     });
     view! {
         <h1>{t("recipe.edit_heading")}</h1>
