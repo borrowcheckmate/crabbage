@@ -14,6 +14,8 @@ pub struct Imported {
     pub image: Option<String>,
     /// The AI's normalized finished-dish crop on one submitted photo.
     pub photo: Option<AiPhoto>,
+    /// The selected household recipe categories.
+    pub categories: Vec<i64>,
     /// The ingredient lines in order.
     pub lines: Vec<ImportedLine>,
     /// The method steps in order.

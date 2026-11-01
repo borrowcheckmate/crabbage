@@ -168,6 +168,12 @@ fn NoHouseholdNotice() -> impl IntoView {
     }
 }
 
+// NOTE: unset at compile time, HydrationScripts asks for the missing `crabbage_bg.wasm`.
+const _: () = assert!(
+    option_env!("LEPTOS_OUTPUT_NAME").is_some(),
+    "LEPTOS_OUTPUT_NAME must be set at compile time"
+);
+
 /// The HTML document around [`App`], used for server rendering. Its `lang` attribute is the
 /// language provided to the render.
 #[must_use]

@@ -48,3 +48,34 @@ async fn sign_in_is_unavailable_until_the_provider_is_reachable() {
     assert_eq!(response.status(), StatusCode::SEE_OTHER);
     assert!(header(&response, LOCATION).is_some_and(|location| location.contains(&address)));
 }
+
+#[tokio::test]
+async fn app_assets_are_revalidated_on_every_load() {
+    let dir = TempDir::new("server-asset-cache");
+    let site = dir.path().join("site");
+    std::fs::create_dir_all(site.join("pkg")).expect("site directory is created");
+    std::fs::write(site.join("pkg/crabbage.css"), "body{}").expect("stylesheet is written");
+    let pool = crabbage_store::open(dir.path())
+        .await
+        .expect("database opens");
+    let config = config("http://127.0.0.1:9", dir.path(), None, &[]);
+    let options = LeptosOptions::builder()
+        .output_name("crabbage")
+        .site_root(site.to_string_lossy().into_owned())
+        .build();
+    let router = crabbage::router(options, &config, pool).expect("router builds");
+
+    let stylesheet = get(&router, "/pkg/crabbage.css").await;
+    assert_eq!(stylesheet.status(), StatusCode::OK);
+    assert_eq!(
+        stylesheet.headers().get(axum::http::header::CACHE_CONTROL),
+        Some(&axum::http::HeaderValue::from_static("no-cache"))
+    );
+    let health = get(&router, "/healthz").await;
+    assert!(
+        health
+            .headers()
+            .get(axum::http::header::CACHE_CONTROL)
+            .is_none()
+    );
+}

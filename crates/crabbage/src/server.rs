@@ -2,7 +2,10 @@ use std::error::Error;
 use std::sync::{Arc, OnceLock};
 
 use axum::Router;
-use axum::middleware::from_fn_with_state;
+use axum::extract::Request;
+use axum::http::{HeaderValue, header};
+use axum::middleware::{Next, from_fn, from_fn_with_state};
+use axum::response::Response;
 use axum::routing::get;
 use leptos::config::LeptosOptions;
 use leptos::prelude::provide_context;
@@ -96,5 +99,19 @@ pub fn router(
             _,
         >(move || provide_context(language), shell))
         .layer(from_fn_with_state(state.clone(), auth::require_session))
+        .layer(from_fn(revalidate_assets))
         .with_state(state))
+}
+
+/// Makes browsers revalidate the stylesheet and app bundle, whose names do not change between
+/// releases, so a deploy reaches them on the next load.
+async fn revalidate_assets(request: Request, next: Next) -> Response {
+    let is_asset = request.uri().path().starts_with("/pkg/");
+    let mut response = next.run(request).await;
+    if is_asset {
+        response
+            .headers_mut()
+            .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-cache"));
+    }
+    response
 }

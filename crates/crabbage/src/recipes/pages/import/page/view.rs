@@ -2,14 +2,15 @@
 
 use leptos::form::ActionForm;
 use leptos::prelude::*;
-use leptos_router::NavigateOptions;
-use leptos_router::hooks::{use_navigate, use_query_map};
+use leptos_router::hooks::use_query_map;
 
 use super::super::super::form::Draft;
+use crate::catalog::CategoryRow;
 use crate::i18n::{t, t_with};
 use crate::notice::{failure, message};
 use crate::recipes::import_fns::{SaveImport, ai_enabled, import_recipe, photo_preview};
 use crate::recipes::ingredients::ingredient_names;
+use crate::recipes::pages::form::CategoryBoxes;
 use crate::recipes::types::ImportPreview;
 
 #[path = "fields.rs"]
@@ -29,14 +30,6 @@ type ImportPageData = (
 #[component]
 pub(crate) fn RecipeImportPage() -> impl IntoView {
     let save = ServerAction::<SaveImport>::new();
-    let navigate = use_navigate();
-    Effect::new(move |_| {
-        save.value().with(|value| {
-            if let Some(Ok(id)) = value {
-                navigate(&format!("/recipes/{id}"), NavigateOptions::default());
-            }
-        });
-    });
     let query = use_query_map();
     let data = Resource::new(
         move || {
@@ -218,6 +211,7 @@ fn review(
         unresolved,
         ai_error,
         photo_preview,
+        categories,
     } = preview;
     let draft = Draft::from_wire(&draft);
     let source_name = if from_text {
@@ -234,6 +228,7 @@ fn review(
         save,
         draft,
         names,
+        categories,
         unresolved,
         ai_error,
         source: source_name,
@@ -254,6 +249,7 @@ struct ReviewForm {
     save: ServerAction<SaveImport>,
     draft: Draft,
     names: Vec<String>,
+    categories: Vec<CategoryRow>,
     unresolved: Vec<String>,
     ai_error: Option<String>,
     source: String,
@@ -287,6 +283,7 @@ fn review_form(form: ReviewForm) -> AnyView {
         save,
         draft,
         names,
+        categories,
         unresolved,
         ai_error,
         source,
@@ -300,12 +297,14 @@ fn review_form(form: ReviewForm) -> AnyView {
     let disclosure = review_source_disclosure(source, url, image.clone(), from_photos);
     let notices = review_notices(&unresolved, ai_error);
     let fields = import_fields(draft, names, unresolved);
+    let category_boxes = view! { <CategoryBoxes draft categories/> };
     let photos = review_photo_fields(image, photo_preview, photos, draft);
     view! {
         <ActionForm action=save attr:class="import-review-form">
             {disclosure}
             {notices}
             {fields}
+            {category_boxes}
             {photos}
             {(!unresolved_for_note.is_empty()).then(|| view! { <p class="import-catalog-note">{t("import.catalog_note")}</p> })}
             <ReviewSaveButton save/>
@@ -411,6 +410,7 @@ fn SourceCard(
 }
 
 pub(super) fn format_amount(amount: &str, unit: &str) -> String {
+    let unit = crate::recipes::unit_text(crate::i18n::messages(), unit.trim());
     match (amount.trim(), unit.trim()) {
         ("", "") => t("import.unspecified").to_owned(),
         ("", unit) => unit.to_owned(),
@@ -477,22 +477,5 @@ fn hex_digit(value: u8) -> char {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{encode_query, format_amount};
-
-    #[test]
-    fn retry_urls_encode_query_delimiters_and_unicode_bytes() {
-        assert_eq!(
-            encode_query("https://example.test/?a=one&b=two"),
-            "https%3A%2F%2Fexample.test%2F%3Fa%3Done%26b%3Dtwo"
-        );
-        assert_eq!(encode_query("café"), "caf%C3%A9");
-    }
-
-    #[test]
-    fn ingredient_amounts_keep_units_and_unspecified_values() {
-        assert_eq!(format_amount("2", "piece"), "2 piece");
-        assert_eq!(format_amount("", "to taste"), "to taste");
-        assert_eq!(format_amount("", ""), "Unspecified");
-    }
-}
+#[path = "view_tests.rs"]
+mod tests;

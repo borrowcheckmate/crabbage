@@ -3,11 +3,15 @@ use base64::engine::general_purpose::STANDARD;
 use serde_json::{Value, json};
 
 const SCHEMA: &str = r#"Answer with one JSON object and nothing else. The object has:
+For each line, "name" is only the ingredient as bought, in singular or plural as written. Leave
+preparation, temperature, size, cut, quantity words and "to taste" or "of choice" out of the name
+and put them in "note".
 "title" (text); "servings", "prep_minutes" and "cook_minutes" (whole numbers or null);
 "lines" (the ingredient lines in order, each with "amount" (a number or null), "unit" (one of
 g, kg, ml, l, tsp, tbsp, piece, pinch, "to taste", or null), "name" (text), "note" (text or
-null) and "ingredient_id" (a number or null)); "steps" (in order, each with "text" and "lines",
-the zero-based indexes of the ingredient lines the step uses); "photo" (null when there is no
+null) and "ingredient_id" (a provided candidate id or null)); "steps" (in order, each with "text"
+and "lines", the zero-based indexes of the ingredient lines the step uses); "categories" (a list of
+ids chosen only from the provided categories); "photo" (null when there is no
 finished-dish photo, otherwise an object with "page" (zero-based image index), "left", "top",
 "width" and "height" (fractions from 0 to 1 describing the dish photo crop). Prefer a clear
 photo of the finished dish. Return null for text-only pages, ads, step photos, or when only the

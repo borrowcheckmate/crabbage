@@ -219,6 +219,47 @@ async fn the_preview_fills_the_form_and_marks_the_unresolved_line() {
 }
 
 #[tokio::test]
+async fn ai_categories_are_prechecked_and_saved_from_the_review_draft() {
+    let (harness, mut requests) =
+        super::recipe_photo_import::with_ai("import-category-review", StatusCode::OK).await;
+    let category = crabbage_store::catalog::categories::create(&harness.pool, "Breakfast")
+        .await
+        .expect("category");
+    assert_eq!(category, 1);
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let response = super::recipe_photo_import::upload(
+        &harness,
+        Some(&token),
+        &[("photo", &super::recipe_photo_import::png())],
+    )
+    .await;
+    let location = super::recipe_photo_import::location(&response);
+    let preview = page(&harness, &token, &location).await;
+    assert!(preview.contains("value=\"1\" checked"), "{preview}");
+    let request = requests.try_recv().expect("AI request");
+    assert!(request.to_string().contains("Breakfast"), "{request}");
+
+    let mut draft: serde_json::Value = serde_json::from_str(&edited_draft()).expect("draft");
+    draft["categories"] = json!([category]);
+    let draft = draft.to_string();
+    let (status, body) = call(&harness, &token, "save_import", &[("draft", &draft)]).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let id: i64 = body.trim().parse().expect("recipe id");
+    let recipe = get_recipe(&harness.pool, id, importer(&harness).await)
+        .await
+        .expect("read")
+        .expect("recipe");
+    assert_eq!(
+        recipe
+            .categories
+            .iter()
+            .map(|category| category.id)
+            .collect::<Vec<_>>(),
+        [category]
+    );
+}
+
+#[tokio::test]
 async fn an_ai_that_fails_is_reported_on_the_preview() {
     let extra = [("CRABBAGE_IMPORT_ALLOW_PRIVATE", "true")];
     let harness = Harness::start_with("import-ai", None, &extra).await;
@@ -306,18 +347,26 @@ async fn saving_creates_the_recipe_for_the_importer_with_their_edits_and_the_pho
         .expect("ingredient");
     let token = sign_in_as(&harness, MEMBER, &[]).await;
     let base = serve().await;
-    let (status, body) = call(
-        &harness,
-        &token,
-        "save_import",
-        &[
-            ("draft", &edited_draft()),
-            ("image", &format!("{base}/photo.png")),
-        ],
-    )
-    .await;
-    assert_eq!(status, StatusCode::OK, "{body}");
-    let id: i64 = body.trim().parse().expect("the id");
+    let body = url::form_urlencoded::Serializer::new(String::new())
+        .append_pair("draft", &edited_draft())
+        .append_pair("image", &format!("{base}/photo.png"))
+        .finish();
+    let response = harness
+        .post_form_html("/api/save_import", Some(&token), &body)
+        .await;
+    assert_eq!(response.status(), StatusCode::FOUND);
+    let location = response
+        .headers()
+        .get(LOCATION)
+        .expect("redirect location")
+        .to_str()
+        .expect("location is text");
+    let id: i64 = location
+        .strip_prefix("/recipes/")
+        .expect("recipe path")
+        .parse()
+        .expect("recipe id");
+    assert_eq!(location, format!("/recipes/{id}"));
     let user = importer(&harness).await;
     let recipe = get_recipe(&harness.pool, id, user)
         .await

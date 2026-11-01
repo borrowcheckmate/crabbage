@@ -18,9 +18,11 @@ pub(crate) async fn create_recipe(draft: String) -> Result<i64, ServerFnError> {
     use crabbage_store::recipes::create;
     let (pool, user) = crate::access::signed_in().await?;
     let input = crate::recipes::draft::parse(&draft)?;
-    create(&pool, user, &input, crate::auth::now())
+    let id = create(&pool, user, &input, crate::auth::now())
         .await
-        .map_err(|error| crate::access::store_failure(&error))
+        .map_err(|error| crate::access::store_failure(&error))?;
+    leptos_axum::redirect(&format!("/recipes/{id}"));
+    Ok(id)
 }
 
 /// Replaces the recipe `id` with the JSON draft.
@@ -34,7 +36,9 @@ pub(crate) async fn update_recipe(id: i64, draft: String) -> Result<(), ServerFn
     let found = update(&pool, id, &input)
         .await
         .map_err(|error| crate::access::store_failure(&error))?;
-    crate::access::ensure_found(found)
+    crate::access::ensure_found(found)?;
+    leptos_axum::redirect(&format!("/recipes/{id}"));
+    Ok(())
 }
 
 /// Deletes the recipe `id` with everything that belongs to it.

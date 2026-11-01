@@ -23,6 +23,7 @@ fn ai_draft(lines: Vec<AiLine>, steps: Vec<AiStep>) -> AiDraft {
         prep_minutes: None,
         cook_minutes: None,
         photo: None,
+        categories: Vec::new(),
     }
 }
 
@@ -44,7 +45,7 @@ fn imperial_units_become_metric() {
         ],
         vec![step("Mix.", vec![])],
     );
-    let result = merge(&ai, &complete_recipe(), &[]);
+    let result = merge(&ai, &complete_recipe(), &[], &[]);
     assert_eq!(result.lines[0].unit, Some(Unit::Millilitre));
     assert_eq!(result.lines[0].amount, Some(240.0));
     assert_eq!(result.lines[1].amount, Some(480.0));
@@ -60,7 +61,7 @@ fn a_measure_without_an_amount_has_no_unit() {
         vec![ai_line(None, Some("cup"), "flour")],
         vec![step("Mix.", vec![])],
     );
-    let result = merge(&ai, &complete_recipe(), &[]);
+    let result = merge(&ai, &complete_recipe(), &[], &[]);
     assert_eq!(result.lines[0].amount, None);
     assert_eq!(result.lines[0].unit, None);
     assert_eq!(result.lines[0].name, "flour");
@@ -76,7 +77,7 @@ fn domain_units_and_amounts_are_kept() {
         ],
         vec![step("Mix.", vec![])],
     );
-    let result = merge(&ai, &complete_recipe(), &[]);
+    let result = merge(&ai, &complete_recipe(), &[], &[]);
     assert_eq!(result.lines[0].amount, Some(200.0));
     assert_eq!(result.lines[0].unit, Some(Unit::Gram));
     assert_eq!(result.lines[1].unit, Some(Unit::Tablespoon));
@@ -91,7 +92,7 @@ fn a_bogus_ingredient_id_is_dropped_and_matched_by_name() {
     let mut line = ai_line(Some(200.0), Some("g"), "Flour");
     line.ingredient_id = Some(99);
     let ai = ai_draft(vec![line], vec![step("Mix.", vec![])]);
-    let result = merge(&ai, &complete_recipe(), &[flour]);
+    let result = merge(&ai, &complete_recipe(), &[flour], &[]);
     assert_eq!(result.lines[0].ingredient_id, Some(1));
 }
 
@@ -101,8 +102,37 @@ fn a_valid_ingredient_id_is_kept_even_when_the_name_differs() {
     let mut line = ai_line(Some(1.0), Some("cup"), "flour");
     line.ingredient_id = Some(2);
     let ai = ai_draft(vec![line], vec![step("Mix.", vec![])]);
-    let result = merge(&ai, &complete_recipe(), &[milk]);
+    let result = merge(&ai, &complete_recipe(), &[milk], &[]);
     assert_eq!(result.lines[0].ingredient_id, Some(2));
+}
+
+#[test]
+fn ai_line_fields_and_valid_category_ids_take_precedence_over_the_reading() {
+    let flour = candidate(1, "flour");
+    let mut line = ai_line(Some(3.0), Some("piece"), "scone");
+    line.note = Some("large".to_owned());
+    line.ingredient_id = Some(1);
+    let mut ai = ai_draft(vec![line], vec![step("Bake.", vec![])]);
+    ai.categories = vec![4, 99, 4];
+    let base = from_draft(&draft(&["200 g flour, sifted"], &["Mix."]), &[flour]);
+    let result = merge(&ai, &base, &[flour], &[4]);
+    assert_eq!(result.lines[0].name, "scone");
+    assert_eq!(result.lines[0].amount, Some(3.0));
+    assert_eq!(result.lines[0].unit, Some(Unit::Piece));
+    assert_eq!(result.lines[0].note.as_deref(), Some("large"));
+    assert_eq!(result.lines[0].ingredient_id, Some(1));
+    assert_eq!(result.categories, [4]);
+}
+
+#[test]
+fn unknown_ai_category_ids_are_dropped() {
+    let mut ai = ai_draft(
+        vec![ai_line(None, None, "salt")],
+        vec![step("Season.", vec![])],
+    );
+    ai.categories = vec![99];
+    let result = merge(&ai, &complete_recipe(), &[], &[4, 5]);
+    assert_eq!(result.categories, Vec::<i64>::new());
 }
 
 #[test]
@@ -114,7 +144,7 @@ fn steps_take_the_ai_line_positions_sorted_and_without_duplicates() {
         ],
         vec![step("Whisk.", vec![1, 0, 1])],
     );
-    let result = merge(&ai, &complete_recipe(), &[]);
+    let result = merge(&ai, &complete_recipe(), &[], &[]);
     assert_eq!(result.steps[0].text, "Whisk.");
     assert_eq!(result.steps[0].line_positions, vec![0, 1]);
 }
@@ -126,7 +156,7 @@ fn the_title_comes_from_the_ai_and_the_photo_from_the_page() {
         vec![ai_line(Some(1.0), Some("piece"), "egg")],
         vec![step("Cook.", vec![0])],
     );
-    let result = merge(&ai, &base, &[]);
+    let result = merge(&ai, &base, &[], &[]);
     assert_eq!(result.title, "Fluffy pancakes");
     assert_eq!(result.image, base.image);
 }
@@ -137,13 +167,13 @@ fn servings_fall_back_to_the_page_when_the_ai_has_none() {
         vec![ai_line(Some(1.0), Some("piece"), "egg")],
         vec![step("Cook.", vec![0])],
     );
-    assert_eq!(merge(&ai, &complete_recipe(), &[]).servings, Some(2));
+    assert_eq!(merge(&ai, &complete_recipe(), &[], &[]).servings, Some(2));
     let with_servings = AiDraft {
         servings: Some(6),
         ..ai
     };
     assert_eq!(
-        merge(&with_servings, &complete_recipe(), &[]).servings,
+        merge(&with_servings, &complete_recipe(), &[], &[]).servings,
         Some(6)
     );
 }
@@ -163,7 +193,7 @@ fn unmatched_names_are_recomputed_from_the_lines_without_an_id() {
     );
     let mut base = complete_recipe();
     base.unmatched = vec!["stale".to_owned()];
-    let result = merge(&ai, &base, &[flour]);
+    let result = merge(&ai, &base, &[flour], &[]);
     assert_eq!(result.unmatched, vec!["Eggs".to_owned()]);
 }
 
@@ -172,7 +202,7 @@ fn each_line_keeps_its_text_as_metric_with_its_note() {
     let mut line = ai_line(Some(1.0), Some("cup"), "milk");
     line.note = Some("warm".to_owned());
     let ai = ai_draft(vec![line], vec![step("Heat.", vec![0])]);
-    let result = merge(&ai, &complete_recipe(), &[]);
+    let result = merge(&ai, &complete_recipe(), &[], &[]);
     assert_eq!(result.lines[0].original, "240 ml milk, warm");
     assert_eq!(result.lines[0].note.as_deref(), Some("warm"));
 }

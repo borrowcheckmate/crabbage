@@ -36,7 +36,7 @@ async fn every_photo_is_sent_and_the_answer_becomes_the_recipe() {
     let (base, mut requests) = serve("200 OK", &completion(VALID)).await;
     let flour = candidate(1, "flour");
     let photos = vec![image(b"one"), image(b"two")];
-    let result = from_photos(photos, &[flour], &client(&base), "nl")
+    let result = from_photos(photos, &[flour], &[], &client(&base), "nl")
         .await
         .expect("a recipe");
     assert_eq!(result.title, "Fluffy pancakes");
@@ -67,7 +67,7 @@ async fn every_photo_is_sent_and_the_answer_becomes_the_recipe() {
 #[tokio::test]
 async fn an_ai_error_is_returned() {
     let (base, _requests) = serve("500 Internal Server Error", "{}").await;
-    let result = from_photos(vec![image(b"one")], &[], &client(&base), "en").await;
+    let result = from_photos(vec![image(b"one")], &[], &[], &client(&base), "en").await;
     assert_eq!(
         result.expect_err("an error").to_string(),
         "the AI service answered with status 500"

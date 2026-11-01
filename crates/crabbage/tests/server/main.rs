@@ -66,6 +66,7 @@ mod recipe_pages;
 )]
 mod recipe_photo_import;
 mod recipe_ratings;
+mod recipe_redirects;
 mod recipe_step_lines;
 #[expect(
     clippy::expect_used,
