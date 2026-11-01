@@ -32,7 +32,7 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 | `cargo xtask lint` | Clippy, warnings denied |
 | `cargo xtask test` | All tests |
 | `cargo xtask docs` | Rustdoc, warnings denied |
-| `cargo xtask coverage` | Line coverage ≥ 90% |
+| `cargo xtask coverage` | Line coverage ≥ 90%, excluding the Chrome-driven `crabbage-dev` browser runner, which the `browser` CI job exercises |
 | `cargo xtask deny` | RustSec advisories, licenses, duplicate and wildcard deps, sources |
 | `cargo xtask policy` | Repository rules, see ARCHITECTURE.md |
 | `cargo xtask identity` | Anonymous git identity |
