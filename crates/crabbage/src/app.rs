@@ -166,8 +166,7 @@ fn NoHouseholdNotice() -> impl IntoView {
     }
 }
 
-// NOTE: without this at compile time, HydrationScripts asks for `crabbage_bg.wasm`, which the site
-// does not have. cargo-leptos sets it; plain cargo builds get it from .cargo/config.toml.
+// NOTE: unset at compile time, HydrationScripts asks for the missing `crabbage_bg.wasm`.
 const _: () = assert!(
     option_env!("LEPTOS_OUTPUT_NAME").is_some(),
     "LEPTOS_OUTPUT_NAME must be set at compile time"
