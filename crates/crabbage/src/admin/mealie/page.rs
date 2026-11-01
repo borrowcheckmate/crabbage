@@ -46,18 +46,37 @@ async fn migration_status() -> Result<RunState, ServerFnError> {
 /// The Mealie migration page, for admins only.
 #[component]
 pub(crate) fn MealiePage() -> impl IntoView {
+    let data = Resource::new(|| (), |()| load_page());
     view! {
         <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
-            {move || Suspend::new(async move { page().await })}
+            {move || Suspend::new(async move { page(data.await) })}
         </Suspense>
     }
 }
 
-async fn page() -> AnyView {
-    if !matches!(current_user().await, Ok(user) if user.is_admin) {
+async fn load_page() -> (
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<RunState, ServerFnError>>,
+) {
+    let user = current_user().await;
+    let status = if user.as_ref().is_ok_and(|user| user.is_admin) {
+        Some(migration_status().await)
+    } else {
+        None
+    };
+    (user, status)
+}
+
+fn page(
+    (user, status): (
+        Result<crate::user::SignedInUser, ServerFnError>,
+        Option<Result<RunState, ServerFnError>>,
+    ),
+) -> AnyView {
+    if !matches!(user, Ok(user) if user.is_admin) {
         return error_notice(t("admin.not_allowed"));
     }
-    let Ok(status) = migration_status().await else {
+    let Ok(status) = status.unwrap_or_else(|| Err(ServerFnError::new("Status unavailable"))) else {
         return view! {
             <section class="admin-page">
                 <h1>{t("admin.mealie.heading")}</h1>

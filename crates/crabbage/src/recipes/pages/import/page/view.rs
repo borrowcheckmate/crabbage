@@ -17,6 +17,15 @@ mod fields;
 
 use fields::import_fields;
 
+type ImportReviewResult = Option<Result<(ImportPreview, Vec<String>), ServerFnError>>;
+type ImportPageData = (
+    String,
+    String,
+    bool,
+    Result<bool, ServerFnError>,
+    ImportReviewResult,
+);
+
 #[component]
 pub(crate) fn RecipeImportPage() -> impl IntoView {
     let save = ServerAction::<SaveImport>::new();
@@ -29,56 +38,72 @@ pub(crate) fn RecipeImportPage() -> impl IntoView {
         });
     });
     let query = use_query_map();
+    let data = Resource::new(
+        move || {
+            query.with(|map| {
+                (
+                    map.get("url").unwrap_or_default().trim().to_owned(),
+                    map.get("photos").unwrap_or_default(),
+                    map.get("text").unwrap_or_default(),
+                )
+            })
+        },
+        |(url, photos, text)| load_content(url, photos, text),
+    );
     view! {
         <Suspense fallback=|| view! { <p class="notice" role="status">{t("import.pending")}</p> }>
             {move || {
-                let (url, photos, error, source, text) = query.with(|map| (
-                    map.get("url").unwrap_or_default().trim().to_owned(),
-                    map.get("photos").unwrap_or_default(),
+                let (error, source) = query.with(|map| (
                     map.get("photo_error")
                         .or_else(|| map.get("text_error"))
                         .unwrap_or_default(),
                     map.get("source").unwrap_or_default(),
-                    map.get("text").unwrap_or_default(),
                 ));
                 let source_url = query.with(|map| map.get("source_url").unwrap_or_default());
-                Suspend::new(async move { content(url, photos, error, source, text, source_url, save).await })
+                Suspend::new(async move { content(data.await, &error, &source, source_url, save) })
             }}
         </Suspense>
         {move || save.value().with(|value| failure(value.as_ref()))}
     }
 }
 
-async fn content(
-    url: String,
-    photos: String,
-    error: String,
-    source: String,
-    text: String,
+async fn load_content(url: String, photos: String, text: String) -> ImportPageData {
+    let from_text = !text.is_empty();
+    let photo_available = ai_enabled().await;
+    let review = if !text.is_empty() {
+        Some(
+            async {
+                let preview = photo_preview(text.clone()).await?;
+                Ok((preview, ingredient_names().await?))
+            }
+            .await,
+        )
+    } else if !url.is_empty() || !photos.is_empty() {
+        Some(load(url.clone(), photos.clone()).await)
+    } else {
+        None
+    };
+    (url, photos, from_text, photo_available, review)
+}
+
+fn content(
+    (url, photos, from_text, photo_available, loaded): ImportPageData,
+    error: &str,
+    source: &str,
     source_url: String,
     save: ServerAction<SaveImport>,
 ) -> AnyView {
-    let photo_available = ai_enabled().await.unwrap_or(false);
-    if !text.is_empty() {
-        return match photo_preview(text).await {
-            Ok(preview) => review(
-                preview,
-                ingredient_names().await.unwrap_or_default(),
-                source_url,
-                String::new(),
-                true,
-                save,
-            ),
-            Err(error) => import_failure(&message(&error), &source_url, true),
+    if let Some(loaded) = loaded {
+        let (preview, names) = match loaded {
+            Ok(value) => value,
+            Err(error) => {
+                return import_failure(&message(&error), &url, from_text || !photos.is_empty());
+            }
         };
+        let review_url = if from_text { source_url } else { url };
+        return review(preview, names, review_url, photos, from_text, save);
     }
-    if !url.is_empty() || !photos.is_empty() {
-        return match load(url.clone(), photos.clone()).await {
-            Ok((preview, names)) => review(preview, names, url, photos, false, save),
-            Err(error) => import_failure(&message(&error), &url, !photos.is_empty()),
-        };
-    }
-    source_page(&source, photo_available, &error)
+    source_page(source, photo_available.unwrap_or(false), error)
 }
 
 fn source_page(source: &str, photo_available: bool, error: &str) -> AnyView {

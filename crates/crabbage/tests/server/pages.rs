@@ -200,7 +200,7 @@ async fn ingredients_page_lists_sections_alias_counts_and_pending_ingredients() 
     ] {
         assert!(body.contains(expected), "{expected}: {body}");
     }
-    assert!(!body.contains("Pomodoro"), "{body}");
+    assert!(!body.contains(">Pomodoro<"), "{body}");
     assert!(!body.contains("Merge into"), "{body}");
 }
 

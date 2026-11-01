@@ -8,25 +8,46 @@ use crate::i18n::t;
 use crate::notice::{error_notice, failure, message};
 use crate::user::current_user;
 
+type ReviewPageData = (
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<Vec<crate::catalog::IngredientRow>, ServerFnError>>,
+);
+
 /// The review page. Admins see the pending ingredients, everyone else a message. The data is loaded
 /// inside one suspense.
 #[component]
 pub(crate) fn ReviewPage() -> impl IntoView {
     let approve = ServerAction::<ApproveIngredient>::new();
+    let data = Resource::new(move || approve.version().get(), |_| load_review());
     view! {
         <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
-                let _version = approve.version().get();
-                Suspend::new(async move { review_page(approve).await })
+                Suspend::new(async move { review_page(data.await, approve) })
             }}
         </Suspense>
     }
 }
 
-async fn review_page(approve: ServerAction<ApproveIngredient>) -> AnyView {
-    match current_user().await {
+async fn load_review() -> (
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<Vec<crate::catalog::IngredientRow>, ServerFnError>>,
+) {
+    let user = current_user().await;
+    let pending = if user.as_ref().is_ok_and(|user| user.is_admin) {
+        Some(list_pending_ingredients().await)
+    } else {
+        None
+    };
+    (user, pending)
+}
+
+fn review_page(
+    (user, pending): ReviewPageData,
+    approve: ServerAction<ApproveIngredient>,
+) -> AnyView {
+    match user {
         Ok(user) if user.is_admin => {
-            let pending = list_pending_ingredients().await;
+            let pending = pending.unwrap_or_else(|| Ok(Vec::new()));
             view! {
                 <section class="admin-page"><h1>{t("admin.review.heading")}</h1>
                 {move || approve.value().with(|value| failure(value.as_ref()))}

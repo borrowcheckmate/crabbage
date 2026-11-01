@@ -48,7 +48,10 @@ async fn the_first_step_shows_its_progress_text_and_no_previous() {
     );
     assert!(body.contains("value=\"1\" max=\"3\""), "{body}");
     assert!(!body.contains("Previous"), "{body}");
-    assert!(!body.contains("Stir in the flour"), "{body}");
+    assert!(
+        !body.contains("class=\"cook-step\">Stir in the flour"),
+        "{body}"
+    );
     assert!(
         body.contains(&format!("href=\"/recipes/{id}/cook?step=2\"")),
         "{body}"

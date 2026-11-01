@@ -9,6 +9,11 @@ use crate::i18n::t;
 use crate::notice::{error_notice, failure, message};
 use crate::user::current_user;
 
+type CategoryPageData = (
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<Vec<CategoryRow>, ServerFnError>>,
+);
+
 /// The categories page. Admins see the forms and the rows, everyone else a message. The data is
 /// loaded inside one suspense.
 #[component]
@@ -16,24 +21,51 @@ pub(crate) fn CategoriesPage() -> impl IntoView {
     let create = ServerAction::<CreateCategory>::new();
     let rename = ServerAction::<RenameCategory>::new();
     let delete = ServerAction::<DeleteCategory>::new();
+    let data = Resource::new(
+        move || {
+            (
+                create.version().get(),
+                rename.version().get(),
+                delete.version().get(),
+            )
+        },
+        |_| load_category_page(),
+    );
     view! {
         <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
-                let _versions = (create.version().get(), rename.version().get(), delete.version().get());
-                Suspend::new(async move { category_page(create, rename, delete).await })
+                Suspend::new(async move { category_page(data.await, create, rename, delete) })
             }}
         </Suspense>
     }
 }
 
-async fn category_page(
+async fn load_category_page() -> (
+    Result<crate::user::SignedInUser, ServerFnError>,
+    Option<Result<Vec<CategoryRow>, ServerFnError>>,
+) {
+    let user = current_user().await;
+    let rows = user
+        .as_ref()
+        .ok()
+        .filter(|user| user.is_admin)
+        .map(|_| list_categories());
+    let rows = match rows {
+        Some(rows) => Some(rows.await),
+        None => None,
+    };
+    (user, rows)
+}
+
+fn category_page(
+    (user, rows): CategoryPageData,
     create: ServerAction<CreateCategory>,
     rename: ServerAction<RenameCategory>,
     delete: ServerAction<DeleteCategory>,
 ) -> AnyView {
-    match current_user().await {
+    match user {
         Ok(user) if user.is_admin => {
-            let rows = list_categories().await;
+            let rows = rows.unwrap_or_else(|| Ok(Vec::new()));
             view! {
                 <section class="admin-page">
                 <h1>{t("admin.categories.heading")}</h1>
