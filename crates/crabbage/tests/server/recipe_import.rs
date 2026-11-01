@@ -3,8 +3,9 @@
 //! with the photo downloaded.
 
 use axum::Router;
-use axum::http::StatusCode;
+use axum::body::Body;
 use axum::http::header::{CONTENT_TYPE, LOCATION};
+use axum::http::{Request, StatusCode};
 use axum::response::Html;
 use axum::routing::get;
 use crabbage_store::catalog::ingredients;
@@ -12,7 +13,7 @@ use crabbage_store::recipes::get as get_recipe;
 use serde_json::json;
 use tokio::net::TcpListener;
 
-use crate::common::{Harness, body_text, header, sign_in_as};
+use crate::common::{Harness, SESSION_COOKIE, body_text, header, sign_in_as};
 use crate::recipes::call;
 
 const MEMBER: &str = "importer";
@@ -74,6 +75,25 @@ async fn page(harness: &Harness, token: &str, path: &str) -> String {
     body_text(response).await
 }
 
+async fn post_text(harness: &Harness, token: &str, text: &str, source_url: &str) -> String {
+    let body = {
+        let mut form = url::form_urlencoded::Serializer::new(String::new());
+        form.append_pair("text", text);
+        form.append_pair("source_url", source_url);
+        form.finish()
+    };
+    let request = Request::builder()
+        .method("POST")
+        .uri("/recipes/import/text")
+        .header("cookie", format!("{SESSION_COOKIE}={token}"))
+        .header("content-type", "application/x-www-form-urlencoded")
+        .body(Body::from(body))
+        .expect("request");
+    let response = harness.send(request).await;
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    header(&response, LOCATION).expect("preview redirect")
+}
+
 #[tokio::test]
 async fn the_import_page_asks_for_an_address_and_the_list_links_to_it() {
     let harness = Harness::start("import-form").await;
@@ -99,6 +119,56 @@ async fn the_import_page_asks_for_an_address_and_the_list_links_to_it() {
     assert!(website.contains("name=\"url\""), "{website}");
     let list = page(&harness, &token, "/recipes").await;
     assert!(list.contains("href=\"/recipes/import\""), "{list}");
+}
+
+#[tokio::test]
+async fn pasted_recipe_text_without_ai_uses_the_line_parser() {
+    let harness = Harness::start("paste-text-off").await;
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let location = post_text(
+        &harness,
+        &token,
+        "Tomato soup\n2 cups flour\nSalt, to taste\nStir everything.",
+        "https://example.test/soup",
+    )
+    .await;
+    assert!(location.contains("text="), "{location}");
+    assert!(!location.contains("Tomato"), "{location}");
+    let body = page(&harness, &token, &location).await;
+    assert!(body.contains("value=\"Tomato soup\""), "{body}");
+    assert!(body.contains("value=\"2\""), "{body}");
+    assert!(body.contains("value=\"flour\""), "{body}");
+    assert!(body.contains("Stir everything."), "{body}");
+    assert!(body.contains("https://example.test/soup"), "{body}");
+    assert!(body.contains("AI is off"), "{body}");
+}
+
+#[tokio::test]
+async fn pasted_recipe_text_uses_the_ai_draft_pipeline() {
+    let (harness, mut requests) =
+        super::recipe_photo_import::with_ai("paste-text-ai", StatusCode::OK).await;
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let location = post_text(&harness, &token, "Tomato soup\n2 cups flour", "").await;
+    let body = page(&harness, &token, &location).await;
+    assert!(
+        body.contains("Grandma&#x27;s soup") || body.contains("Grandma's soup"),
+        "{body}"
+    );
+    let request = requests.recv().await.expect("AI request");
+    assert!(request.to_string().contains("Tomato soup"), "{request}");
+    assert!(request.to_string().contains("2 cups flour"), "{request}");
+}
+
+#[tokio::test]
+async fn long_pasted_recipe_text_is_kept_out_of_the_redirect_url() {
+    let harness = Harness::start("paste-text-long").await;
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let text = format!("Long soup\n{}", "2 cups flour\n".repeat(2_000));
+    assert!(text.len() >= 20_000);
+    let location = post_text(&harness, &token, &text, "").await;
+    assert!(location.len() < 100, "{location}");
+    let body = page(&harness, &token, &location).await;
+    assert!(body.contains("Long soup"), "{body}");
 }
 
 #[tokio::test]

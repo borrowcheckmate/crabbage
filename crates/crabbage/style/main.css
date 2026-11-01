@@ -995,8 +995,8 @@ button.danger, button.destructive { color:var(--on-danger); }
 .import-heading { margin-bottom:1.25rem; }
 .import-heading h1 { margin-bottom:.45rem; }
 .import-heading p { color:var(--muted); margin:0; }
-.import-tabs { display:grid; grid-template-columns:1fr 1fr; gap:.25rem; padding:4px; border-radius:12px; background:var(--soft); margin:1.25rem 0; }
-.import-tabs a { display:flex; align-items:center; justify-content:center; gap:.5rem; min-height:44px; border-radius:9px; color:var(--muted); text-decoration:none; }
+.import-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.25rem; padding:4px; border-radius:12px; background:var(--soft); margin:1.25rem 0; }
+.import-tabs a { display:flex; align-items:center; justify-content:center; gap:.5rem; min-height:44px; border-radius:9px; color:var(--muted); text-decoration:none; font-size:.92rem; text-align:center; }
 .import-tabs a.active { color:var(--text); background:var(--surface); box-shadow:0 1px 4px #0001; }
 .import-source-card,.import-unavailable { display:grid; gap:.8rem; padding:1.15rem; border:1px solid var(--border); border-radius:var(--radius-panel); background:var(--surface); }
 .import-source-card h2,.import-unavailable h2 { margin:.2rem 0; }

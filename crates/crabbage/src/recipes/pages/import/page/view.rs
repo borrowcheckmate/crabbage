@@ -32,13 +32,17 @@ pub(crate) fn RecipeImportPage() -> impl IntoView {
     view! {
         <Suspense fallback=|| view! { <p class="notice" role="status">{t("import.pending")}</p> }>
             {move || {
-                let (url, photos, error, source) = query.with(|map| (
+                let (url, photos, error, source, text) = query.with(|map| (
                     map.get("url").unwrap_or_default().trim().to_owned(),
                     map.get("photos").unwrap_or_default(),
-                    map.get("photo_error").unwrap_or_default(),
+                    map.get("photo_error")
+                        .or_else(|| map.get("text_error"))
+                        .unwrap_or_default(),
                     map.get("source").unwrap_or_default(),
+                    map.get("text").unwrap_or_default(),
                 ));
-                Suspend::new(async move { content(url, photos, error, source, save).await })
+                let source_url = query.with(|map| map.get("source_url").unwrap_or_default());
+                Suspend::new(async move { content(url, photos, error, source, text, source_url, save).await })
             }}
         </Suspense>
         {move || save.value().with(|value| failure(value.as_ref()))}
@@ -50,12 +54,27 @@ async fn content(
     photos: String,
     error: String,
     source: String,
+    text: String,
+    source_url: String,
     save: ServerAction<SaveImport>,
 ) -> AnyView {
     let photo_available = ai_enabled().await.unwrap_or(false);
+    if !text.is_empty() {
+        return match photo_preview(text).await {
+            Ok(preview) => review(
+                preview,
+                ingredient_names().await.unwrap_or_default(),
+                source_url,
+                String::new(),
+                true,
+                save,
+            ),
+            Err(error) => import_failure(&message(&error), &source_url, true),
+        };
+    }
     if !url.is_empty() || !photos.is_empty() {
         return match load(url.clone(), photos.clone()).await {
-            Ok((preview, names)) => review(preview, names, url, photos, save),
+            Ok((preview, names)) => review(preview, names, url, photos, false, save),
             Err(error) => import_failure(&message(&error), &url, !photos.is_empty()),
         };
     }
@@ -66,6 +85,7 @@ fn source_page(source: &str, photo_available: bool, error: &str) -> AnyView {
     let website = source == "website";
     let problem = match error {
         "invalid" => Some(t("import.photo_error.invalid")),
+        "text_invalid" => Some(t("import.text_error.invalid")),
         "ai" => Some(t("import.photo_error.ai")),
         _ => None,
     };
@@ -77,17 +97,31 @@ fn source_page(source: &str, photo_available: bool, error: &str) -> AnyView {
             <p>{t("import.choose_help")}</p>
         </header>
         <nav class="import-tabs" aria-label=t("import.source_choices")>
-            <a class:active=!website href="/recipes/import?source=photos" aria-current=if website { None::<&str> } else { Some("page") }>
+            <a class:active=source != "website" && source != "text" href="/recipes/import?source=photos" aria-current=(source != "website" && source != "text").then_some("page")>
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 4h-4l-2 2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="12" r="3"/></svg>{t("import.source.photos")}
             </a>
             <a class:active=website href="/recipes/import?source=website" aria-current=website.then_some("page")>
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 7 21.1l1.7-1.7"/></svg>{t("import.source.url")}
             </a>
+            <a class:active=source == "text" href="/recipes/import?source=text" aria-current=(source == "text").then_some("page")>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3.5h6M9 9h6M9 13h6M9 17h4"/></svg>{t("import.source.text")}
+            </a>
         </nav>
-        {if website { website_form().into_any() } else if photo_available { photo_source().into_any() } else { unavailable_notice() }}
+        {if website { website_form().into_any() } else if source == "text" { text_form().into_any() } else if photo_available { photo_source().into_any() } else { unavailable_notice() }}
         {problem.map(|text| view! { <p class="notice error" role="alert">{text}</p> })}
         <a class="import-manual" href="/recipes/new"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/></svg>{t("import.manual")}</a>
     }.into_any()
+}
+
+fn text_form() -> impl IntoView {
+    view! {
+        <form method="post" action="/recipes/import/text" class="import-source-card">
+            <h2>{t("import.text_heading")}</h2>
+            <label>{t("import.text_label")}<textarea name="text" required rows="12"></textarea></label>
+            <label>{t("import.source_url_label")}<input type="url" name="source_url" placeholder="https://"/></label>
+            <button class="import-primary">{t("import.text_button")}</button>
+        </form>
+    }
 }
 
 fn website_form() -> impl IntoView {
@@ -149,6 +183,7 @@ fn review(
     names: Vec<String>,
     url: String,
     photos: String,
+    from_text: bool,
     save: ServerAction<SaveImport>,
 ) -> AnyView {
     let ImportPreview {
@@ -160,7 +195,9 @@ fn review(
         photo_preview,
     } = preview;
     let draft = Draft::from_wire(&draft);
-    let source_name = if photos.is_empty() {
+    let source_name = if from_text {
+        t("import.source.text").to_owned()
+    } else if photos.is_empty() {
         t("import.source.url").to_owned()
     } else {
         source
@@ -364,6 +401,15 @@ pub(super) fn count_label(one: &str, many: &str, count: usize) -> String {
 }
 
 fn import_failure(message: &str, url: &str, expired: bool) -> AnyView {
+    if message == t("import.error.blocked_site") {
+        return view! {
+            <ImportProgress current=1/>
+            <h1>{t("import.failure_heading")}</h1>
+            <div class="import-warning" role="alert"><p>{message}</p></div>
+            <a class="import-primary" href="/recipes/import?source=text">{t("import.source.text")}</a>
+            <a class="import-manual" href="/recipes/import?source=photos">{t("import.source.photos")}</a>
+        }.into_any();
+    }
     let heading = if expired {
         t("import.expired_heading")
     } else {

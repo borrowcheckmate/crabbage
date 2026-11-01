@@ -3,8 +3,10 @@
 //! created pending review by the store.
 
 use crabbage_import::ai::AiClient;
+use crabbage_import::lines::parse_line;
 use crabbage_import::matching::Candidate;
 use crabbage_import::pipeline::{Imported, complete};
+use crabbage_import::web::Draft;
 use crabbage_import::web::{ImportError, Limits, extract, fetch};
 use crabbage_store::catalog::ingredients::{Ingredient, list};
 use crabbage_store::settings;
@@ -125,6 +127,51 @@ pub(crate) async fn read_page(
     Ok(preview(&imported, url, settings.is_enabled()))
 }
 
+pub(crate) async fn read_text(
+    pool: &SqlitePool,
+    config: &Config,
+    text: &str,
+    source: &str,
+) -> Result<ImportPreview, ServerFnError> {
+    let mut lines = text.lines().map(str::trim).filter(|line| !line.is_empty());
+    let title = lines.next().unwrap_or_default().to_owned();
+    let lines: Vec<String> = lines.map(str::to_owned).collect();
+    let (ingredients_text, steps_text) = split_text_lines(&lines);
+    let draft = Draft {
+        title,
+        servings: None,
+        language: Some(config.language.code().to_owned()),
+        image: None,
+        lines: ingredients_text,
+        steps: steps_text,
+        prep_time: None,
+        cook_time: None,
+        total_time: None,
+    };
+    let ingredients = list(pool).await.map_err(|error| store_failure(&error))?;
+    let candidates = candidates(&ingredients);
+    let settings = settings::get(pool)
+        .await
+        .map_err(|_error| ServerFnError::new(t("catalog.error.database")))?;
+    let ai = ai_client(&settings);
+    let imported = complete(&draft, &candidates, ai.as_ref(), config.language.code()).await;
+    Ok(preview(&imported, source.trim(), settings.is_enabled()))
+}
+
+fn split_text_lines(lines: &[String]) -> (Vec<String>, Vec<String>) {
+    let (ingredients, steps): (Vec<_>, Vec<_>) = lines.iter().partition(|line| {
+        let parsed = parse_line(line);
+        parsed.amount.is_some() || parsed.unit.is_some()
+    });
+    (
+        ingredients
+            .into_iter()
+            .map(|line| (*line).clone())
+            .collect(),
+        steps.into_iter().map(|line| (*line).clone()).collect(),
+    )
+}
+
 fn ai_client(settings: &settings::AiSettings) -> Option<AiClient> {
     if !settings.is_enabled() {
         return None;
@@ -152,6 +199,7 @@ fn failure(error: &ImportError) -> ServerFnError {
         ImportError::PrivateAddress => t("import.error.private").to_owned(),
         ImportError::Timeout => t("import.error.timeout").to_owned(),
         ImportError::TooLarge => t("import.error.too_large").to_owned(),
+        ImportError::Status(401 | 403 | 429) => t("import.error.blocked_site").to_owned(),
         ImportError::Status(code) => t_with("import.error.status", &[("code", &code.to_string())]),
         ImportError::Network(message) => t_with("import.error.network", &[("message", message)]),
         ImportError::NoRecipe => t("import.error.no_recipe").to_owned(),
@@ -292,6 +340,29 @@ mod tests {
         unique.sort();
         unique.dedup();
         assert_eq!(unique.len(), texts.len(), "{texts:?}");
+    }
+
+    #[test]
+    fn blocked_http_statuses_share_the_specific_message() {
+        for status in [401, 403, 429] {
+            assert!(
+                failure(&ImportError::Status(status))
+                    .to_string()
+                    .contains(t("import.error.blocked_site"))
+            );
+        }
+    }
+
+    #[test]
+    fn pasted_lines_split_english_and_dutch_ingredients_from_steps() {
+        let (ingredients, steps) = split_text_lines(&[
+            "2 cups flour".to_owned(),
+            "Mix the flour well.".to_owned(),
+            "1 tl zout".to_owned(),
+            "Roer alles door elkaar.".to_owned(),
+        ]);
+        assert_eq!(ingredients, ["2 cups flour", "1 tl zout"]);
+        assert_eq!(steps, ["Mix the flour well.", "Roer alles door elkaar."]);
     }
 
     #[tokio::test]
