@@ -61,17 +61,22 @@ fn valid_categories(selected: &[i64], available: &[i64]) -> Vec<i64> {
 
 fn merged_line(line: &AiLine, candidates: &[Candidate<'_>]) -> ImportedLine {
     let name = line.name.trim().to_owned();
-    let (amount, unit) = metric(line.amount, line.unit.as_deref());
+    let (amount, unit, unknown_unit) = metric(line.amount, line.unit.as_deref());
     let ingredient_id = line
         .ingredient_id
         .filter(|id| candidates.iter().any(|candidate| candidate.id == *id))
         .or_else(|| match_ingredient(&name, candidates));
-    let note = line
+    let existing_note = line
         .note
         .as_deref()
         .map(str::trim)
         .filter(|note| !note.is_empty())
         .map(str::to_owned);
+    let note = match (unknown_unit, existing_note) {
+        (Some(word), Some(note)) => Some(format!("{word}, {note}")),
+        (Some(word), None) => Some(word),
+        (None, note) => note,
+    };
     ImportedLine {
         original: render(amount, unit, &name, note.as_deref()),
         amount,
@@ -84,19 +89,27 @@ fn merged_line(line: &AiLine, candidates: &[Candidate<'_>]) -> ImportedLine {
 
 /// The amount and unit in metric. A unit the domain knows keeps its amount. An imperial or other
 /// measure is converted, and a measure without an amount has nothing to convert, so it is dropped.
-fn metric(amount: Option<f64>, symbol: Option<&str>) -> (Option<f64>, Option<Unit>) {
-    let Some(symbol) = symbol else {
-        return (amount, None);
+fn metric(
+    amount: Option<f64>,
+    symbol: Option<&str>,
+) -> (Option<f64>, Option<Unit>, Option<String>) {
+    let Some(symbol) = symbol.map(str::trim).filter(|symbol| !symbol.is_empty()) else {
+        return (amount, None, None);
     };
     if let Some(unit) = Unit::from_symbol(symbol) {
-        return (amount, Some(unit));
+        return (amount, Some(unit), None);
     }
-    let Some((amount, measure)) = amount.zip(measure_of(symbol)) else {
-        return (None, None);
+    let Some(measure) = measure_of(symbol) else {
+        return (amount, None, Some(symbol.to_owned()));
     };
-    measure.quantity(amount).map_or((None, None), |quantity| {
-        (Some(quantity.amount()), Some(quantity.unit()))
-    })
+    let Some(amount) = amount else {
+        return (None, None, None);
+    };
+    measure
+        .quantity(amount)
+        .map_or((None, None, None), |quantity| {
+            (Some(quantity.amount()), Some(quantity.unit()), None)
+        })
 }
 
 fn render(amount: Option<f64>, unit: Option<Unit>, name: &str, note: Option<&str>) -> String {

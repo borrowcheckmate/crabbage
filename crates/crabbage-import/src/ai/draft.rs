@@ -1,8 +1,6 @@
-use crabbage_domain::quantity::Unit;
 use serde::Deserialize;
 
 use super::AiError;
-use crate::lines::measure_of;
 
 /// A recipe draft as the model wrote it. Ingredient lines are referred to by their index.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -134,12 +132,7 @@ fn validate_line(number: usize, line: &AiLine) -> Result<(), AiError> {
             "ingredient {number} has an invalid amount"
         )));
     }
-    match line.unit.as_deref() {
-        Some(symbol) if Unit::from_symbol(symbol).is_none() && measure_of(symbol).is_none() => Err(
-            invalid(format!("ingredient {number} has an unknown unit: {symbol}")),
-        ),
-        _ => Ok(()),
-    }
+    Ok(())
 }
 
 fn validate_step(number: usize, step: &AiStep, line_count: usize) -> Result<(), AiError> {
