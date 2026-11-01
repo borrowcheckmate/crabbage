@@ -1,8 +1,49 @@
 //! The admin AI settings page and server functions.
 
+use axum::extract::State;
+use axum::http::HeaderMap;
 use axum::http::StatusCode;
+use axum::routing::{get, post};
+use axum::{Json, Router, response::IntoResponse};
+use serde_json::Value;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use crate::common::{Harness, body_text, session_token};
+
+type Requests = Arc<Mutex<Vec<(String, HeaderMap, Option<Value>)>>>;
+
+async fn completion(
+    State(requests): State<Requests>,
+    headers: HeaderMap,
+    Json(body): Json<Value>,
+) -> impl IntoResponse {
+    requests
+        .lock()
+        .await
+        .push(("completion".to_owned(), headers, Some(body)));
+    (StatusCode::UNAUTHORIZED, "saved-secret rejected")
+}
+
+async fn models(State(requests): State<Requests>, headers: HeaderMap) -> impl IntoResponse {
+    requests
+        .lock()
+        .await
+        .push(("models".to_owned(), headers, None));
+    Json(serde_json::json!({"data": [{"id":"z-model"},{"id":"a-model"}]}))
+}
+
+async fn fake_provider() -> Result<(String, Requests), std::io::Error> {
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+    let address = listener.local_addr()?;
+    let app = Router::new()
+        .route("/v1/chat/completions", post(completion))
+        .route("/v1/models", get(models))
+        .with_state(Arc::clone(&requests));
+    tokio::spawn(async move { drop(axum::serve(listener, app).await) });
+    Ok((format!("http://{address}/v1"), requests))
+}
 
 fn form(pairs: &[(&str, &str)]) -> String {
     url::form_urlencoded::Serializer::new(String::new())
@@ -21,7 +62,14 @@ async fn every_settings_server_function_rejects_members() {
             "ai_enabled=false&provider=custom&base_url=https%3A%2F%2Fai.example%2Fv1&model=small&api_key=",
         ),
         ("remove_ai_key", ""),
-        ("test_ai_connection", ""),
+        (
+            "test_ai_connection",
+            "provider=openai&base_url=https%3A%2F%2Fapi.openai.com%2Fv1&model=small&api_key=",
+        ),
+        (
+            "list_ai_models",
+            "provider=openai&base_url=https%3A%2F%2Fapi.openai.com%2Fv1&api_key=",
+        ),
     ] {
         let response = harness
             .post_form(&format!("/api/{endpoint}"), Some(&token), fields)
@@ -85,6 +133,11 @@ async fn settings_fields_are_stacked_and_test_connection_uses_one_button() {
         previous = position;
     }
     assert_eq!(body.matches("Test connection").count(), 1, "{body}");
+    assert!(
+        body.contains("formaction=\"/api/test_ai_connection\""),
+        "{body}"
+    );
+    assert!(body.contains("Load models"), "{body}");
     assert!(!body.contains("API key for this test"), "{body}");
     assert!(!body.contains("Remove saved key"), "{body}");
     assert!(body.contains("Back to administration"), "{body}");
@@ -124,5 +177,96 @@ async fn administrators_can_update_and_remove_the_saved_key() {
             .expect("settings read")
             .api_key,
         None
+    );
+}
+
+#[tokio::test]
+async fn an_unticked_checkbox_saves_ai_as_disabled() {
+    let harness = Harness::start("admin-settings-disabled").await;
+    harness.issuer.set_groups(&["admin"]);
+    let token = session_token(&harness.sign_in().await).expect("admin session");
+    let response = harness
+        .post_form(
+            "/api/save_ai_settings",
+            Some(&token),
+            &form(&[
+                ("provider", "mistral"),
+                ("base_url", ""),
+                ("model", "mistral-small-latest"),
+                ("api_key", "new-key"),
+            ]),
+        )
+        .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let settings = crabbage_store::settings::get(&harness.pool)
+        .await
+        .expect("settings read");
+    assert!(!settings.ai_enabled);
+    assert_eq!(settings.provider, "mistral");
+}
+
+#[tokio::test]
+async fn test_and_model_listing_use_submitted_values_and_saved_key() {
+    let (base, requests) = fake_provider().await.expect("fake provider starts");
+
+    let harness = Harness::start("admin-settings-unsaved-test").await;
+    crabbage_store::settings::save(
+        &harness.pool,
+        &crabbage_store::settings::AiSettings {
+            ai_enabled: false,
+            provider: "custom".to_owned(),
+            base_url: "https://stored.example/v1".to_owned(),
+            model: "stored-model".to_owned(),
+            api_key: Some("saved-secret".to_owned()),
+        },
+    )
+    .await
+    .expect("saved settings");
+    harness.issuer.set_groups(&["admin"]);
+    let token = session_token(&harness.sign_in().await).expect("admin session");
+    let tested = harness
+        .post_form(
+            "/api/test_ai_connection",
+            Some(&token),
+            &form(&[
+                ("provider", "custom"),
+                ("base_url", &base),
+                ("model", "unsaved-model"),
+                ("api_key", ""),
+            ]),
+        )
+        .await;
+    assert_eq!(tested.status(), StatusCode::OK);
+    let tested = body_text(tested).await;
+    assert!(!tested.contains("saved-secret"), "{tested}");
+
+    let listed = harness
+        .post_form(
+            "/api/list_ai_models",
+            Some(&token),
+            &form(&[("provider", "custom"), ("base_url", &base), ("api_key", "")]),
+        )
+        .await;
+    assert_eq!(listed.status(), StatusCode::OK);
+    let listed = body_text(listed).await;
+    assert!(
+        listed.find("a-model").expect("first sorted model")
+            < listed.find("z-model").expect("second sorted model"),
+        "{listed}"
+    );
+
+    let requests = requests.lock().await;
+    assert_eq!(requests.len(), 2);
+    for (_, headers, _) in requests.iter() {
+        assert_eq!(
+            headers
+                .get("authorization")
+                .and_then(|value| value.to_str().ok()),
+            Some("Bearer saved-secret")
+        );
+    }
+    assert_eq!(
+        requests[0].2.as_ref().expect("completion body")["model"],
+        "unsaved-model"
     );
 }
