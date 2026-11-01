@@ -25,13 +25,35 @@ fn body_of(request: &str) -> Value {
 }
 
 #[tokio::test]
-async fn the_ai_is_not_called_for_a_complete_draft_in_the_instance_language() {
+async fn the_ai_is_called_for_a_complete_draft_and_prompt_has_candidates_and_categories() {
     let (base, mut requests) = serve("200 OK", &completion(VALID)).await;
     let flour = candidate(1, "flour");
     let page = draft(&["200 g flour"], &["Mix the flour."]);
-    let result = complete(&page, &[flour], Some(&client(&base)), "en").await;
-    assert!(requests.try_recv().is_err(), "the AI must not be called");
-    assert_eq!(result, from_draft(&page, &[flour]));
+    let result = complete(
+        &page,
+        &[flour],
+        &[(7, "Breakfast")],
+        Some(&client(&base)),
+        "en",
+    )
+    .await;
+    assert_eq!(result.title, "Fluffy pancakes");
+    let request = requests.try_recv().expect("AI called for complete parse");
+    let body = body_of(&request);
+    let text = body["messages"][1]["content"][0]["text"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(text.contains("1: flour"), "{text}");
+    assert!(text.contains("7: Breakfast"), "{text}");
+    let instructions = body["messages"][0]["content"].as_str().unwrap_or_default();
+    assert!(
+        instructions.contains("only the ingredient as bought"),
+        "{instructions}"
+    );
+    assert!(
+        instructions.contains("put all such text in") && instructions.contains("\"note\""),
+        "{instructions}"
+    );
 }
 
 #[tokio::test]
@@ -39,7 +61,7 @@ async fn the_ai_is_called_for_an_unmatched_line_and_its_draft_is_merged() {
     let (base, mut requests) = serve("200 OK", &completion(VALID)).await;
     let flour = candidate(1, "flour");
     let page = draft(&["200 g flour", "2 eggs"], &["Whisk the flour and eggs."]);
-    let result = complete(&page, &[flour], Some(&client(&base)), "en").await;
+    let result = complete(&page, &[flour], &[], Some(&client(&base)), "en").await;
     assert_eq!(result.title, "Fluffy pancakes");
     assert_eq!(result.lines[0].ingredient_id, Some(1));
     assert_eq!(result.unmatched, vec!["eggs".to_owned()]);
@@ -65,7 +87,7 @@ async fn the_ai_is_called_when_the_page_is_in_another_language() {
     let flour = candidate(1, "flour");
     let mut page = draft(&["200 g flour"], &["Mix the flour."]);
     page.language = Some("nl-NL".to_owned());
-    let result = complete(&page, &[flour], Some(&client(&base)), "en").await;
+    let result = complete(&page, &[flour], &[], Some(&client(&base)), "en").await;
     assert_eq!(result.title, "Fluffy pancakes");
     assert!(requests.try_recv().is_ok());
 }
@@ -75,7 +97,7 @@ async fn an_ai_failure_keeps_the_reading_and_sets_the_error() {
     let (base, _requests) = serve("500 Internal Server Error", "{}").await;
     let flour = candidate(1, "flour");
     let page = draft(&["200 g flour", "2 eggs"], &["Whisk the flour and eggs."]);
-    let result = complete(&page, &[flour], Some(&client(&base)), "en").await;
+    let result = complete(&page, &[flour], &[], Some(&client(&base)), "en").await;
     let reading = from_draft(&page, &[flour]);
     assert_eq!(
         result.ai_error.as_deref(),
@@ -94,6 +116,6 @@ async fn an_ai_failure_keeps_the_reading_and_sets_the_error() {
 async fn without_an_ai_config_the_reading_is_returned_unchanged() {
     let flour = candidate(1, "flour");
     let page = draft(&["200 g flour", "2 eggs"], &["Whisk the flour and eggs."]);
-    let result = complete(&page, &[flour], None, "en").await;
+    let result = complete(&page, &[flour], &[], None, "en").await;
     assert_eq!(result, from_draft(&page, &[flour]));
 }

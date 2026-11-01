@@ -84,6 +84,27 @@ fn a_parenthesised_note_keeps_the_text_after_it() {
 }
 
 #[test]
+fn optional_and_choice_phrases_become_notes() {
+    for (input, name, note) in [
+        ("rood fruit naar keuze", "rood fruit", "naar keuze"),
+        ("fruit of choice", "fruit", "of choice"),
+        (
+            "salt, finely chopped optional",
+            "salt",
+            "finely chopped, optional",
+        ),
+        ("tomato optioneel", "tomato", "optioneel"),
+        ("tomato (optioneel)", "tomato", "optioneel"),
+        ("slagroom (koud)", "slagroom", "koud"),
+    ] {
+        let line = parse_line(input);
+        assert_eq!(line.name, name, "{input}");
+        assert_eq!(line.note.as_deref(), Some(note), "{input}");
+        assert_ne!(line.unit, Some(Unit::ToTaste), "{input}");
+    }
+}
+
+#[test]
 fn to_taste_without_an_amount_becomes_the_unit() {
     for (input, name) in [
         ("Salt to taste", "Salt"),
