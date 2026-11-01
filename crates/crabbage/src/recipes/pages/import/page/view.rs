@@ -145,7 +145,7 @@ fn text_form(stage: RwSignal<u8>) -> impl IntoView {
             <h2>{t("import.text_heading")}</h2>
             <label>{t("import.text_label")}<textarea name="text" required rows="12"></textarea></label>
             <label>{t("import.source_url_label")}<input type="url" name="source_url" placeholder="https://"/></label>
-            <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get()>{t("import.text_button")}</button>
+            <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")>{t("import.text_button")}</button>
             {move || pending.get().then(|| view! { <ImportPending message=t("import.pending")/> })}
         </form>
     }
@@ -159,7 +159,7 @@ fn website_form(stage: RwSignal<u8>) -> impl IntoView {
             <h2>{t("import.website_heading")}</h2>
             <label>{t("import.url_label")}<input type="url" name="url" required placeholder="https://"/></label>
             <p>{t("import.url_hint")}</p>
-            <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get()><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>{t("import.button")}</button>
+            <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>{t("import.button")}</button>
             {move || pending.get().then(|| view! { <ImportPending message=t("import.fetching")/> })}
         </form>
     }
@@ -175,16 +175,15 @@ fn photo_source(stage: RwSignal<u8>) -> impl IntoView {
                 <label class="import-file import-camera"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 4h-4L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="12" r="3"/></svg>{t("import.take_photo")}
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" capture="environment" required/>
                 </label>
-                <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get()>{t("import.photos_button")}</button>
-                {move || pending.get().then(|| view! { <ImportPending message=t("import.pending")/> })}
+                <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")>{t("import.photos_button")}</button>
             </form>
             <form method="post" action="/recipes/import/photos" enctype="multipart/form-data" class="import-file-form" on:submit=move |_| { pending.set(true); stage.set(1); }>
                 <label class="import-file"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>{t("import.choose_photos")}
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" multiple required/>
                 </label>
-                <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get()>{t("import.photos_button")}</button>
-                {move || pending.get().then(|| view! { <ImportPending message=t("import.pending")/> })}
+                <button class="import-primary" disabled=move || pending.get() aria-busy=move || pending.get().then_some("true")>{t("import.photos_button")}</button>
             </form>
+            {move || pending.get().then(|| view! { <ImportPending message=t("import.pending")/> })}
             <p class="import-file-hint">{t("import.photos_limits")}</p>
             <p class="import-config-note">{t("import.ai_service")}</p>
         </section>

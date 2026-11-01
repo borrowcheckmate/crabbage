@@ -990,7 +990,7 @@ button.danger, button.destructive { color:var(--on-danger); }
 .import-back { margin-bottom:1rem; }
 .import-back svg,.import-manual svg,.import-tabs svg,.import-primary svg,.import-file svg,.import-add svg,.import-warning > svg,.import-pencil { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .import-progress { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.25rem; margin:0 0 1.6rem; padding:0; list-style:none; font-size:11px; }
-.import-progress li { display:flex; align-items:center; gap:.25rem; min-width:0; color:var(--muted); white-space:nowrap; }
+.import-progress li { display:flex; align-items:center; gap:.25rem; min-width:0; color:var(--muted); }
 .import-progress li span { display:grid; place-items:center; width:24px; height:24px; border:1px solid var(--border); border-radius:50%; background:var(--surface); flex:none; }
 .import-progress li span svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .import-progress li.current { color:var(--accent); font-weight:600; }
