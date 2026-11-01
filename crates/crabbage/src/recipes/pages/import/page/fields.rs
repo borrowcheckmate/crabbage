@@ -1,7 +1,7 @@
 use leptos::prelude::event_target_value;
 use leptos::prelude::*;
 
-use super::super::super::super::form::{Draft, LineSignals, StepSignals};
+use super::super::super::super::form::{Draft, LineSignals, StepSignals, unit_select};
 use super::{count_label, format_amount};
 use crate::i18n::t;
 use crate::recipes::types::{LineDraft, StepDraft};
@@ -56,7 +56,7 @@ fn import_line(draft: Draft, line: LineSignals, unresolved: Vec<String>) -> AnyV
             </summary>
             <div class="import-line-editor">
                 {amount_field(line)}
-                {unit_field(line)}
+                {unit_select(line)}
                 {ingredient_field(line)}
                 {note_field(line)}
                 <button type="button" class="secondary" aria-label=t("recipe.button.remove_ingredient") on:click=move |_| draft.remove_line(line.key)>{t("recipe.button.remove")}</button>
@@ -68,10 +68,6 @@ fn import_line(draft: Draft, line: LineSignals, unresolved: Vec<String>) -> AnyV
 
 fn amount_field(line: LineSignals) -> AnyView {
     view! { <label>{t("recipe.label.amount")}<input type="number" min="0" step="any" value=move || line.amount.get() on:input=move |ev| line.amount.set(event_target_value(&ev))/></label> }.into_any()
-}
-
-fn unit_field(line: LineSignals) -> AnyView {
-    view! { <label>{t("recipe.label.unit")}<input value=move || line.unit.get() on:input=move |ev| line.unit.set(event_target_value(&ev))/></label> }.into_any()
 }
 
 fn ingredient_field(line: LineSignals) -> AnyView {

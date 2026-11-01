@@ -158,4 +158,6 @@ pub(crate) struct ImportPreview {
     pub(crate) ai_error: Option<String>,
     /// The cropped dish photo for a photo import, as a preview data URL.
     pub(crate) photo_preview: Option<String>,
+    /// The household categories available to the review form.
+    pub(crate) categories: Vec<CategoryRow>,
 }

@@ -45,3 +45,4 @@ pub(crate) use photo::routes as photo_routes;
 pub(crate) use photo_drafts::PhotoDrafts;
 #[cfg(feature = "ssr")]
 pub(crate) use rating::routes as rating_routes;
+pub(crate) use units::unit_text;

@@ -8,6 +8,7 @@ use crabbage_import::matching::Candidate;
 use crabbage_import::pipeline::{Imported, complete};
 use crabbage_import::web::Draft;
 use crabbage_import::web::{ImportError, Limits, extract, fetch};
+use crabbage_store::catalog::categories;
 use crabbage_store::catalog::ingredients::{Ingredient, list};
 use crabbage_store::settings;
 use leptos::prelude::ServerFnError;
@@ -64,7 +65,7 @@ pub(crate) fn recipe_draft(imported: &Imported) -> RecipeDraft {
         ),
         lines,
         steps,
-        categories: Vec::new(),
+        categories: imported.categories.clone(),
     }
 }
 
@@ -95,6 +96,7 @@ pub(crate) fn preview(imported: &Imported, source: &str, ai_enabled: bool) -> Im
         unresolved,
         ai_error,
         photo_preview: None,
+        categories: Vec::new(),
     }
 }
 
@@ -119,12 +121,31 @@ pub(crate) async fn read_page(
     let draft = extract(&html).map_err(|error| failure(&error))?;
     let ingredients = list(pool).await.map_err(|error| store_failure(&error))?;
     let candidates = candidates(&ingredients);
+    let category_rows = categories::list(pool)
+        .await
+        .map_err(|error| store_failure(&error))?;
+    let category_refs: Vec<(i64, &str)> = category_rows
+        .iter()
+        .map(|category| (category.id, category.name.as_str()))
+        .collect();
     let settings = settings::get(pool)
         .await
         .map_err(|_error| ServerFnError::new(t("catalog.error.database")))?;
     let ai = ai_client(&settings);
-    let imported = complete(&draft, &candidates, ai.as_ref(), config.language.code()).await;
-    Ok(preview(&imported, url, settings.is_enabled()))
+    let imported = complete(
+        &draft,
+        &candidates,
+        &category_refs,
+        ai.as_ref(),
+        config.language.code(),
+    )
+    .await;
+    let mut preview = preview(&imported, url, settings.is_enabled());
+    preview.categories = category_rows
+        .into_iter()
+        .map(crate::catalog::CategoryRow::from)
+        .collect();
+    Ok(preview)
 }
 
 pub(crate) async fn read_text(
@@ -150,12 +171,31 @@ pub(crate) async fn read_text(
     };
     let ingredients = list(pool).await.map_err(|error| store_failure(&error))?;
     let candidates = candidates(&ingredients);
+    let category_rows = categories::list(pool)
+        .await
+        .map_err(|error| store_failure(&error))?;
+    let category_refs: Vec<(i64, &str)> = category_rows
+        .iter()
+        .map(|category| (category.id, category.name.as_str()))
+        .collect();
     let settings = settings::get(pool)
         .await
         .map_err(|_error| ServerFnError::new(t("catalog.error.database")))?;
     let ai = ai_client(&settings);
-    let imported = complete(&draft, &candidates, ai.as_ref(), config.language.code()).await;
-    Ok(preview(&imported, source.trim(), settings.is_enabled()))
+    let imported = complete(
+        &draft,
+        &candidates,
+        &category_refs,
+        ai.as_ref(),
+        config.language.code(),
+    )
+    .await;
+    let mut preview = preview(&imported, source.trim(), settings.is_enabled());
+    preview.categories = category_rows
+        .into_iter()
+        .map(crate::catalog::CategoryRow::from)
+        .collect();
+    Ok(preview)
 }
 
 fn split_text_lines(lines: &[String]) -> (Vec<String>, Vec<String>) {
@@ -232,6 +272,7 @@ mod tests {
             servings: None,
             image: Some("https://example.com/okra.png".to_owned()),
             photo: None,
+            categories: Vec::new(),
             lines,
             steps,
             unmatched: Vec::new(),

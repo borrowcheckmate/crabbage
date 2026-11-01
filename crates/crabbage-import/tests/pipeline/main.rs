@@ -1,10 +1,9 @@
-//! Recipe completion: the reading of a draft without AI, the AI trigger, the merge of the AI's draft
-//! and the whole `complete` flow. The AI server is on loopback.
+//! Recipe completion: the reading of a draft without AI, the merge of the AI's draft and the whole
+//! `complete` flow. The AI server is on loopback.
 
 mod complete;
 mod from_draft;
 mod merge;
-mod needs_ai;
 mod photos;
 mod server;
 
@@ -40,6 +39,7 @@ fn complete_recipe() -> Imported {
         servings: Some(2),
         image: None,
         photo: None,
+        categories: Vec::new(),
         lines: vec![ImportedLine {
             amount: Some(200.0),
             unit: None,

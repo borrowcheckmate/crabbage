@@ -16,7 +16,7 @@ use crate::common::{Harness, SESSION_COOKIE, body_text, header, sign_in_as};
 const BOUNDARY: &str = "crabbage-test-boundary";
 const MEMBER: &str = "photographer";
 const PNG: &[u8] = b"\x89PNG\r\n\x1a\npng";
-const DRAFT: &str = r#"{"title":"Grandma's soup","servings":4,"lines":[{"amount":200,"unit":"g","name":"leeks","note":"sliced","ingredient_id":null}],"steps":[{"text":"Simmer the leeks.","lines":[0]}],"photo":{"page":0,"left":0.2,"top":0.2,"width":0.6,"height":0.6}}"#;
+const DRAFT: &str = r#"{"title":"Grandma's soup","servings":4,"lines":[{"amount":200,"unit":"g","name":"leeks","note":"sliced","ingredient_id":null}],"steps":[{"text":"Simmer the leeks.","lines":[0]}],"categories":[1],"photo":{"page":0,"left":0.2,"top":0.2,"width":0.6,"height":0.6}}"#;
 const NULL_PHOTO_DRAFT: &str = r#"{"title":"Grandma's soup","servings":4,"lines":[{"amount":200,"unit":"g","name":"leeks","note":"sliced","ingredient_id":null}],"steps":[{"text":"Simmer the leeks.","lines":[0]}],"photo":null}"#;
 
 /// A loopback AI endpoint that records each request body and answers with `status` and the draft.

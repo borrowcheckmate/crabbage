@@ -201,7 +201,8 @@
   "unit.l": "l",
   "unit.tsp": "tsp",
   "unit.tbsp": "tbsp",
-  "unit.piece": "piece",
+  "unit.piece_label": "",
+  "unit.piece_option": "pieces",
   "unit.pinch": "a pinch",
   "unit.to_taste": "to taste",
   "unit.minutes": "min",
@@ -378,5 +379,8 @@
   "recipe.ingredients.one": "{count} ingredient",
   "recipe.ingredients.many": "{count} ingredients",
   "import.steps.one": "· {count} step",
-  "import.steps.many": "· {count} steps"
+  "import.steps.many": "· {count} steps",
+  "admin.settings.mistral": "Mistral",
+  "admin.settings.load_models": "Load models",
+  "admin.settings.models_failed": "Could not load models."
 }

@@ -130,6 +130,8 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
     ] {
         assert!(body.contains(expected), "{expected}: {body}");
     }
+    assert!(body.contains("1,25 el"), "{body}");
+    assert!(!body.contains("piece</span>"), "{body}");
 }
 
 #[tokio::test]

@@ -1,7 +1,7 @@
 use crate::ai::{AiClient, AiError, Image, Prompt};
 use crate::matching::Candidate;
 
-use super::run::instructions;
+use super::run::{instructions, known_ingredients_and_categories};
 use super::{Imported, merge};
 
 /// Reads a recipe from photos of a cookbook page or recipe card with the AI. The imported recipe
@@ -13,15 +13,18 @@ use super::{Imported, merge};
 pub async fn from_photos(
     images: Vec<Image>,
     candidates: &[Candidate<'_>],
+    categories: &[(i64, &str)],
     client: &AiClient,
     instance_language: &str,
 ) -> Result<Imported, AiError> {
     let prompt = Prompt {
         instructions: format!(
-            "{} Read the recipe from the photos. Choose a clear finished-dish photo when present, +             prefer it over step photos, and return null rather than selecting the whole page. +             Return null for text-only pages, ads, or pages without a finished-dish photo.",
+            "{} Read the recipe from the photos. Choose a clear finished-dish photo when present, \
+             prefer it over step photos, and return null rather than selecting the whole page. \
+             Return null for text-only pages, ads, or pages without a finished-dish photo.",
             instructions(instance_language)
         ),
-        text: String::new(),
+        text: known_ingredients_and_categories(candidates, categories),
         images,
     };
     let ai = client.complete(&prompt).await?;
@@ -30,10 +33,12 @@ pub async fn from_photos(
         servings: None,
         image: None,
         photo: None,
+        categories: Vec::new(),
         lines: Vec::new(),
         steps: Vec::new(),
         unmatched: Vec::new(),
         ai_error: None,
     };
-    Ok(merge(&ai, &base, candidates))
+    let category_ids = categories.iter().map(|(id, _)| *id).collect::<Vec<_>>();
+    Ok(merge(&ai, &base, candidates, &category_ids))
 }

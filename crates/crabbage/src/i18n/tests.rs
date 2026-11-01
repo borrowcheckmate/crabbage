@@ -67,6 +67,27 @@ fn dutch_text_differs_from_english_where_it_is_translated() {
 }
 
 #[test]
+fn unit_labels_are_localized_and_piece_labels_are_empty() {
+    let english = Messages::for_language(Language::En);
+    let dutch = Messages::for_language(Language::Nl);
+    for (key, en, nl) in [
+        ("unit.g", "g", "g"),
+        ("unit.kg", "kg", "kg"),
+        ("unit.ml", "ml", "ml"),
+        ("unit.l", "l", "l"),
+        ("unit.tsp", "tsp", "tl"),
+        ("unit.tbsp", "tbsp", "el"),
+        ("unit.pinch", "a pinch", "een snufje"),
+        ("unit.to_taste", "to taste", "naar smaak"),
+        ("unit.piece_label", "", ""),
+        ("unit.piece_option", "pieces", "stuks"),
+    ] {
+        assert_eq!(english.get(key), en, "{key}");
+        assert_eq!(dutch.get(key), nl, "{key}");
+    }
+}
+
+#[test]
 fn missing_keys_are_returned_as_the_key() {
     let messages = Messages::from_json(r#"{"known": "text"}"#);
     assert_eq!(messages.get("unknown.key"), "unknown.key");
