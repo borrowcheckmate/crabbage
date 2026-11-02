@@ -13,9 +13,11 @@ use super::run::wait_for_hydration;
 pub(super) async fn exercise_interactions(
     page: &Page,
     base_url: &str,
+    language: &str,
     output: &Path,
     failures: &mut Vec<String>,
 ) -> Result<(), String> {
+    super::navigation::exercise_navigation(page, base_url, language, failures).await?;
     exercise_households(page, base_url, failures).await?;
     exercise_cook(page, base_url, failures).await?;
     exercise_import(page, base_url, output, failures).await?;
@@ -121,7 +123,7 @@ async fn find_timed_recipe(page: &Page, base_url: &str) -> Result<String, String
     Err("demo recipes have no step with a named or stored duration".to_owned())
 }
 
-async fn goto_hydrated(page: &Page, url: &str) -> Result<(), String> {
+pub(super) async fn goto_hydrated(page: &Page, url: &str) -> Result<(), String> {
     page.goto(url).await.map_err(|error| error.to_string())?;
     wait_for_hydration(page).await
 }

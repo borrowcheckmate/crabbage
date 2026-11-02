@@ -262,6 +262,7 @@
   "admin.loading": "Beheer wordt geladen…",
   "admin.mealie.status_error": "De migratiestatus kon niet worden geladen. Vernieuw de pagina om het opnieuw te proberen.",
   "system.loading": "Laden…",
+  "system.navigation.pending": "Pagina laden…",
   "system.not_found.heading": "Pagina niet gevonden",
   "system.not_found.message": "Deze pagina is niet beschikbaar of is mogelijk verplaatst.",
   "system.not_found.home": "Naar Vandaag",

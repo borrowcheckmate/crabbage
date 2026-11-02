@@ -9,6 +9,9 @@ use crate::admin::{
     SectionsPage, SettingsPage,
 };
 use crate::i18n::{current_language, t};
+#[cfg(feature = "hydrate")]
+use crate::navigation::focus_main;
+use crate::navigation::{HistoryScroll, RouteFocus};
 use crate::plan_page::PlanPage;
 use crate::recipes::{
     CookPage, RecipeEditPage, RecipeImportPage, RecipeNewPage, RecipePage, RecipesPage,
@@ -21,18 +24,28 @@ use crate::user::current_user;
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+    let (is_routing, set_is_routing) = signal(false);
+    let (is_history_navigation, set_is_history_navigation) = signal(false);
     view! {
         <Title text=t("app.title")/>
-        <Router>
-            <a class="skip-link" href="#main-content">{t("app.skip")}</a>
+        <Router set_is_routing=set_is_routing>
+            <a class="skip-link" href="#main-content" on:click=move |_| {
+                #[cfg(feature = "hydrate")]
+                focus_main();
+            }>{t("app.skip")}</a>
             <div class="app-frame">
+                <HistoryScroll is_routing=is_routing is_history_navigation=is_history_navigation set_is_history_navigation=set_is_history_navigation/>
+                <RouteFocus is_routing=is_routing is_history_navigation=is_history_navigation/>
+                <Show when=move || is_routing.get()>
+                    <p class="route-pending" role="status">{t("system.navigation.pending")}</p>
+                </Show>
                 <header class="topbar">
                     <a class="brand" href="/"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8zM14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>{t("app.title")}</a>
                     <AccountMenu/>
                 </header>
                 <div class="shell-layout">
                     <PrimaryNavigation/>
-                    <main id="main-content">
+                    <main id="main-content" tabindex="-1" aria-busy=move || is_routing.get().to_string()>
                         <NoHouseholdNotice/>
                         <Routes fallback=NotFound>
                             <Route path=path!("/") view=TodayPage/>

@@ -25,7 +25,7 @@ required-features = ["ssr"]
 [features]
 default = []
 ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:base64", "dep:crabbage-import", "dep:crabbage-store", "dep:futures-util", "dep:getrandom", "dep:image", "dep:leptos_axum", "dep:axum", "dep:openidconnect", "dep:sqlx", "dep:tokio", "dep:url"]
-hydrate = ["leptos/hydrate", "dep:wasm-bindgen", "dep:web-sys"]
+hydrate = ["leptos/hydrate", "dep:js-sys", "dep:wasm-bindgen", "dep:web-sys"]
 
 [dependencies]
 axum = { workspace = true, optional = true }
@@ -37,6 +37,8 @@ fastrand = { workspace = true, features = ["std"] }
 crabbage-store = { version = "0.1.0", path = "../crabbage-store", optional = true }
 getrandom = { workspace = true, optional = true }
 image = { workspace = true, optional = true }
+# History.state is a JavaScript object that must be merged to retain router or application state.
+js-sys = { workspace = true, optional = true }
 leptos.workspace = true
 leptos_axum = { workspace = true, optional = true }
 leptos_meta.workspace = true
@@ -48,7 +50,7 @@ sqlx = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 wasm-bindgen = { workspace = true, optional = true }
-web-sys = { workspace = true, features = ["AudioContext", "AudioDestinationNode", "AudioNode", "AudioParam", "AudioScheduledSourceNode", "BaseAudioContext", "Document", "Element", "EventSource", "EventTarget", "GainNode", "MessageEvent", "Navigator", "OscillatorNode", "Storage", "Touch", "TouchEvent", "TouchList", "VisibilityState", "Window"], optional = true }
+web-sys = { workspace = true, features = ["AudioContext", "AudioDestinationNode", "AudioNode", "AudioParam", "AudioScheduledSourceNode", "BaseAudioContext", "Document", "Element", "Event", "EventSource", "EventTarget", "FocusOptions", "GainNode", "History", "HtmlElement", "MessageEvent", "Navigator", "OscillatorNode", "Storage", "Touch", "TouchEvent", "TouchList", "VisibilityState", "Window"], optional = true }
 
 [dev-dependencies]
 http-body-util.workspace = true

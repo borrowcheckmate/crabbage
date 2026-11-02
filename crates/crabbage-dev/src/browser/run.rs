@@ -137,7 +137,7 @@ pub async fn run(
         sign_in(&page).await?;
         verify_hashed_assets(&page).await?;
         let (mut failures, report) = check_routes(&page, base_url, language, output).await?;
-        exercise_interactions(&page, base_url, output, &mut failures).await?;
+        exercise_interactions(&page, base_url, language, output, &mut failures).await?;
         fs::write(output.join("report.csv"), report).map_err(|error| error.to_string())?;
         if failures.is_empty() {
             Ok(())
