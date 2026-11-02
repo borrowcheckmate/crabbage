@@ -196,7 +196,8 @@ pub(super) async fn check_query_history_entry(
             .into_value()
             .map_err(|error| error.to_string())?;
         failures.push(format!(
-            "{width}px query-entry Back restored scroll {restored}, expected {saved}"
+            "{width}px query-entry Back restored scroll {restored}, expected {saved}; {}",
+            history_diagnostic(page).await?
         ));
     }
     Ok(())
@@ -239,7 +240,7 @@ async fn check_same_route_query_history(
 }
 
 async fn history_diagnostic(page: &Page) -> Result<String, String> {
-    page.evaluate("JSON.stringify({href:location.href,cards:document.querySelectorAll('.recipe-card').length,scrollY,height:document.documentElement.scrollHeight,busy:document.querySelector('main')?.getAttribute('aria-busy'),state:history.state,fetches:window.__history_fetches||[]})")
+    page.evaluate("JSON.stringify({href:location.href,cards:document.querySelectorAll('.recipe-card').length,scrollY,height:document.documentElement.scrollHeight,innerHeight,maxScroll:document.documentElement.scrollHeight-innerHeight,busy:document.querySelector('main')?.getAttribute('aria-busy'),state:history.state,fetches:window.__history_fetches||[]})")
         .await
         .map_err(|error| error.to_string())?
         .into_value()

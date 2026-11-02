@@ -211,6 +211,7 @@ pub(crate) fn HistoryScroll(
     let (user_intent_generation, set_user_intent_generation) = signal(0_u64);
     #[cfg(feature = "hydrate")]
     install_history_tracking(
+        is_routing,
         is_history_navigation,
         set_is_history_navigation,
         history_generation,
@@ -234,6 +235,7 @@ pub(crate) fn HistoryScroll(
 
 #[cfg(feature = "hydrate")]
 fn install_history_tracking(
+    is_routing: ReadSignal<bool>,
     is_history_navigation: ReadSignal<bool>,
     set_is_history_navigation: WriteSignal<bool>,
     history_generation: ReadSignal<u64>,
@@ -266,7 +268,7 @@ fn install_history_tracking(
         true,
     ));
     let scroll = SendWrapper::new(Closure::<dyn FnMut(Event)>::new(move |_event| {
-        if !is_history_navigation.get_untracked() {
+        if !is_routing.get_untracked() && !is_history_navigation.get_untracked() {
             replace_scroll_state(
                 window().scroll_x().unwrap_or(0.0),
                 window().scroll_y().unwrap_or(0.0),
