@@ -171,17 +171,11 @@ pub(super) async fn check_query_history_entry(
         failures.push(format!("{width}px category query setup did not settle before path-history test"));
         return Ok(());
     }
-    page.evaluate("window.scrollTo(0,500)")
-        .await
-        .map_err(|error| error.to_string())?;
     let saved: f64 = page
-        .evaluate("scrollY")
+        .evaluate("window.scrollTo(0,500);const saved=scrollY;document.querySelector('.brand[href=\\'/\\']').click();saved")
         .await
         .map_err(|error| error.to_string())?
         .into_value()
-        .map_err(|error| error.to_string())?;
-    page.evaluate("document.querySelector('.brand[href=\\'/\\']').click()")
-        .await
         .map_err(|error| error.to_string())?;
     if !wait_for(page, "location.pathname === '/' && document.querySelector('main')?.getAttribute('aria-busy') === 'false'").await? {
         failures.push(format!("{width}px category query test did not reach Today"));
