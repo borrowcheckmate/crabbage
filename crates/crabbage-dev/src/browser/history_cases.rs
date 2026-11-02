@@ -137,13 +137,24 @@ pub(super) async fn check_duplicate_url_entries(
         failures.push(format!("{width}px duplicate URL Back did not reach first Recipes entry"));
         return Ok(());
     }
+    check_distinct_entry_scroll(page, width, first, second, failures).await
+}
+
+async fn check_distinct_entry_scroll(
+    page: &Page,
+    width: u32,
+    first: f64,
+    second: f64,
+    failures: &mut Vec<String>,
+) -> Result<(), String> {
+    let scroll_restored = wait_for(page, &format!("Math.abs(scrollY-{first}) <= 3")).await?;
     let restored_first: f64 = page
         .evaluate("scrollY")
         .await
         .map_err(|error| error.to_string())?
         .into_value()
         .map_err(|error| error.to_string())?;
-    if (restored_first - first).abs() > 3.0 || (second - first).abs() < 3.0 {
+    if !scroll_restored || (second - first).abs() < 3.0 {
         failures.push(format!("{width}px duplicate URL entries did not retain distinct scroll positions: first={first}, second={second}, restored={restored_first}"));
     }
     Ok(())
@@ -164,15 +175,16 @@ pub(super) async fn check_query_history_entry(
     }
     check_same_route_query_history(page, width, failures).await?;
     goto_hydrated(page, &format!("{base_url}/recipes")).await?;
-    page.evaluate("document.querySelector('.filters a[href*=category]').click()")
+    page.evaluate("window.__realAnimationFrame=window.requestAnimationFrame.bind(window);window.__pendingFrames=[];window.requestAnimationFrame=callback=>{window.__pendingFrames.push(callback);return 0};document.querySelector('.filters a[href*=category]').click()")
         .await
         .map_err(|error| error.to_string())?;
-    if !wait_for(page, "location.pathname === '/recipes' && location.search.includes('category=') && document.querySelector('.recipe-card') && document.querySelector('main')?.getAttribute('aria-busy') === 'false'").await? {
+    if !wait_for(page, "location.pathname === '/recipes' && location.search.includes('category=') && document.querySelector('.filters a[href*=category][aria-current=page]') && document.querySelector('.recipe-card') && document.querySelector('main')?.getAttribute('aria-busy') === 'false'").await? {
+        resume_animation_frames(page).await?;
         failures.push(format!("{width}px category query setup did not settle before path-history test"));
         return Ok(());
     }
     let saved: f64 = page
-        .evaluate("window.scrollTo(0,500);const saved=scrollY;document.querySelector('.brand[href=\\'/\\']').click();saved")
+        .evaluate("window.requestAnimationFrame=window.__realAnimationFrame;delete window.__realAnimationFrame;for(const callback of window.__pendingFrames)requestAnimationFrame(callback);delete window.__pendingFrames;window.scrollTo(0,500);const saved=scrollY;document.querySelector('.brand[href=\\'/\\']').click();saved")
         .await
         .map_err(|error| error.to_string())?
         .into_value()
@@ -188,6 +200,11 @@ pub(super) async fn check_query_history_entry(
         failures.push(format!("{width}px Back did not restore the recipe query URL"));
         return Ok(());
     }
+    if !wait_for(page, "Boolean(history.state?.__crabbage_scroll_v1)").await? {
+        failures.push(format!(
+            "{width}px query entry left before its first animation frame has no scroll metadata"
+        ));
+    }
     if !wait_for(page, &format!("Math.abs(scrollY-{saved}) < 3")).await? {
         let restored: f64 = page
             .evaluate("scrollY")
@@ -200,6 +217,13 @@ pub(super) async fn check_query_history_entry(
             history_diagnostic(page).await?
         ));
     }
+    Ok(())
+}
+
+async fn resume_animation_frames(page: &Page) -> Result<(), String> {
+    page.evaluate("window.requestAnimationFrame=window.__realAnimationFrame;delete window.__realAnimationFrame;for(const callback of window.__pendingFrames)requestAnimationFrame(callback);delete window.__pendingFrames")
+        .await
+        .map_err(|error| error.to_string())?;
     Ok(())
 }
 

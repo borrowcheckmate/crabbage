@@ -306,7 +306,7 @@ fn install_pre_navigation_saver() {
         replace_scroll_state(
             window().scroll_x().unwrap_or(0.0),
             window().scroll_y().unwrap_or(0.0),
-            false,
+            true,
         );
     }));
     for event in ["click", "submit"] {
