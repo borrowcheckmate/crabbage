@@ -3,5 +3,5 @@
 
 pub mod categories;
 pub mod ingredients;
-mod names;
+pub(crate) mod names;
 pub mod sections;

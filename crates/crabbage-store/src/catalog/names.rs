@@ -6,6 +6,14 @@ use sqlx::error::DatabaseError;
 
 use crate::StoreError;
 
+/// `name` with its first letter in upper case, how the catalogue writes ingredient names.
+pub(crate) fn capitalized(name: &str) -> String {
+    let mut chars = name.chars();
+    chars.next().map_or_else(String::new, |first| {
+        first.to_uppercase().chain(chars).collect()
+    })
+}
+
 /// Maps a failed write to a conflict on `text` when it breaks a unique constraint, and any other
 /// failure to a database error.
 pub(super) fn unique_or_database(text: &str) -> impl FnOnce(sqlx::Error) -> StoreError + '_ {
@@ -51,4 +59,18 @@ pub(super) async fn ensure_not_a_name(
         return Err(StoreError::Conflict(alias.to_owned()));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::capitalized;
+
+    #[test]
+    fn only_the_first_letter_is_raised() {
+        assert_eq!(capitalized("ahornsiroop"), "Ahornsiroop");
+        assert_eq!(capitalized("rode ui"), "Rode ui");
+        assert_eq!(capitalized("éclair"), "Éclair");
+        assert_eq!(capitalized("Basilicum"), "Basilicum");
+        assert_eq!(capitalized(""), "");
+    }
 }
