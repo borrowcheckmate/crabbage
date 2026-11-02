@@ -5,7 +5,7 @@ use super::smoke::IMAGE;
 use super::step::Step;
 
 const COVERAGE_THRESHOLD: &str = "90";
-const BROWSER_DRIVER_FILES: &str = r"crabbage-dev/src/browser/(run|interactions)\.rs$";
+const BROWSER_DRIVER_FILES: &str = r"crabbage-dev/src/browser/.*\.rs$";
 const SSR_FEATURE: &str = "crabbage/ssr";
 
 pub(crate) fn plan(command: &Command) -> Vec<Action> {
@@ -216,6 +216,8 @@ mod tests {
 
     #[test]
     fn coverage_has_a_threshold() {
-        assert!(shell_lines(&Command::Coverage)[0].contains("--fail-under-lines 90"));
+        let command = &shell_lines(&Command::Coverage)[0];
+        assert!(command.contains("--fail-under-lines 90"));
+        assert!(command.contains(r"--ignore-filename-regex crabbage-dev/src/browser/.*\.rs$"));
     }
 }
