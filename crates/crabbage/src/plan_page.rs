@@ -7,10 +7,12 @@
 )]
 
 use leptos::prelude::*;
+
 use leptos_router::hooks::use_query_map;
 use serde::{Deserialize, Serialize};
 
 use crate::i18n::{t, t_with};
+use crate::navigation_transition::NavigationTransition;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct PlanData {
@@ -134,7 +136,7 @@ pub(crate) fn PlanPage() -> impl IntoView {
     let selected = move || query.get().get("day").unwrap_or_default();
     let resource = Resource::new(week, plan_week);
     view! {
-        <Suspense fallback=|| view! { <p class="plan-loading" role="status">{t("plan.loading")}</p> }>
+        <NavigationTransition fallback=|| view! { <p class="plan-loading" role="status">{t("plan.loading")}</p> }>
             {move || Suspend::new(async move {
                 resource.await.map_or_else(
                     |_| plan_error().into_any(),
@@ -144,7 +146,7 @@ pub(crate) fn PlanPage() -> impl IntoView {
                     },
                 )
             })}
-        </Suspense>
+        </NavigationTransition>
     }
 }
 

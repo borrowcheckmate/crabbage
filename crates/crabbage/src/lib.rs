@@ -42,6 +42,13 @@ mod notice;
 )]
 mod navigation;
 
+#[expect(
+    unreachable_pub,
+    clippy::same_name_method,
+    reason = "the #[component] props builder adds pub methods to a private type"
+)]
+mod navigation_transition;
+
 mod route;
 
 #[expect(

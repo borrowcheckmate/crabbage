@@ -167,7 +167,7 @@ fn restore_entry_position(
 
 #[component]
 pub(crate) fn RouteFocus(
-    is_routing: ReadSignal<bool>,
+    is_routing: Signal<bool>,
     is_history_navigation: ReadSignal<bool>,
 ) -> impl IntoView {
     let location = use_location();
@@ -201,7 +201,7 @@ pub(crate) fn RouteFocus(
 
 #[component]
 pub(crate) fn HistoryScroll(
-    is_routing: ReadSignal<bool>,
+    is_routing: Signal<bool>,
     is_history_navigation: ReadSignal<bool>,
     set_is_history_navigation: WriteSignal<bool>,
 ) -> impl IntoView {
@@ -228,14 +228,14 @@ pub(crate) fn HistoryScroll(
         user_intent_generation,
     );
     #[cfg(not(feature = "hydrate"))]
-    let _: (ReadSignal<bool>, ReadSignal<bool>, WriteSignal<bool>) =
+    let _: (Signal<bool>, ReadSignal<bool>, WriteSignal<bool>) =
         (is_routing, is_history_navigation, set_is_history_navigation);
     view! { <span hidden=true></span> }
 }
 
 #[cfg(feature = "hydrate")]
 fn install_history_tracking(
-    is_routing: ReadSignal<bool>,
+    is_routing: Signal<bool>,
     is_history_navigation: ReadSignal<bool>,
     set_is_history_navigation: WriteSignal<bool>,
     history_generation: ReadSignal<u64>,
@@ -358,7 +358,7 @@ fn install_user_intent_tracking(
 #[cfg(feature = "hydrate")]
 #[derive(Clone, Copy)]
 struct NavigationRestore {
-    is_routing: ReadSignal<bool>,
+    is_routing: Signal<bool>,
     is_history_navigation: ReadSignal<bool>,
     set_is_history_navigation: WriteSignal<bool>,
     navigation_pending: StoredValue<bool>,
@@ -377,7 +377,7 @@ struct RestoreAttempt {
 
 #[cfg(feature = "hydrate")]
 fn track_location(
-    is_routing: ReadSignal<bool>,
+    is_routing: Signal<bool>,
     is_history_navigation: ReadSignal<bool>,
     set_is_history_navigation: WriteSignal<bool>,
     history_generation: ReadSignal<u64>,
