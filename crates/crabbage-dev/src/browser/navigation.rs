@@ -11,6 +11,9 @@ mod history_cases;
 #[path = "query_cases.rs"]
 mod query_cases;
 
+#[path = "recipe_controls.rs"]
+mod recipe_controls;
+
 const MAX_POLLS: usize = 160;
 
 pub(super) async fn exercise_navigation(
@@ -20,7 +23,7 @@ pub(super) async fn exercise_navigation(
     failures: &mut Vec<String>,
 ) -> Result<(), String> {
     for width in [1280, 390] {
-        set_viewport(page, width).await?;
+        set_viewport(page, width, 900).await?;
         exercise_slow_navigation(page, base_url, language, width, failures)
             .await
             .map_err(|error| format!("{width}px slow route: {error}"))?;
@@ -37,16 +40,17 @@ pub(super) async fn exercise_navigation(
             .await
             .map_err(|error| format!("{width}px history/hash: {error}"))?;
         query_cases::check_queries(page, base_url, width, failures).await?;
+        recipe_controls::check_controls(page, base_url, width, failures).await?;
     }
     super::no_javascript::exercise_no_javascript(page, base_url, failures)
         .await
         .map_err(|error| format!("no-JavaScript navigation: {error}"))
 }
 
-async fn set_viewport(page: &Page, width: u32) -> Result<(), String> {
+async fn set_viewport(page: &Page, width: u32, height: u32) -> Result<(), String> {
     let viewport = SetDeviceMetricsOverrideParams::builder()
         .width(width)
-        .height(900)
+        .height(height)
         .device_scale_factor(1.0)
         .mobile(width <= 600)
         .build()?;

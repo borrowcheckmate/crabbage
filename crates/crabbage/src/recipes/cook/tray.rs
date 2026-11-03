@@ -5,6 +5,7 @@ use leptos::prelude::*;
 
 use super::timers::{Timer, cancel, clock, finished, remaining_ms, soonest_first, start};
 use crate::i18n::{t, t_with};
+use crate::recipes::duration::duration_text;
 
 #[cfg(feature = "hydrate")]
 use super::tray_client::{now_ms, save};
@@ -46,8 +47,14 @@ pub(crate) fn start_button(timers: RwSignal<Vec<Timer>>, step: usize, seconds: u
     let number = step.to_string();
     let label = t_with("timer.label", &[("step", &number)]);
     let started = label.clone();
-    let minutes = seconds.div_ceil(60).to_string();
-    let time = t_with("timer.duration.minutes", &[("minutes", &minutes)]);
+    let time = if seconds.is_multiple_of(60) {
+        t_with(
+            "timer.duration.minutes",
+            &[("minutes", &(seconds / 60).to_string())],
+        )
+    } else {
+        duration_text(i64::from(seconds))
+    };
     let aria = t_with("timer.start.step", &[("step", &number)]);
     view! {
         <button

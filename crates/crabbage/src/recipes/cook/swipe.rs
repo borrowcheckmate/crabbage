@@ -66,7 +66,13 @@ pub(crate) fn swipe_card(
             None => None,
         };
         if let Some(href) = target {
-            navigate(&href, NavigateOptions::default());
+            navigate(
+                &href,
+                NavigateOptions {
+                    scroll: false,
+                    ..NavigateOptions::default()
+                },
+            );
         }
     };
     view! {

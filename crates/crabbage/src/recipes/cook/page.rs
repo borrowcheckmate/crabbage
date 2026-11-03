@@ -32,27 +32,23 @@ pub(crate) fn CookPage() -> impl IntoView {
     let query = use_query_map();
     let timers = RwSignal::new(Vec::<Timer>::new());
     let now = RwSignal::new(0.0_f64);
-    let data = Resource::new(
-        move || {
-            (
-                id(),
-                query.with(|map| (map.get("step"), map.get("servings"), map.get("done"))),
-            )
-        },
-        |(id, (step, servings, done))| async move {
-            let recipe = match id {
-                Some(id) => Some(get_recipe(id).await),
-                None => None,
-            };
-            (id, step, servings, done, recipe)
-        },
-    );
+    let data = Resource::new(id, |id| async move {
+        let recipe = match id {
+            Some(id) => Some(get_recipe(id).await),
+            None => None,
+        };
+        (id, recipe)
+    });
     #[cfg(feature = "hydrate")]
     super::wake_client::attach();
     view! {
         <NavigationTransition fallback=|| ()>
             {move || {
-                Suspend::new(async move { cook_view(data.await, timers) })
+                let (step, servings, done) = query.with(|map| (map.get("step"), map.get("servings"), map.get("done")));
+                Suspend::new(async move {
+                    let (id, recipe) = data.await;
+                    cook_view((id, step, servings, done, recipe), timers)
+                })
             }}
         </NavigationTransition>
         <TimerTray timers now/>
@@ -133,7 +129,7 @@ fn cook(
                 {card(previous, next, content)}
                 {needed(row, &lines, servings, shown)}
             </div>
-            <a class="cook-toggle" href=place.toggle(current) aria-pressed=is_done.to_string()>
+            <a class="cook-toggle" href=place.toggle(current) data-noscroll aria-pressed=is_done.to_string()>
                 {done_label(is_done)}
             </a>
             {dots(&place, total, current)}
@@ -174,6 +170,8 @@ fn step_content(
     is_done: bool,
 ) -> AnyView {
     let forward_href = next.map_or_else(|| place.finish(), str::to_owned);
+    let previous_scroll = previous.is_some().then_some("");
+    let next_scroll = next.is_some().then_some("");
     let forward_label = if next.is_some() {
         t("cook.next_step")
     } else {
@@ -184,8 +182,8 @@ fn step_content(
         <p class="cook-step">{row.text.clone()}</p>
         {timer_starts(row, current, timers)}
         <div class="cook-nav">
-            <a class="button secondary" href=previous.unwrap_or_else(|| place.finish())>{t("cook.previous")}</a>
-            <a class="button" href=forward_href>
+            <a class="button secondary" href=previous.unwrap_or_else(|| place.finish()) data-noscroll=previous_scroll>{t("cook.previous")}</a>
+            <a class="button" href=forward_href data-noscroll=next_scroll>
                 {forward_label}
                 {next.map(|_| view! { <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg> })}
             </a>
@@ -243,7 +241,7 @@ fn dots(place: &Place, total: usize, current: usize) -> AnyView {
             };
             view! {
                 <li>
-                    <a href=place.step(number) class=class aria-label=label aria-current=(number == current).then_some("step")>
+                    <a href=place.step(number) data-noscroll class=class aria-label=label aria-current=(number == current).then_some("step")>
                         {number.to_string()}
                     </a>
                 </li>
