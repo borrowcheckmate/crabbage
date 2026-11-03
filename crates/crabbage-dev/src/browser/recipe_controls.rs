@@ -49,7 +49,7 @@ async fn check_control(
     failures: &mut Vec<String>,
 ) -> Result<(), String> {
     let setup = format!(
-        "(() => {{const link=document.querySelector({selector:?});link.scrollIntoView({{block:'center'}});link.focus({{preventScroll:true}});window.__controlSnapshot={{y:scrollY,from:location.href,target:link.href,text:document.querySelector('main').innerText}}}})()"
+        "(() => {{const link=document.querySelector({selector:?});link.scrollIntoView({{block:'center'}});link.focus({{preventScroll:true}});window.__controlSnapshot={{y:scrollY,from:location.href,target:link.href,text:document.querySelector('main').innerText,anchor:link.matches('.cook-toggle')?link.getBoundingClientRect().top:null}}}})()"
     );
     page.evaluate(setup)
         .await
@@ -71,15 +71,24 @@ async fn check_control(
     if !wait_for(page, "location.href === window.__controlSnapshot.target && document.querySelector('main').innerText !== window.__controlSnapshot.text && document.querySelector('main').getAttribute('aria-busy') === 'false'").await? {
         failures.push(format!("{width}px {selector} did not update the recipe"));
     }
+    page.evaluate(
+        "new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))",
+    )
+    .await
+    .map_err(|error| error.to_string())?;
     let state: serde_json::Value = page
-        .evaluate("({scroll:scrollY,saved:Math.min(window.__controlSnapshot.y,Math.max(0,document.documentElement.scrollHeight-innerHeight)),fetches:window.__controlFetches,document:document.documentElement===window.__controlDocument})")
+        .evaluate("({scroll:scrollY,saved:Math.min(window.__controlSnapshot.y,Math.max(0,document.documentElement.scrollHeight-innerHeight)),anchor:window.__controlSnapshot.anchor===null?null:document.querySelector('.cook-toggle').getBoundingClientRect().top,savedAnchor:window.__controlSnapshot.anchor,fetches:window.__controlFetches,document:document.documentElement===window.__controlDocument})")
         .await.map_err(|error| error.to_string())?
         .into_value().map_err(|error| error.to_string())?;
-    let stable_scroll = state
-        .get("scroll")
-        .and_then(serde_json::Value::as_f64)
-        .zip(state.get("saved").and_then(serde_json::Value::as_f64))
-        .is_some_and(|(current, saved)| (current - saved).abs() < 3.0);
+    let stable_scroll = [("scroll", "saved"), ("anchor", "savedAnchor")]
+        .into_iter()
+        .any(|(current, saved)| {
+            state
+                .get(current)
+                .and_then(serde_json::Value::as_f64)
+                .zip(state.get(saved).and_then(serde_json::Value::as_f64))
+                .is_some_and(|(current, saved)| (current - saved).abs() < 3.0)
+        });
     if !stable_scroll
         || state.get("fetches").and_then(serde_json::Value::as_u64) != Some(0)
         || state.get("document").and_then(serde_json::Value::as_bool) != Some(true)
