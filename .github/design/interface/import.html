@@ -1,0 +1,239 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Crabbage recipe import reference</title><script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script><style>body{margin:0;padding:24px;background:light-dark(#eee,#151b17);color:light-dark(#202c25,#eff0e7);color-scheme:light dark;font-family:system-ui}body>header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;max-width:1024px;margin:0 auto 20px}body>header p{font-size:13px}body>header select{font:inherit;min-height:44px;padding:8px;background:light-dark(#fffef9,#27312a);color:inherit;border:1px solid #888;border-radius:8px}#crabbage-import>[data-variant]{min-height:0!important}.cursor-interaction{cursor:pointer}@media(max-width:500px){body{padding:12px}}</style></head><body><header><div><strong>Crabbage recipe import reference</strong><p>Interactive prototype. Synthetic data; external actions are simulated.</p></div><label>Layout <select id="layout"><option>Phone</option><option>Tablet</option><option>Desktop</option></select></label></header><div id="crabbage-import" class="reference-carousel" aria-label="Recipe import on phone, tablet and desktop">
+<section data-variant="Phone" aria-label="Phone recipe import"><div class="cb-app" data-device="phone" data-start="source" aria-label="Phone import flow"></div></section>
+<section data-variant="Tablet" aria-label="Tablet recipe import" hidden><div class="cb-app" data-device="tablet" data-start="photos" aria-label="Tablet import flow"></div></section>
+<section data-variant="Desktop" aria-label="Desktop recipe import" hidden><div class="cb-app" data-device="desktop" data-start="review" aria-label="Desktop import flow"></div></section>
+</div>
+<style>
+#crabbage-import{--cb-bg:light-dark(#f5f3ec,#1d2520);--cb-paper:light-dark(#fffef9,#27312a);--cb-ink:light-dark(#202c25,#eff0e7);--cb-muted:light-dark(#59645c,#b9c3b8);--cb-line:light-dark(#dedfd5,#465147);--cb-green:light-dark(#285442,#b9d4b4);--cb-inverse:light-dark(#fffef9,#1c2d23);--cb-soft:light-dark(#e8edde,#384b3b);--cb-warm:light-dark(#eee6d6,#453e32);--cb-orange:light-dark(#885333,#e6b58c);color-scheme:light dark;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#crabbage-import *{box-sizing:border-box}
+
+#crabbage-import [hidden]{display:none!important}
+#crabbage-import .cb-app{container-type:inline-size;background:var(--cb-bg);color:var(--cb-ink);border:1px solid var(--cb-line);border-radius:20px;overflow:hidden;margin:0 auto;min-height:780px;font-size:15px;line-height:1.5;--cb-radius:18px}
+#crabbage-import .cb-app[data-device="phone"]{max-width:390px}
+#crabbage-import .cb-app[data-device="tablet"]{max-width:768px}
+#crabbage-import .cb-app[data-device="desktop"]{max-width:1024px}
+#crabbage-import button,#crabbage-import input{font:inherit;color:inherit}
+#crabbage-import button{border:0;background:transparent;min-height:44px;padding:8px 12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px}
+#crabbage-import button:focus-visible,#crabbage-import input:focus-visible{outline:3px solid var(--cb-green);outline-offset:3px}
+#crabbage-import .cb-action{background:var(--cb-green);color:var(--cb-inverse);font-weight:600;padding:12px 18px}
+#crabbage-import .cb-secondary{border:1px solid var(--cb-line);background:var(--cb-paper)}
+#crabbage-import .cb-icon{width:19px;height:19px;flex:none}
+#crabbage-import .cb-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 22px;border-bottom:1px solid var(--cb-line);background:var(--cb-paper)}
+#crabbage-import .cb-brand{font:600 26px/1.1 Georgia,serif;letter-spacing:-1px;display:flex;align-items:center;gap:8px}
+#crabbage-import .cb-brand .cb-icon{color:var(--cb-green);width:26px;height:26px}
+#crabbage-import .cb-house{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--cb-muted);text-align:left}
+#crabbage-import .cb-avatar{width:34px;height:34px;border-radius:50%;background:var(--cb-soft);display:grid;place-items:center;color:var(--cb-green);font-size:12px;font-weight:600}
+#crabbage-import .cb-frame{display:flex;min-height:710px}
+#crabbage-import .cb-side{display:none;width:172px;flex:none;padding:28px 14px;border-right:1px solid var(--cb-line);background:var(--cb-paper)}
+#crabbage-import .cb-side button{width:100%;justify-content:flex-start;margin-bottom:7px;color:var(--cb-muted)}
+#crabbage-import .cb-side button[aria-current="page"]{background:var(--cb-soft);color:var(--cb-green);font-weight:600}
+#crabbage-import .cb-work{flex:1;min-width:0;display:flex;flex-direction:column}
+#crabbage-import .cb-content{padding:28px 22px;flex:1;min-width:0}
+#crabbage-import .cb-eyebrow{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:650;color:var(--cb-muted);margin:0 0 8px}
+#crabbage-import h1{font:400 34px/1.12 Georgia,serif;letter-spacing:-1.2px;margin:0 0 12px}
+#crabbage-import h2{font:400 25px/1.2 Georgia,serif;letter-spacing:-.5px;margin:0}
+#crabbage-import h3{font-size:15px;line-height:1.35;margin:0;font-weight:600}
+#crabbage-import p{margin:0}
+#crabbage-import .cb-muted{color:var(--cb-muted);font-size:13px}
+#crabbage-import .cb-subtitle{color:var(--cb-muted);margin-bottom:24px}
+#crabbage-import .cb-section{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:26px 0 14px}
+#crabbage-import .cb-section button{padding:2px 0;color:var(--cb-green);font-size:12px}
+#crabbage-import .cb-feature{border-radius:var(--cb-radius);background:var(--cb-paper);overflow:hidden;border:1px solid var(--cb-line)}
+#crabbage-import .cb-photo{width:100%;height:220px;object-fit:cover;display:block}
+#crabbage-import .cb-feature-copy{padding:19px}
+#crabbage-import .cb-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--cb-green);font-weight:650;margin-bottom:10px}
+#crabbage-import .cb-meta{display:flex;align-items:center;flex-wrap:wrap;gap:15px;color:var(--cb-muted);font-size:12px;margin:12px 0 18px}
+#crabbage-import .cb-meta span{display:flex;align-items:center;gap:5px}
+#crabbage-import .cb-meta .cb-icon{width:15px;height:15px}
+#crabbage-import .cb-feature .cb-action{width:100%}
+#crabbage-import .cb-upcoming{display:grid;gap:0}
+#crabbage-import .cb-next{display:flex;align-items:center;gap:15px;padding:14px 0;border-bottom:1px solid var(--cb-line)}
+#crabbage-import .cb-date{color:var(--cb-muted);font-size:11px;min-width:38px;text-transform:uppercase;letter-spacing:.5px}
+#crabbage-import .cb-next-copy{flex:1;min-width:0}
+#crabbage-import .cb-shortcut{display:flex;align-items:center;gap:12px;padding:17px;background:var(--cb-soft);border-radius:14px;margin-top:22px}
+#crabbage-import .cb-shortcut button{margin-left:auto;padding:5px;color:var(--cb-green)}
+#crabbage-import .cb-bottom{background:var(--cb-paper);display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--cb-line);padding:8px 7px 10px;gap:2px}
+#crabbage-import .cb-bottom button{display:flex;flex-direction:column;gap:4px;padding:7px 3px;font-size:11px;color:var(--cb-muted);border-radius:12px}
+#crabbage-import .cb-bottom button[aria-current="page"]{color:var(--cb-green);background:var(--cb-soft);font-weight:600}
+#crabbage-import .cb-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+#crabbage-import .cb-search{display:flex;align-items:center;gap:10px;border:1px solid var(--cb-line);background:var(--cb-paper);border-radius:12px;padding:0 13px;margin:14px 0}
+#crabbage-import input{min-width:0;width:100%;border:0;background:transparent;min-height:48px;outline-offset:2px;font-size:16px}
+#crabbage-import .cb-filters{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0 23px}
+#crabbage-import .cb-filter{border:1px solid var(--cb-line);border-radius:24px;padding:7px 14px;font-size:12px;min-height:36px;background:var(--cb-paper)}
+#crabbage-import .cb-filter[aria-pressed="true"]{background:var(--cb-green);border-color:var(--cb-green);color:var(--cb-inverse)}
+#crabbage-import .cb-library{display:grid;gap:18px}
+#crabbage-import .cb-recipe-row{background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:var(--cb-radius);padding:19px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:145px;gap:8px;text-align:left}
+#crabbage-import .cb-recipe-row .cb-icon{color:var(--cb-green)}
+#crabbage-import .cb-recipe-row h2{font-size:23px}
+#crabbage-import .cb-library .cb-feature button.cb-open{padding:0;display:block;text-align:left;width:100%}
+#crabbage-import .cb-week{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--cb-line);border-radius:12px;background:var(--cb-paper);padding:4px;margin:20px 0}
+#crabbage-import .cb-day{display:flex;align-items:center;gap:14px;width:100%;border-bottom:1px solid var(--cb-line);border-radius:0;padding:16px 4px;text-align:left;justify-content:flex-start}
+#crabbage-import .cb-day[aria-pressed="true"]{background:var(--cb-soft);border-radius:12px;border-color:transparent;padding-left:12px;padding-right:12px}
+#crabbage-import .cb-daydate{min-width:34px;text-align:center;font-size:12px;color:var(--cb-muted)}
+#crabbage-import .cb-daydate b{display:block;font-size:21px;font-weight:400;color:var(--cb-ink)}
+#crabbage-import .cb-day .cb-icon{margin-left:auto;color:var(--cb-muted)}
+#crabbage-import .cb-editor{padding:20px;background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:var(--cb-radius);margin-top:20px}
+#crabbage-import .cb-editor .cb-action{width:100%;margin-top:18px}
+#crabbage-import .cb-editor .cb-photo{height:150px;border-radius:12px;margin:15px 0}
+#crabbage-import .cb-editor .cb-row{margin-top:15px}
+#crabbage-import .cb-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#crabbage-import .cb-row .cb-secondary{flex:1}
+#crabbage-import .cb-listline{display:flex;align-items:center;width:100%;gap:13px;padding:14px 0;text-align:left;border-bottom:1px solid var(--cb-line);border-radius:0;justify-content:flex-start}
+#crabbage-import .cb-box{width:23px;height:23px;border-radius:7px;border:1.5px solid var(--cb-line);flex:none;display:grid;place-items:center}
+#crabbage-import .cb-listline[aria-pressed="true"] .cb-box{background:var(--cb-green);border-color:var(--cb-green);color:var(--cb-inverse)}
+#crabbage-import .cb-listline[aria-pressed="true"] .cb-itemname{text-decoration:line-through;color:var(--cb-muted)}
+#crabbage-import .cb-itemname{flex:1}
+#crabbage-import .cb-qty{font-size:13px;color:var(--cb-muted)}
+#crabbage-import .cb-group-label{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--cb-muted);margin:23px 0 6px}
+#crabbage-import .cb-summary{background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:var(--cb-radius);padding:20px;margin-top:24px}
+#crabbage-import .cb-summary .cb-action{width:100%;margin:16px 0 10px}
+#crabbage-import .cb-progress{height:5px;border-radius:3px;background:var(--cb-line);margin:15px 0;overflow:hidden}
+#crabbage-import .cb-progress span{display:block;background:var(--cb-green);height:100%}
+#crabbage-import .cb-cookstep{font:400 29px/1.45 Georgia,serif;margin:23px 0}
+#crabbage-import .cb-ingredients{background:var(--cb-soft);padding:18px;border-radius:14px;margin:20px 0}
+#crabbage-import .cb-ingredients p{padding:5px 0}
+#crabbage-import .cb-status{font-size:12px;color:var(--cb-green);padding:12px 0;min-height:18px}
+#crabbage-import .cb-back{padding:0;color:var(--cb-green);font-size:12px;margin-bottom:16px}
+#crabbage-import .cb-detail-photo{height:240px;border-radius:16px;margin:8px 0 22px}
+#crabbage-import .cb-note{font-size:11px;color:var(--cb-muted);text-align:center}
+#crabbage-import .cb-fieldlabel{display:block;font-size:12px;color:var(--cb-muted);margin-top:15px}
+@container (min-width:560px){#crabbage-import .cb-content{padding:32px}#crabbage-import h1{font-size:42px}#crabbage-import .cb-today-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:25px;align-items:start}#crabbage-import .cb-today-layout .cb-section:first-child{margin-top:0}#crabbage-import .cb-plan-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px}#crabbage-import .cb-editor{margin-top:0}#crabbage-import .cb-library{grid-template-columns:1fr 1fr}#crabbage-import .cb-library .cb-feature{grid-row:span 2}#crabbage-import .cb-shop-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:28px}#crabbage-import .cb-summary{margin-top:22px}#crabbage-import .cb-cook-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:25px}#crabbage-import .cb-detail-layout{display:grid;grid-template-columns:1fr 1.5fr;gap:28px}}
+@container (min-width:900px){#crabbage-import .cb-side{display:block}#crabbage-import .cb-bottom{display:none}#crabbage-import .cb-content{padding:36px}#crabbage-import .cb-top{padding:19px 27px}#crabbage-import .cb-photo{height:230px}#crabbage-import .cb-library{grid-template-columns:1.2fr 1fr}#crabbage-import .cb-frame{min-height:700px}}
+@media(max-width:420px){#crabbage-import .cb-content{padding:24px 17px}#crabbage-import .cb-top{padding:15px 17px}#crabbage-import .cb-house .cb-housename{display:none}}
+
+#crabbage-import{--cb-warning:light-dark(#855321,#ebc58d);--cb-warning-bg:light-dark(#f4ead8,#423a2c);--cb-error:light-dark(#a43228,#ffb5ac)}
+#crabbage-import>[data-variant]{min-height:1340px}
+#crabbage-import .cb-app{min-height:960px}
+#crabbage-import .cb-content{padding-top:23px}
+#crabbage-import .ci-note{font-size:11px;color:var(--cb-muted);margin-top:14px}
+#crabbage-import .ci-steps{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:8px 0 25px;padding:0;list-style:none;font-size:12px;color:var(--cb-muted)}
+#crabbage-import .ci-steps li{display:flex;align-items:center;gap:6px}
+#crabbage-import .ci-steps li[aria-current="step"]{color:var(--cb-green);font-weight:600}
+#crabbage-import .ci-steps span{width:22px;height:22px;display:grid;place-items:center;background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:50%;font-size:11px}
+#crabbage-import .ci-steps li[aria-current="step"] span{background:var(--cb-green);color:var(--cb-inverse);border-color:var(--cb-green)}
+#crabbage-import .ci-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--cb-soft);padding:4px;border-radius:13px;margin:20px 0}
+#crabbage-import .ci-tabs button{color:var(--cb-muted);font-size:13px}
+#crabbage-import .ci-tabs button[aria-pressed="true"]{background:var(--cb-paper);color:var(--cb-ink)}
+#crabbage-import .ci-panel{background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:18px;padding:20px}
+#crabbage-import .ci-upload{display:grid;gap:12px;margin:18px 0}
+#crabbage-import .ci-file{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--cb-line);background:var(--cb-paper);padding:12px;border-radius:11px;min-height:48px;font-size:14px;position:relative;overflow:hidden;text-align:center}
+#crabbage-import .ci-file input{position:absolute;inset:0;width:100%;height:100%;opacity:0;min-height:0}
+#crabbage-import .ci-file:focus-within{outline:3px solid var(--cb-green);outline-offset:3px}
+#crabbage-import .ci-file.ci-camera{background:var(--cb-green);color:var(--cb-inverse);border-color:var(--cb-green)}
+#crabbage-import .ci-options{display:grid;gap:20px}
+#crabbage-import .ci-option{padding:18px 0;border-top:1px solid var(--cb-line)}
+#crabbage-import .ci-option h3{margin-bottom:6px}
+#crabbage-import .ci-example{font-size:12px;color:var(--cb-muted);text-decoration:underline;text-underline-offset:4px;padding:8px 0;margin-top:12px}
+#crabbage-import .ci-url{margin-top:18px;display:block;font-size:13px;font-weight:600}
+#crabbage-import .ci-input,#crabbage-import select,#crabbage-import textarea{border:1px solid var(--cb-line);border-radius:10px;background:var(--cb-paper);color:var(--cb-ink);width:100%;min-height:46px;padding:10px 12px;font:inherit;font-size:16px;margin-top:6px}
+#crabbage-import .ci-input:focus-visible,#crabbage-import select:focus-visible,#crabbage-import textarea:focus-visible{outline:3px solid var(--cb-green);outline-offset:2px}
+#crabbage-import .ci-input[aria-invalid="true"]{border-color:var(--cb-warning)}
+#crabbage-import textarea{resize:vertical;min-height:92px;line-height:1.5}
+#crabbage-import .ci-full{width:100%;margin-top:19px}
+#crabbage-import .ci-small{font-size:12px;color:var(--cb-muted)}
+#crabbage-import .ci-callout{display:flex;align-items:flex-start;gap:10px;border-radius:12px;padding:13px 14px;background:var(--cb-warning-bg);color:var(--cb-warning);font-size:13px;margin:18px 0}
+#crabbage-import .ci-callout .cb-icon{margin-top:2px;width:17px;height:17px}
+#crabbage-import .ci-error{color:var(--cb-error);margin-top:10px;font-size:13px}
+#crabbage-import .ci-pages{display:grid;gap:12px;margin:20px 0}
+#crabbage-import .ci-page{display:grid;grid-template-columns:67px minmax(0,1fr);gap:13px;padding:12px;background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:13px;align-items:center}
+#crabbage-import .ci-pagephoto{display:block;width:65px;height:89px;object-fit:cover;border-radius:5px;background:var(--cb-warm)}
+#crabbage-import .ci-thumb{width:65px;height:89px;padding:9px 6px;background:var(--cb-warm);color:var(--cb-ink);font:8px/1.4 Georgia,serif;overflow:hidden;border-radius:4px}
+#crabbage-import .ci-thumb b{font-size:11px;line-height:1.05;display:block;margin-bottom:7px;font-weight:400}
+#crabbage-import .ci-thumb hr{border:0;height:1px;background:var(--cb-line);margin:6px 0}
+#crabbage-import .ci-page-actions{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+#crabbage-import .ci-page-actions button{min-height:44px;min-width:44px;padding:7px;color:var(--cb-muted);font-size:12px}
+#crabbage-import .ci-page-actions button:disabled{opacity:.35}
+#crabbage-import .ci-source{background:var(--cb-warm);padding:19px;border-radius:15px}
+#crabbage-import .ci-paper{background:var(--cb-paper);border:1px solid var(--cb-line);padding:25px 23px;min-height:315px;border-radius:3px;font-family:Georgia,serif;color:var(--cb-ink)}
+#crabbage-import .ci-paper h3{font:400 24px/1.2 Georgia,serif;margin:9px 0 17px;letter-spacing:-.5px}
+#crabbage-import .ci-paper p{font-size:12px;line-height:1.7;margin-bottom:12px}
+#crabbage-import .ci-paper ul{padding-left:17px;font-size:12px;line-height:1.9;margin:0}
+#crabbage-import .ci-paper .ci-mark{background:var(--cb-warning-bg);color:var(--cb-warning);padding:2px 4px}
+#crabbage-import .ci-paper img{max-width:100%;height:auto;display:block}
+#crabbage-import .ci-source-label{font-family:system-ui;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--cb-muted)}
+#crabbage-import .ci-source-nav{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;margin-bottom:13px}
+#crabbage-import .ci-source-nav button{background:var(--cb-paper);padding:6px;min-width:44px}
+#crabbage-import .ci-source-mobile{margin:20px 0}
+#crabbage-import .ci-source-mobile summary{min-height:44px;padding:10px 0;color:var(--cb-green);font-size:13px}
+#crabbage-import .ci-source-desktop{display:none}
+#crabbage-import .ci-processing{padding:30px 0 15px;text-align:center}
+#crabbage-import .ci-processing .cb-icon{width:32px;height:32px;color:var(--cb-green);margin:0 auto 20px;display:block}
+#crabbage-import .ci-processing h2{margin-bottom:12px}
+#crabbage-import .ci-processing .ci-small{max-width:28em;margin:0 auto}
+#crabbage-import .ci-job{margin:22px 0;background:var(--cb-paper);border:1px solid var(--cb-line);padding:16px;border-radius:13px;text-align:left;display:flex;align-items:center;gap:13px}
+#crabbage-import .ci-job .cb-icon{width:20px;height:20px;margin:0}
+#crabbage-import .ci-demo-controls{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:24px 0 10px}
+#crabbage-import .ci-demo-controls button{font-size:12px;border:1px dashed var(--cb-line)}
+#crabbage-import .ci-review-form{min-width:0}
+#crabbage-import .ci-metaform{display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:12px;margin:20px 0}
+#crabbage-import .ci-metaform label{font-size:12px;color:var(--cb-muted)}
+#crabbage-import .ci-metaform input{font-size:15px}
+#crabbage-import .ci-ingredient{padding:13px 0;border-bottom:1px solid var(--cb-line)}
+#crabbage-import .ci-ingredient-top{display:flex;align-items:center;gap:10px}
+#crabbage-import .ci-amount{min-width:43px;font-size:13px;color:var(--cb-muted)}
+#crabbage-import .ci-name{flex:1;min-width:0}
+#crabbage-import .ci-ingredient-top button{padding:5px;min-width:44px;color:var(--cb-green)}
+#crabbage-import .ci-new{font-size:11px;display:inline-block;color:var(--cb-green);background:var(--cb-soft);border-radius:5px;padding:2px 5px;margin-top:3px}
+#crabbage-import .ci-warning-inline{color:var(--cb-warning);font-size:12px;margin:4px 0 0 53px;display:flex;gap:6px;align-items:center}
+#crabbage-import .ci-warning-inline .cb-icon{width:14px;height:14px}
+#crabbage-import .ci-edit{margin-top:12px;background:var(--cb-paper);padding:14px;border:1px solid var(--cb-line);border-radius:12px}
+#crabbage-import .ci-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#crabbage-import .ci-edit label{font-size:12px;color:var(--cb-muted);display:block;margin-bottom:10px}
+#crabbage-import .ci-edit .ci-input,#crabbage-import .ci-edit select{font-size:15px}
+#crabbage-import .ci-edit .cb-row button{font-size:12px}
+#crabbage-import .ci-review-actions{border-top:1px solid var(--cb-line);margin-top:22px;padding-top:19px}
+#crabbage-import .ci-review-actions .cb-action{width:100%}
+#crabbage-import .ci-review-actions button:disabled{opacity:.5}
+#crabbage-import .ci-method{margin-top:24px}
+#crabbage-import .ci-method summary{font:400 25px/1.2 Georgia,serif;min-height:44px;padding:5px 0}
+#crabbage-import .ci-method ol{padding-left:22px;margin:15px 0;font-size:14px;line-height:1.65}
+#crabbage-import .ci-method li{padding:4px 0}
+#crabbage-import .ci-method label{font-size:12px;color:var(--cb-muted);display:block;margin-top:15px}
+#crabbage-import .ci-photo-destination{font-size:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--cb-line);color:var(--cb-muted)}
+#crabbage-import .ci-success{background:var(--cb-soft);border-radius:50%;width:52px;height:52px;display:grid;place-items:center;color:var(--cb-green);margin:17px 0 23px}
+#crabbage-import .ci-saved-info{padding:18px;background:var(--cb-paper);border:1px solid var(--cb-line);border-radius:14px;margin:23px 0}
+@container(min-width:560px){#crabbage-import .ci-options{grid-template-columns:1.2fr 1fr;gap:25px}#crabbage-import .ci-option{border:0;padding:7px 0}#crabbage-import .ci-upload{grid-template-columns:1fr 1fr}#crabbage-import .ci-pages{grid-template-columns:1fr 1fr}#crabbage-import .ci-source-mobile{display:none}#crabbage-import .ci-source-desktop{display:block}#crabbage-import .ci-review-layout{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.25fr);gap:25px;align-items:start}#crabbage-import .ci-steps{max-width:410px;margin-bottom:27px}#crabbage-import .ci-review-header{margin-bottom:22px}#crabbage-import .ci-metaform{margin-top:0}#crabbage-import .ci-processing{padding:40px 50px}#crabbage-import .ci-saved{max-width:520px}}
+@media(prefers-reduced-motion:reduce){#crabbage-import *{animation:none;transition:none}}
+</style>
+<script>
+(()=>{
+const root=document.getElementById('crabbage-import');
+const icon=n=>`<i data-lucide="${n}" class="cb-icon" aria-hidden="true"></i>`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const defaultSteps=['Whisk the eggs and ricotta in a bowl.','Fold in the flour, vanilla and salt.','Fry spoonfuls of batter for 2 minutes on each side.'];
+const modes=['source','photos','reading','review','failure','expired','saved'];
+function pageDoc(n){return n===0?`<span class="ci-source-label">Sample recipe page · 1 of 2</span><h3>Lemon ricotta<br>pancakes</h3><p>Serves 4</p><ul><li>250 g flour</li><li><span class="ci-mark">200? g ricotta</span></li><li>2 eggs</li><li>½ tsp vanilla extract</li><li>Salt, to taste</li></ul>`:`<span class="ci-source-label">Sample recipe page · 2 of 2</span><h3>Method</h3><p>Whisk the eggs and ricotta in a bowl.</p><p>Fold in the flour, vanilla and salt.</p><p>Fry spoonfuls of batter for 2 minutes on each side.</p>`}
+function thumb(n){return `<div class="ci-thumb" aria-label="Sample recipe page ${n+1}"><b>${n===0?'Lemon ricotta pancakes':'Method'}</b><hr>${n===0?'250 g flour<br>200? g ricotta<br>2 eggs<br>½ tsp vanilla':'Whisk eggs and ricotta.<br><br>Fold in flour.<br><br>Fry the pancakes.'}</div>`}
+root.querySelectorAll('.cb-app').forEach(app=>{
+const device=app.dataset.device;
+const s={stage:app.dataset.start,method:'photos',ai:true,pages:[],page:0,url:'',error:'',edit:-1,checkedAmount:false,amount:'',unit:'g',ingredient:'Ricotta',title:'Lemon ricotta pancakes',servings:'4',steps:[...defaultSteps],skipAmount:false,adding:false,saveCount:0,newIngredient:true,manual:false};
+if(s.stage!=='source')s.pages=[{sample:0,name:'Ingredients',id:1},{sample:1,name:'Method',id:2}];
+function sourceView(){const selected=s.pages[s.page];return `<div class="ci-source"><div class="ci-source-nav"><span>Original · ${s.method==='url'?'Recipe page':`Photo ${Math.min(s.page+1,s.pages.length)} of ${s.pages.length}`}</span><span><button type="button" data-act="source-prev" aria-label="Previous source page" class="cursor-interaction" ${s.page<=0?'disabled':''}>${icon('chevron-left')}</button><button type="button" data-act="source-next" aria-label="Next source page" class="cursor-interaction" ${s.page>=s.pages.length-1?'disabled':''}>${icon('chevron-right')}</button></span></div><div class="ci-paper">${selected?.data?`<img src="${selected.data}" alt="Selected source recipe photo">`:pageDoc(selected?.sample||0)}</div><p class="ci-note">${selected?.data?'Selected photo shown locally. The extracted recipe in this prototype is sample data.':'Example source used for this prototype.'}</p></div>`}
+function progress(){const index=['source','photos'].includes(s.stage)?0:['reading','failure'].includes(s.stage)?1:2;return `<ol class="ci-steps" aria-label="Import progress">${['Choose source','Read recipe','Review & save'].map((t,i)=>`<li ${index===i?'aria-current="step"':''}><span>${i<index?'✓':i+1}</span>${t}</li>`).join('')}</ol>`}
+function intro(title,description=''){return `<h1>${title}</h1>${description?`<p class="cb-subtitle">${description}</p>`:''}`}
+function fileControls(){return `<div class="ci-upload"><label class="ci-file ci-camera cursor-interaction">${icon('camera')} Take photo<input type="file" data-file accept="image/jpeg,image/png,image/webp" capture="environment" aria-label="Take a photo of a recipe" ${s.pages.length>=4?'disabled':''}></label><label class="ci-file cursor-interaction">${icon('images')} Choose photos<input type="file" data-file multiple accept="image/jpeg,image/png,image/webp" aria-label="Choose recipe photos" ${s.pages.length>=4?'disabled':''}></label></div>`}
+function source(){return intro('Import recipe','Choose how to add a recipe.')+`<div class="ci-tabs" aria-label="Import source"><button type="button" data-act="photos-tab" aria-pressed="${s.method==='photos'}" class="cursor-interaction">${icon('camera')} Photos</button><button type="button" data-act="url-tab" aria-pressed="${s.method==='url'}" class="cursor-interaction">${icon('link')} Website</button></div>${s.method==='photos'?s.ai?`<div class="ci-options"><div class="ci-panel"><h2>Recipe photos</h2><p class="cb-muted" style="margin-top:10px">Photograph a book, card or printed recipe.</p>${fileControls()}<p class="ci-small">Up to 4 photos · JPEG, PNG or WebP<br>10 MB per photo</p></div><div class="ci-option"><h3>Before you take a photo</h3><p class="cb-muted">Include the ingredients and instructions. Keep the page flat and the text sharp.</p><p class="ci-note">Photo import uses this server's configured AI service.</p><button type="button" data-act="sample" class="ci-example cursor-interaction">Load sample photos · prototype</button></div></div>`:`<div class="ci-callout">${icon('info')}<div><h3>Photo import unavailable</h3><p>AI is not configured on this server. Use a website URL or enter the recipe yourself.</p></div></div><button type="button" data-act="url-tab" class="cb-action cursor-interaction">Use a website URL</button>`:`<form data-urlform class="ci-panel"><h2>Recipe website</h2><label class="ci-url">Recipe URL<input class="ci-input" type="url" data-bind="url" value="${esc(s.url)}" placeholder="https://recipes.example/pancakes" required></label><p class="ci-small" style="margin-top:10px">Paste the page containing the recipe.</p><button type="submit" class="cb-action ci-full cursor-interaction">Read recipe ${icon('arrow-right')}</button><button type="button" data-act="sample-url" class="ci-example cursor-interaction">Use sample URL · prototype</button></form>`}<button type="button" class="cb-back cursor-interaction" data-act="manual" style="margin-top:23px">${icon('pen-line')} Enter recipe manually</button>`}
+function photos(){return intro('Check your photos',`${s.pages.length} of 4 photos selected`)+`<p class="cb-muted">Put the pages in reading order. Check the text before continuing.</p><div class="ci-pages">${s.pages.map((p,i)=>`<article class="ci-page">${p.data?`<img class="ci-pagephoto" src="${p.data}" alt="Recipe source page ${i+1}">`:thumb(p.sample)}<div><h3>Page ${i+1}</h3><p class="ci-small">${esc(p.name)}</p><div class="ci-page-actions"><button type="button" class="cursor-interaction" data-act="up" data-index="${i}" aria-label="Move page ${i+1} earlier" ${i===0?'disabled':''}>${icon('arrow-up')}</button><button type="button" class="cursor-interaction" data-act="down" data-index="${i}" aria-label="Move page ${i+1} later" ${i===s.pages.length-1?'disabled':''}>${icon('arrow-down')}</button><button type="button" class="cursor-interaction" data-act="remove" data-index="${i}" aria-label="Remove page ${i+1}">${icon('trash-2')}</button></div></div></article>`).join('')}</div>${s.pages.length<4?fileControls():''}<p class="ci-small">Photos are used as the source, not as the recipe's cover image.</p><button type="button" data-act="read" class="cb-action ci-full cursor-interaction" ${!s.pages.length?'disabled':''}>Read recipe ${icon('arrow-right')}</button><p class="ci-note">Prototype only. Selected photos stay in this browser; no AI request is made.</p>`}
+function reading(){return intro('Reading recipe')+`<div class="ci-processing" role="status" aria-live="polite">${icon('scan-text')}<h2>${s.method==='photos'?'Reading your photos':'Reading the recipe page'}</h2><p class="ci-small">The recipe will be shown for review before it is saved.</p><div class="ci-job">${icon(s.method==='photos'?'images':'link')}<div><h3>${s.method==='photos'?s.pages.length+' photos': 'Recipe URL'}</h3><p class="ci-small">${s.method==='photos'?'Ingredients and instructions':esc(s.url)}</p></div></div><button type="button" data-act="back-source" class="cb-secondary cursor-interaction">Back to source</button></div><div class="ci-demo-controls" aria-label="Prototype outcomes"><button type="button" data-act="result" class="cursor-interaction">Preview sample result</button><button type="button" data-act="failure" class="cursor-interaction">Preview failure</button><button type="button" data-act="expired" class="cursor-interaction">Preview expired draft</button></div><p class="cb-note">Prototype state — no request is running.</p>`}
+const baseRows=[['250','g','Flour'],['','g','Ricotta'],['2','','Eggs'],['0.5','tsp','Vanilla extract'],['','','Salt']];
+const rows=baseRows.map(r=>[...r]);
+function ingredients(){return rows.map((r,i)=>{const special=i===1&&!s.manual;const amount=special?s.amount:r[0],unit=special?s.unit:r[1],name=special?s.ingredient:r[2];return `<div class="ci-ingredient" id="${device}-ingredient-${i}"><div class="ci-ingredient-top"><span class="ci-amount">${special&&!s.checkedAmount?'—':esc(amount?amount+' '+unit:'To taste')}</span><div class="ci-name"><h3>${esc(name)}</h3>${special&&s.newIngredient?'<span class="ci-new">New ingredient</span>':''}</div><button type="button" data-act="edit" data-index="${i}" aria-label="Edit ${esc(name)}" class="cursor-interaction">${icon('pencil')}</button></div>${special&&!s.checkedAmount?`<p class="ci-warning-inline">${icon('triangle-alert')} Check quantity against source</p>`:''}${s.edit===i?editRow(i,amount,unit,name):''}</div>`}).join('')}
+function editRow(i,amount,unit,name){return `<div class="ci-edit"><p class="ci-small" style="margin-bottom:12px">${i===1&&!s.manual?'Original: “200? g ricotta”':'Edit ingredient'}</p><div class="ci-edit-row"><label>Amount<input class="ci-input" type="number" min="0" step="any" data-edit="amount" value="${esc(amount)}" ${i===1&&!s.manual&&!s.checkedAmount?'aria-invalid="true"':''}></label><label>Unit<select data-edit="unit">${['','g','kg','ml','l','tsp','tbsp','piece'].map(x=>`<option ${x===unit?'selected':''} value="${x}">${x||'No unit'}</option>`).join('')}</select></label></div><label>Ingredient<input class="ci-input" data-edit="ingredient" value="${esc(name)}" list="${device}-catalog"></label><datalist id="${device}-catalog"><option value="Cottage cheese"></option><option value="Flour"></option><option value="Eggs"></option></datalist>${i===1&&!s.manual?`<p class="ci-small">If this is a new ingredient, it will be added for catalogue review.</p>`:''}<div class="cb-row" style="margin-top:13px"><button type="button" data-act="apply" class="cb-action cursor-interaction">Apply</button><button type="button" data-act="unspecified" class="cb-secondary cursor-interaction">Leave amount unspecified</button><button type="button" data-act="close-edit" class="cursor-interaction">Cancel</button></div></div>`}
+function methodEditor(){return `<details class="ci-method"><summary>Method <span class="ci-small">· ${s.steps.length} steps</span></summary>${s.steps.map((t,i)=>`<label>Step ${i+1}<textarea data-stepbind="${i}">${esc(t)}</textarea></label>`).join('')}<button type="button" data-act="add-step" class="cb-back cursor-interaction" style="margin-top:12px">${icon('plus')} Add step</button></details>`}
+function review(){const isView=s.stage==='view';return `<div class="ci-review-header">${intro(isView?'Lemon ricotta pancakes':s.manual?'New recipe':'Review recipe',isView?'4 servings':s.manual?'Enter the recipe details.':'Check the recipe before saving.')}</div><div class="ci-review-layout">${!s.manual?`<aside class="ci-source-desktop">${sourceView()}</aside>`:''}<div class="ci-review-form" ${s.manual?'style="grid-column:1/-1"':''}>${!s.manual?`<details class="ci-source-mobile"><summary>View original ${s.method==='photos'?'photos':'recipe page'}</summary>${sourceView()}</details>`:''}<div class="ci-metaform"><label>Recipe title<input class="ci-input" data-bind="title" value="${esc(s.title)}" required></label><label>Servings<input class="ci-input" type="number" min="1" max="99" step="1" data-bind="servings" value="${esc(s.servings)}" required></label></div>${!s.checkedAmount?`<div class="ci-callout">${icon('triangle-alert')}<div><h3>1 quantity needs checking</h3><p>Ricotta could not be read clearly. Check it against the source.</p></div></div>`:''}<div class="cb-section" style="margin-top:16px"><h2>Ingredients</h2><span class="ci-small">${rows.length} ingredients</span></div>${ingredients()}<button type="button" data-act="add-ingredient" class="cb-back cursor-interaction" style="margin:12px 0">${icon('plus')} Add ingredient</button>${methodEditor()}<p class="ci-photo-destination">${s.newIngredient?'Ricotta will be added as a new ingredient for catalogue review.':'All ingredient names match the catalogue.'}</p><div class="ci-review-actions"><button type="button" data-act="save" class="cb-action cursor-interaction" ${!s.checkedAmount?'disabled':''}>${icon('check')} ${isView?'Return to import':'Save recipe'}</button><p class="ci-note">${!s.checkedAmount?'Check the flagged quantity, or explicitly leave it unspecified.':'Prototype only — this saves to the preview, not to Crabbage.'}</p></div></div></div>`}
+function failure(){return intro('Could not read the recipe')+`<div class="ci-callout" role="alert">${icon('triangle-alert')}<div><h3>Recipe reading failed</h3><p>${s.method==='photos'?'Try a sharper photo with the full ingredients and instructions visible.':'Check the URL or try importing photos instead.'}</p></div></div><p class="cb-muted">Your selected source is still available.</p><button type="button" data-act="read" class="cb-action ci-full cursor-interaction">Try again</button><button type="button" data-act="back-source" class="cb-secondary ci-full cursor-interaction">${s.method==='photos'?'Change photos':'Change URL'}</button><button type="button" data-act="manual" class="cb-back cursor-interaction" style="margin-top:15px">Enter recipe manually</button><p class="ci-note">Prototype failure state. No upload was sent.</p>`}
+function expired(){return intro('Preview expired')+`<div class="ci-callout" role="alert">${icon('clock')}<div><h3>This preview is no longer available</h3><p>Read the recipe again to create a new preview.</p></div></div><button type="button" data-act="back-source" class="cb-action ci-full cursor-interaction">Choose source</button><p class="ci-note">Photo previews are temporary. They may expire or be lost when the server restarts.</p>`}
+function saving(){return intro('Saving recipe')+`<div class="ci-job" role="status">${icon('save')}<div><h3>${esc(s.title)}</h3><p class="ci-small">Saving the reviewed recipe…</p></div></div><button type="button" class="cb-action ci-full" disabled>Saving…</button><div class="ci-demo-controls"><button type="button" data-act="save-failure" class="cursor-interaction">Preview save failure</button><button type="button" data-act="saved" class="cursor-interaction">Preview saved recipe</button></div><p class="cb-note">Prototype state — no save request is running.</p>`}
+function saved(){return `<div class="ci-saved"><div class="ci-success">${icon('check')}</div>${intro('Recipe saved')}<div class="ci-saved-info"><h2>${esc(s.title)}</h2><p class="cb-muted" style="margin-top:12px">${esc(s.servings)} servings · ${rows.length} ingredients · ${s.steps.length} steps</p>${s.newIngredient?'<p class="ci-small" style="margin-top:12px">1 new ingredient is awaiting catalogue review.</p>':''}</div><p class="cb-muted">Saved in this preview only.</p><button type="button" data-act="again" class="cb-action ci-full cursor-interaction">Import another recipe</button></div>`}
+function contents(){return ({source,photos,reading,review,failure,expired,saving,saved,view:review}[s.stage]||source)()}
+function draw(focus=''){app.dataset.stage=s.stage;const back=['source','photos'].includes(s.stage)?'Recipes':'Import recipe';app.innerHTML=`<header class="cb-top"><span class="cb-brand">${icon('sprout')} crabbage<span style="color:var(--cb-green)">.</span></span><div class="cb-house">${icon('house')}<span class="cb-housename">Our household</span><span class="cb-avatar">K</span></div></header><div class="cb-frame"><nav class="cb-side" aria-label="Main navigation">${[['sun','Today'],['book-open','Recipes'],['calendar-days','Plan'],['shopping-basket','Shopping']].map(([ico,t])=>`<button type="button" class="cursor-interaction" ${t==='Recipes'?'aria-current="page"':''} data-act="${t==='Recipes'?'again':'nav-info'}">${icon(ico)}${t}</button>`).join('')}</nav><div class="cb-work"><main class="cb-content"><button type="button" class="cb-back cursor-interaction" data-act="${s.stage==='source'?'nav-info':'back-source'}">${icon('arrow-left')}${back}</button>${s.stage!=='saved'?progress():''}${contents()}${s.error?`<p class="ci-error" role="alert">${esc(s.error)}</p>`:''}<p class="cb-status" aria-live="polite" data-status></p></main></div></div>`;if(globalThis.lucide)lucide.createIcons({attrs:{width:19,height:19}});if(focus)app.querySelector(focus)?.focus()}
+function applyEdit(unspecified=false){const amount=app.querySelector('[data-edit="amount"]')?.value.trim()||'';const name=app.querySelector('[data-edit="ingredient"]')?.value.trim()||'';const unit=app.querySelector('[data-edit="unit"]')?.value||'';if(!name){s.error='Enter an ingredient name.';return}if(!unspecified&&(!amount||!Number.isFinite(+amount)||+amount<0)){s.error='Enter a valid amount, or explicitly leave the amount unspecified.';return}if(s.edit===1&&!s.manual){s.amount=unspecified?'':amount;s.unit=unit;s.ingredient=name;s.checkedAmount=true;s.newIngredient=!['Cottage cheese','Flour','Eggs'].includes(name)}else if(s.edit>=0){rows[s.edit]=[unspecified?'':amount,unit,name]}s.edit=-1;s.error=''}
+app.addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b||b.disabled)return;const act=b.dataset.act;const i=Number(b.dataset.index);s.error='';switch(act){case'photos-tab':s.method='photos';s.stage=s.pages.length?'photos':'source';break;case'url-tab':s.method='url';s.stage='source';break;case'sample':s.pages=[{sample:0,name:'Ingredients',id:1},{sample:1,name:'Method',id:2}];s.method='photos';s.stage='photos';break;case'sample-url':s.url='https://recipes.example/pancakes';s.pages=[{sample:0,name:'Recipe page',id:1}];break;case'up':if(i>0)[s.pages[i-1],s.pages[i]]=[s.pages[i],s.pages[i-1]];break;case'down':if(i<s.pages.length-1)[s.pages[i+1],s.pages[i]]=[s.pages[i],s.pages[i+1]];break;case'remove':s.pages.splice(i,1);s.page=Math.min(s.page,Math.max(0,s.pages.length-1));if(!s.pages.length)s.stage='source';break;case'read':s.stage='reading';s.edit=-1;s.manual=false;break;case'result':s.stage='review';s.page=0;break;case'failure':s.stage='failure';break;case'expired':s.stage='expired';break;case'back-source':s.stage=s.method==='photos'&&s.pages.length?'photos':'source';break;case'source-prev':s.page=Math.max(0,s.page-1);break;case'source-next':s.page=Math.min(s.pages.length-1,s.page+1);break;case'edit':s.edit=s.edit===i?-1:i;break;case'apply':applyEdit();break;case'unspecified':applyEdit(true);break;case'close-edit':s.edit=-1;break;case'save':if(s.checkedAmount){if(rows.some(r=>!r[2].trim())||s.steps.some(t=>!t.trim())){s.error='Enter an ingredient name and an instruction for each row.'}else if(!s.title.trim()||!/^\d+$/.test(s.servings)||+s.servings<1||+s.servings>99){s.error='Enter a title and a whole number of servings from 1 to 99.'}else{s.stage='saving';s.edit=-1}}break;case'save-failure':s.stage='review';s.error='Could not save. Your corrections are still here. Try saving again.';break;case'saved':s.stage='saved';s.saveCount++;break;case'again':s.stage='source';s.pages=[];s.checkedAmount=false;s.amount='';s.manual=false;s.title='Lemon ricotta pancakes';s.servings='4';s.ingredient='Ricotta';s.newIngredient=true;s.steps=[...defaultSteps];rows.splice(0,rows.length,...baseRows.map(r=>[...r]));break;case'manual':s.manual=true;s.stage='review';s.checkedAmount=true;s.title='';s.servings='4';s.newIngredient=false;s.steps=[''];rows.splice(0,rows.length,['','','']);s.edit=0;break;case'add-ingredient':rows.push(['','','']);s.edit=rows.length-1;break;case'add-step':s.steps.push('');break;case'nav-info':s.error='This prototype focuses on importing. Use the main design reference for the other screens.';break;}draw(act==='edit'?'[data-edit="amount"]':'')});
+app.addEventListener('input',e=>{if(e.target.dataset.bind)s[e.target.dataset.bind]=e.target.value;if(e.target.dataset.stepbind!==undefined)s.steps[+e.target.dataset.stepbind]=e.target.value;});
+app.addEventListener('submit',e=>{e.preventDefault();if(e.target.hasAttribute('data-urlform')){try{const u=new URL(s.url);if(!['http:','https:'].includes(u.protocol))throw Error();s.pages=[{sample:0,name:'Recipe page',id:1}];s.method='url';s.stage='reading';s.error=''}catch{s.error='Enter a valid http or https recipe URL.'}draw()}});
+app.addEventListener('change',async e=>{if(!e.target.hasAttribute('data-file'))return;const files=Array.from(e.target.files||[]);for(const f of files){if(s.pages.length>=4){s.error='Choose up to 4 photos.';break}if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>10*1024*1024){s.error='Use JPEG, PNG or WebP files up to 10 MB each.';continue}const data=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>resolve('');reader.readAsDataURL(f)});if(data)s.pages.push({data,name:'Selected photo',id:Date.now()+s.pages.length})}if(s.pages.length){s.method='photos';s.stage='photos'}draw()});
+draw();
+});
+})();
+</script>
+<script>document.getElementById('layout').addEventListener('change',e=>{document.querySelectorAll('[data-variant]').forEach(el=>el.hidden=el.dataset.variant!==e.target.value)});</script></body></html>
