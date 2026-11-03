@@ -1,7 +1,7 @@
 use chromiumoxide::page::Page;
 
 use super::super::interactions::goto_hydrated;
-use super::{restore_fetch, wait_for};
+use super::{restore_fetch, set_viewport, wait_for};
 
 pub(super) async fn check_controls(
     page: &Page,
@@ -9,6 +9,7 @@ pub(super) async fn check_controls(
     width: u32,
     failures: &mut Vec<String>,
 ) -> Result<(), String> {
+    set_viewport(page, width, 450).await?;
     for (path, selectors) in [
         (
             "/recipes/1",
@@ -38,7 +39,7 @@ pub(super) async fn check_controls(
         check_history(page, width, failures).await?;
         restore_fetch(page).await?;
     }
-    Ok(())
+    set_viewport(page, width, 900).await
 }
 
 async fn check_control(
