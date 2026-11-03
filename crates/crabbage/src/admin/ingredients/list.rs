@@ -3,12 +3,15 @@
 
 use leptos::form::ActionForm;
 use leptos::prelude::*;
+
+use leptos_router::components::Form;
 use leptos_router::hooks::use_query_map;
 
 use crate::catalog::ingredients::{CreateIngredient, list_ingredients};
 use crate::catalog::sections::list_sections;
 use crate::catalog::{IngredientRow, SectionRow};
 use crate::i18n::t;
+use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, failure, message};
 use crate::user::current_user;
 
@@ -38,11 +41,11 @@ pub(crate) fn IngredientsPage() -> impl IntoView {
         |(search, _)| load_ingredient_page(search),
     );
     view! {
-        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
+        <NavigationTransition fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
                 Suspend::new(async move { ingredient_page(data.await, create) })
             }}
-        </Suspense>
+        </NavigationTransition>
     }
 }
 
@@ -72,6 +75,7 @@ fn ingredient_page(
     match user {
         Ok(user) if user.is_admin => {
             let (rows, sections) = rows.unwrap_or_else(|| (Ok(Vec::new()), Ok(Vec::new())));
+            let search_value = search.clone();
             view! {
                 <section class="admin-page">
                 <h1>{t("admin.ingredients.heading")}</h1>
@@ -80,10 +84,10 @@ fn ingredient_page(
                     <button>{t("admin.button.add")}</button>
                 </ActionForm></section>
                 {move || create.value().with(|value| failure(value.as_ref()))}
-                <form class="admin-search" method="get" action="/admin/ingredients">
-                    <label>{t("admin.label.search")} <input type="search" name="q" value=search.clone()/></label>
+                <Form attr:class="admin-search" method="get" action="/admin/ingredients">
+                    <label>{t("admin.label.search")} <input type="search" name="q" value=search_value/></label>
                     <button>{t("admin.button.search")}</button>
-                </form>
+                </Form>
                 {ingredient_rows(rows, sections, &search)}
                 </section>
             }

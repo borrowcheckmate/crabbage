@@ -2,10 +2,13 @@
 //! button for a new one.
 
 use leptos::prelude::*;
+
+use leptos_router::components::Form;
 use leptos_router::hooks::use_query_map;
 
 use crate::catalog::CategoryRow;
 use crate::i18n::{t, t_with};
+use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, message};
 use crate::recipes::categories::list_recipe_categories;
 use crate::recipes::list::list_recipes;
@@ -43,11 +46,11 @@ pub(crate) fn RecipesPage() -> impl IntoView {
                 search: map.get("q").unwrap_or_default().trim().to_owned(),
             }))}
         </div>
-        <Suspense fallback=|| ()>
+        <NavigationTransition fallback=|| ()>
             {move || {
                 Suspend::new(async move { recipe_list(data.await) })
             }}
-        </Suspense>
+        </NavigationTransition>
     }
 }
 
@@ -133,6 +136,7 @@ fn empty_text(filters: &Filters) -> String {
 /// The search form: a search box for `q`, and hidden fields that keep the category and favourites
 /// filters when the search is submitted.
 fn search_form(filters: &Filters) -> impl IntoView + use<> {
+    let search = filters.search.clone();
     let category = filters
         .category
         .map(|id| view! { <input type="hidden" name="category" value=id/> });
@@ -140,11 +144,11 @@ fn search_form(filters: &Filters) -> impl IntoView + use<> {
         .favourites
         .then(|| view! { <input type="hidden" name="favourites" value="1"/> });
     view! {
-        <form class="recipe-search-form" method="get" action="/recipes" role="search">
+        <Form attr:class="recipe-search-form" method="get" action="/recipes" attr:role="search">
             {category}
             {favourites}
-            <label class="recipe-search-label"><span class="recipe-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input type="search" name="q" aria-label=t("recipes.search.label") placeholder=t("recipes.search.placeholder") value=filters.search.clone()/></label>
-        </form>
+            <label class="recipe-search-label"><span class="recipe-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input type="search" name="q" aria-label=t("recipes.search.label") placeholder=t("recipes.search.placeholder") value=search/></label>
+        </Form>
     }
 }
 

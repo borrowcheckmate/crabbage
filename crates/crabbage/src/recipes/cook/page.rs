@@ -2,6 +2,7 @@
 //! the previous and next links, and one dot per step to jump to any of them.
 
 use leptos::prelude::*;
+
 use leptos_router::hooks::use_query_map;
 
 use super::links::Place;
@@ -9,6 +10,7 @@ use super::query::{current_step, done_steps};
 use super::timers::{Timer, step_durations};
 use super::tray::{TimerTray, start_button};
 use crate::i18n::{messages, t, t_with};
+use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, message};
 use crate::recipes::line_text::line_text;
 use crate::recipes::read::get_recipe;
@@ -48,11 +50,11 @@ pub(crate) fn CookPage() -> impl IntoView {
     #[cfg(feature = "hydrate")]
     super::wake_client::attach();
     view! {
-        <Suspense fallback=|| ()>
+        <NavigationTransition fallback=|| ()>
             {move || {
                 Suspend::new(async move { cook_view(data.await, timers) })
             }}
-        </Suspense>
+        </NavigationTransition>
         <TimerTray timers now/>
     }
 }

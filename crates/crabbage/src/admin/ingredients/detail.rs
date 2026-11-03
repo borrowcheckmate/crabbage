@@ -3,6 +3,7 @@
 
 use leptos::form::ActionForm;
 use leptos::prelude::*;
+
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_query_map};
 
@@ -13,6 +14,7 @@ use crate::catalog::ingredients::{
 use crate::catalog::sections::list_sections;
 use crate::catalog::{IngredientRow, SectionRow};
 use crate::i18n::{t, t_with};
+use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, failure, message};
 use crate::route::route_id;
 use crate::user::current_user;
@@ -77,11 +79,11 @@ pub(crate) fn IngredientPage() -> impl IntoView {
         }
     });
     view! {
-        <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
+        <NavigationTransition fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
                 Suspend::new(async move { ingredient_page(data.await, actions) })
             }}
-        </Suspense>
+        </NavigationTransition>
     }
 }
 

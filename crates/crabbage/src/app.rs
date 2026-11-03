@@ -12,6 +12,7 @@ use crate::i18n::{current_language, t};
 #[cfg(feature = "hydrate")]
 use crate::navigation::focus_main;
 use crate::navigation::{HistoryScroll, RouteFocus};
+use crate::navigation_transition::navigation_pending;
 use crate::plan_page::PlanPage;
 use crate::recipes::{
     CookPage, RecipeEditPage, RecipeImportPage, RecipeNewPage, RecipePage, RecipesPage,
@@ -25,6 +26,7 @@ use crate::user::current_user;
 pub fn App() -> impl IntoView {
     provide_meta_context();
     let (is_routing, set_is_routing) = signal(false);
+    let is_pending = navigation_pending(is_routing);
     let (is_history_navigation, set_is_history_navigation) = signal(false);
     view! {
         <Title text=t("app.title")/>
@@ -34,9 +36,9 @@ pub fn App() -> impl IntoView {
                 focus_main();
             }>{t("app.skip")}</a>
             <div class="app-frame">
-                <HistoryScroll is_routing=is_routing is_history_navigation=is_history_navigation set_is_history_navigation=set_is_history_navigation/>
-                <RouteFocus is_routing=is_routing is_history_navigation=is_history_navigation/>
-                <Show when=move || is_routing.get()>
+                <HistoryScroll is_routing=is_pending is_history_navigation=is_history_navigation set_is_history_navigation=set_is_history_navigation/>
+                <RouteFocus is_routing=is_pending is_history_navigation=is_history_navigation/>
+                <Show when=move || is_pending.get()>
                     <p class="route-pending" role="status">{t("system.navigation.pending")}</p>
                 </Show>
                 <header class="topbar">
@@ -45,7 +47,7 @@ pub fn App() -> impl IntoView {
                 </header>
                 <div class="shell-layout">
                     <PrimaryNavigation/>
-                    <main id="main-content" tabindex="-1" aria-busy=move || is_routing.get().to_string()>
+                    <main id="main-content" tabindex="-1" aria-busy=move || is_pending.get().to_string()>
                         <NoHouseholdNotice/>
                         <Routes fallback=NotFound>
                             <Route path=path!("/") view=TodayPage/>

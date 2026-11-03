@@ -4,12 +4,14 @@
 
 use leptos::form::ActionForm;
 use leptos::prelude::*;
+
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_query_map};
 
 use super::rating_section::rating_section;
 use super::stepper::servings_stepper;
 use crate::i18n::{messages, t, t_with};
+use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, failure, message};
 use crate::recipes::cook::start_href;
 use crate::recipes::duration::duration_text;
@@ -64,11 +66,11 @@ pub(crate) fn RecipePage() -> impl IntoView {
         });
     });
     view! {
-        <Suspense fallback=|| ()>
+        <NavigationTransition fallback=|| ()>
             {move || {
                 Suspend::new(async move { detail(data.await, delete) })
             }}
-        </Suspense>
+        </NavigationTransition>
     }
 }
 
