@@ -11,6 +11,9 @@ mod history_cases;
 #[path = "query_cases.rs"]
 mod query_cases;
 
+#[path = "recipe_controls.rs"]
+mod recipe_controls;
+
 const MAX_POLLS: usize = 160;
 
 pub(super) async fn exercise_navigation(
@@ -37,6 +40,7 @@ pub(super) async fn exercise_navigation(
             .await
             .map_err(|error| format!("{width}px history/hash: {error}"))?;
         query_cases::check_queries(page, base_url, width, failures).await?;
+        recipe_controls::check_controls(page, base_url, width, failures).await?;
     }
     super::no_javascript::exercise_no_javascript(page, base_url, failures)
         .await

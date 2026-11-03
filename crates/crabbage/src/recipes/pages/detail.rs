@@ -36,27 +36,16 @@ pub(crate) fn RecipePage() -> impl IntoView {
     let id = route_id();
     let query = use_query_map();
     let delete = ServerAction::<DeleteRecipe>::new();
-    let data = Resource::new(
-        move || {
-            (
-                id(),
-                query.with(|map| (map.get("confirm"), map.get("servings"), map.get("return"))),
-            )
-        },
-        |(id, (confirm, servings, return_to))| async move {
-            let recipe = id.map(get_recipe);
-            (
-                id,
-                confirm,
-                servings,
-                return_to,
-                match recipe {
-                    Some(call) => Some(call.await),
-                    None => None,
-                },
-            )
-        },
-    );
+    let data = Resource::new(id, |id| async move {
+        let recipe = id.map(get_recipe);
+        (
+            id,
+            match recipe {
+                Some(call) => Some(call.await),
+                None => None,
+            },
+        )
+    });
     let navigate = use_navigate();
     Effect::new(move |_| {
         delete.value().with(|value| {
@@ -68,7 +57,11 @@ pub(crate) fn RecipePage() -> impl IntoView {
     view! {
         <NavigationTransition fallback=|| ()>
             {move || {
-                Suspend::new(async move { detail(data.await, delete) })
+                let (confirm, servings, return_to) = query.with(|map| (map.get("confirm"), map.get("servings"), map.get("return")));
+                Suspend::new(async move {
+                    let (id, recipe) = data.await;
+                    detail((id, confirm, servings, return_to, recipe), delete)
+                })
             }}
         </NavigationTransition>
     }
@@ -238,11 +231,11 @@ fn delete_confirmation(
 }
 
 fn step_item(step: &StepRow) -> impl IntoView {
-    let minutes = step.duration_seconds.map(duration_text);
+    let duration = step.duration_seconds.map(duration_text);
     view! {
         <li>
             <p>{step.text.clone()}</p>
-            {minutes.map(|text| view! { <span class="recipe-step-duration">{text}</span> })}
+            {duration.map(|text| view! { <span class="recipe-step-duration">{text}</span> })}
         </li>
     }
 }

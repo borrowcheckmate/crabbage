@@ -40,10 +40,10 @@ pub(crate) fn servings_stepper(
     });
     view! {
         <div class="stepper row" role="group" aria-label=t("recipe.servings")>
-            {less.map(|href| view! { <a href=href aria-label=t("recipe.servings.less")>{t("recipe.servings.minus")}</a> })}
+            {less.map(|href| view! { <a href=href data-noscroll aria-label=t("recipe.servings.less")>{t("recipe.servings.minus")}</a> })}
             <span>{count_text(shown)}</span>
-            {more.map(|href| view! { <a href=href aria-label=t("recipe.servings.more")>{t("recipe.servings.plus")}</a> })}
-            {reset.map(|href| view! { <a class="recipe-stepper-reset" href=href>{t("recipe.servings.reset")}</a> })}
+            {more.map(|href| view! { <a href=href data-noscroll aria-label=t("recipe.servings.more")>{t("recipe.servings.plus")}</a> })}
+            {reset.map(|href| view! { <a class="recipe-stepper-reset" href=href data-noscroll>{t("recipe.servings.reset")}</a> })}
         </div>
     }
 }

@@ -24,18 +24,6 @@ const CASES: &[QueryCase] = &[
         destination: "location.search.includes('week=')",
     },
     QueryCase {
-        name: "recipe servings",
-        path: "/recipes/1",
-        action: "document.querySelector('a[href*=\"servings=\"]').click()",
-        destination: "location.search.includes('servings=')",
-    },
-    QueryCase {
-        name: "cooking step",
-        path: "/recipes/1/cook?step=1",
-        action: "document.querySelector('.cook-nav a[href*=\"step=2\"]').click()",
-        destination: "location.search.includes('step=2')",
-    },
-    QueryCase {
         name: "ingredient confirmation",
         path: "/admin/ingredients/1",
         action: "document.querySelector('a[href*=\"confirm=delete\"]').click()",

@@ -381,6 +381,26 @@ async fn a_stored_duration_without_text_offers_a_timer() {
 }
 
 #[tokio::test]
+async fn short_timers_show_their_exact_duration_in_both_languages() {
+    for (language, label) in [
+        ("en", "Start 10 sec timer"),
+        ("nl", "Start timer van 10 sec"),
+    ] {
+        let harness = Harness::start_with_language("cook-timer-seconds", Some(language)).await;
+        let token = sign_in_as(&harness, OWNER, &[]).await;
+        let id = one_step(&harness, "Stir briefly", Some(10)).await;
+        let body = page(&harness, &token, &format!("/recipes/{id}/cook")).await;
+        assert!(body.contains("data-seconds=\"10\""), "{body}");
+        assert!(body.contains(&format!("{label}</button>")), "{body}");
+        let detail = page(&harness, &token, &format!("/recipes/{id}")).await;
+        assert!(
+            detail.contains("recipe-step-duration\">10 sec</span>"),
+            "{detail}"
+        );
+    }
+}
+
+#[tokio::test]
 async fn a_stored_duration_and_the_same_one_in_the_text_give_one_timer() {
     let harness = Harness::start("cook-timer-once").await;
     let token = sign_in_as(&harness, OWNER, &[]).await;
