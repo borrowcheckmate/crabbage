@@ -182,6 +182,21 @@ fn today_side_heading_aligns_with_the_left_column() {
 }
 
 #[test]
+fn today_title_link_is_a_44_pixel_target_without_moving_the_heading() {
+    let css = stylesheet();
+    let link = declarations_of(&css, ".today-feature-copy h2 a").unwrap_or_default();
+    assert!(link.contains("display: block"), "{link}");
+    assert!(
+        link.contains("padding-block: calc((44px - 1.2em) / 2)"),
+        "{link}"
+    );
+    assert!(
+        link.contains("margin-block: calc((1.2em - 44px) / 2)"),
+        "{link}"
+    );
+}
+
+#[test]
 fn shell_shadow_uses_a_dark_theme_token() {
     let css = stylesheet();
     assert!(css.contains("--shadow: #0002"));
