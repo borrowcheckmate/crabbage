@@ -31,6 +31,8 @@ mod api;
 )]
 mod admin;
 
+mod background_form;
+
 mod catalog;
 
 mod notice;

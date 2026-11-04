@@ -9,6 +9,7 @@
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::background_form::submit_in_background;
 use crate::i18n::{Messages, messages, t, t_with};
 use crate::recipes::unit_text;
 
@@ -72,6 +73,7 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
     let rows = RwSignal::new(Vec::<ShoppingRow>::new());
     let sections = RwSignal::new(Vec::<(i64, String)>::new());
     let load_failed = RwSignal::new(false);
+    let groups = Memo::new(move |_| grouped_rows(rows.get(), &sections.get()));
     #[cfg(feature = "hydrate")]
     connect_events(rows, load_failed, messages());
     view! {
@@ -87,7 +89,7 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
                 }
                 view! {
                     <p class="shopping-count">{move || remaining_text(rows.get().iter().filter(|item| !item.checked).count())}</p>
-                    <form class="shopping-add" method="post" action="/shopping/items">
+                    <form class="shopping-add" method="post" action="/shopping/items" on:submit=move |event| { submit_in_background(&event); }>
                         <label class="shopping-visually-hidden" for="shopping-text">{t("shopping.add.label")}</label>
                         <input id="shopping-text" name="text" type="text" placeholder=t("shopping.add.placeholder") required/>
                         <button type="submit" aria-label=t("shopping.add.button")><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -97,11 +99,14 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
                     <Show when=move || rows.get().is_empty()>
                         <p>{t("shopping.empty")}</p>
                     </Show>
-                    <For each=move || grouped_rows(rows.get(), &sections.get()) key=|group| group.0.clone() let(group)>
+                    <For each=move || groups.get() key=|group| group.0.clone() let(group)>
                         <section class="shopping-group">
                             <h2>{group.0.clone()}</h2>
-                            <For each=move || group.1.clone() key=|item| item.ids.first().copied().unwrap_or_default() let(item)>
-                                <form class="shopping-row" class:checked=item.checked method="post" action="/shopping/checked">
+                            <For each=move || group_rows(groups, &group.0) key=row_key let(item)>
+                                <form class="shopping-row" class:checked=item.checked method="post" action="/shopping/checked" on:submit={
+                                    let ids = item.ids;
+                                    move |event| if submit_in_background(&event) { toggle_checked(rows, &ids); }
+                                }>
                                     <input type="hidden" name="ids" value={item.ids.iter().map(ToString::to_string).collect::<Vec<_>>().join(",")}/>
                                     <input type="hidden" name="on" value=if item.checked { "false" } else { "true" }/>
                                     <button class="shopping-item" aria-pressed=item.checked.to_string()>
@@ -114,7 +119,7 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
                         </section>
                     </For>
                     <Show when=move || rows.get().iter().any(|item| item.checked)>
-                        <form class="shopping-clear" method="post" action="/shopping/clear-checked"><button class="quiet">{t("shopping.clear")}</button></form>
+                        <form class="shopping-clear" method="post" action="/shopping/clear-checked" on:submit=move |event| if submit_in_background(&event) { rows.update(|rows| rows.retain(|item| !item.checked)); }><button class="quiet">{t("shopping.clear")}</button></form>
                     </Show>
                     </div><aside class="shopping-review"><span class="shopping-eyebrow">{t("shopping.next")}</span><h2>{t("shopping.review.heading")}</h2><p>{t("shopping.review.copy")}</p><button type="button" disabled=true>{t("shopping.review.button")}<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button><p class="shopping-note">{t("shopping.review.note")}</p></aside></div>
                 }
@@ -123,8 +128,35 @@ pub(crate) fn ShoppingPage() -> impl IntoView {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 struct Group(String, Vec<ShoppingRow>);
+
+fn group_rows(groups: Memo<Vec<Group>>, name: &str) -> Vec<ShoppingRow> {
+    groups.with(|groups| {
+        groups
+            .iter()
+            .find(|group| group.0 == name)
+            .map(|group| group.1.clone())
+            .unwrap_or_default()
+    })
+}
+
+fn row_key(row: &ShoppingRow) -> (Vec<i64>, bool, String, String) {
+    (
+        row.ids.clone(),
+        row.checked,
+        row.label.clone(),
+        row.quantity.clone(),
+    )
+}
+
+fn toggle_checked(rows: RwSignal<Vec<ShoppingRow>>, ids: &[i64]) {
+    rows.update(|rows| {
+        for row in rows.iter_mut().filter(|row| row.ids == ids) {
+            row.checked = !row.checked;
+        }
+    });
+}
 
 #[derive(Deserialize)]
 #[cfg(feature = "hydrate")]
