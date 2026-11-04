@@ -29,5 +29,8 @@ pub(crate) async fn require_session(
 }
 
 fn is_public(path: &str) -> bool {
-    path == "/healthz" || path.starts_with("/auth/") || path.starts_with("/pkg/")
+    path == "/healthz"
+        || path == crate::favicon::FAVICON_PATH
+        || path.starts_with("/auth/")
+        || path.starts_with("/pkg/")
 }

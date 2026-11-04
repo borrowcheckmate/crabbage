@@ -17,6 +17,7 @@ use crate::recipes::read::get_recipe;
 use crate::recipes::servings::{scale_lines, shown_servings};
 use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
 use crate::route::route_id;
+use leptos_meta::Title;
 
 type CookPageData = (
     Option<i64>,
@@ -119,6 +120,7 @@ fn cook(
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M9 12h12"/></svg>
                 {t("cook.back")}
             </a>
+            <Title text=t_with("cook.page_title", &[("title", &title)])/>
             <p class="cook-recipe-name">{title}</p>
             <h1 class="cook-title">{t("cook.heading")}</h1>
             <div class="cook-progress" aria-live="polite">
@@ -259,6 +261,7 @@ fn no_steps(title: String, place: &Place) -> AnyView {
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M9 12h12"/></svg>
                 {t("cook.back")}
             </a>
+            <Title text=t_with("cook.page_title", &[("title", &title)])/>
             <p class="cook-recipe-name">{title}</p>
             <h1 class="cook-title">{t("cook.heading")}</h1>
             <p>{t("cook.no_steps")}</p>

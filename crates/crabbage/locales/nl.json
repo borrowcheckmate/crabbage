@@ -113,6 +113,7 @@
   "cook.progress.label": "Voortgang",
   "cook.mode.label": "Kookmodus",
   "cook.heading": "Koken",
+  "cook.page_title": "{title} koken",
   "cook.done.mark": "✓ Klaar",
   "cook.mark_done": "Markeer als klaar",
   "cook.mark_not_done": "Niet klaar",

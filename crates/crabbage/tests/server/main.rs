@@ -42,6 +42,11 @@ mod mealie;
     clippy::expect_used,
     reason = "test helpers stop the test on setup failure"
 )]
+mod page_titles;
+#[expect(
+    clippy::expect_used,
+    reason = "test helpers stop the test on setup failure"
+)]
 mod pages;
 #[expect(
     clippy::expect_used,
@@ -111,7 +116,7 @@ async fn home_renders_the_shell_with_the_title_for_a_signed_in_user() {
     assert_eq!(response.status(), StatusCode::OK);
     let body = body_text(response).await;
     assert!(body.contains("<html lang=\"en\""), "{body}");
-    assert!(body.contains("<title>crabbage</title>"), "{body}");
+    assert!(body.contains("<title>Today · crabbage</title>"), "{body}");
     assert!(body.contains("Sign out"), "{body}");
 }
 
@@ -131,7 +136,7 @@ async fn home_renders_in_the_configured_language() {
     assert_eq!(response.status(), StatusCode::OK);
     let body = body_text(response).await;
     assert!(body.contains("<html lang=\"nl\""), "{body}");
-    assert!(body.contains("<title>crabbage</title>"), "{body}");
+    assert!(body.contains("<title>Vandaag · crabbage</title>"), "{body}");
     assert!(body.contains("Uitloggen"), "{body}");
     assert!(!body.contains("Sign out"), "{body}");
 }
