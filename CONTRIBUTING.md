@@ -43,7 +43,7 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 
 ## Commits
 
-[Conventional commits](https://www.conventionalcommits.org): `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `style`, `revert`. release-plz derives versions and the changelog from them. No tool attribution, co-author trailers for tools, or "generated with" lines.
+[Conventional commits](https://www.conventionalcommits.org): `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `style`, `revert`. release-plz derives versions and the changelog from them.
 
 ## Pull requests
 

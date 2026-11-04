@@ -99,6 +99,7 @@ fn is_personal_email(local: &str, domain: &str, email: &str) -> bool {
         tld.len() >= 2 && tld.bytes().all(|byte| byte.is_ascii_alphabetic())
     });
     !local.is_empty()
+        && !is_noreply(local)
         && has_alphabetic_tld
         && !is_anonymous_email(email)
         && !SERVICE_ADDRESSES.contains(&email.to_ascii_lowercase().as_str())
@@ -106,6 +107,12 @@ fn is_personal_email(local: &str, domain: &str, email: &str) -> bool {
         && !PLACEHOLDER_SUFFIXES
             .iter()
             .any(|suffix| domain.ends_with(suffix))
+}
+
+/// A `noreply` mailbox reaches no one, so naming it reveals no one.
+fn is_noreply(local: &str) -> bool {
+    let local = local.to_ascii_lowercase();
+    local == "noreply" || local == "no-reply"
 }
 
 fn home_paths(text: &str) -> impl Iterator<Item = usize> + '_ {
@@ -162,6 +169,8 @@ mod tests {
             email("git", "github.com:owner/repo"),
             email("actions/checkout", "v4"),
             email("serde", "1.0.200"),
+            email("noreply", "tool.example.org"),
+            email("No-Reply", "service.dev"),
             "@AGENTS.md".to_owned(),
         ]
         .join("\n");

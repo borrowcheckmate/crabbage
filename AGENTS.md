@@ -12,7 +12,6 @@ Instructions for automated contributors. Humans follow the same rules via CONTRI
 8. No new dependencies without the checks in CONTRIBUTING.md → Dependencies.
 9. No loose notes or documents. Update the existing documents or the issue.
 10. No personal data: no real emails, names, home paths or tokens. Git identity must be a noreply address.
-11. No attribution or advertising for tools in commits, PRs, code or docs.
-12. PR descriptions: what, why, how tested. Nothing else.
-13. ARCHITECTURE.md describes the code as it is, never plans. Update it in the same commit that changes the structure. Plans live in issues.
-14. Use the `gh` CLI for everything on GitHub: issues, sub-issues, labels, milestones, PRs, reviews, CI runs and project boards.
+11. PR descriptions: what, why, how tested. Nothing else.
+12. ARCHITECTURE.md describes the code as it is, never plans. Update it in the same commit that changes the structure. Plans live in issues.
+13. Use the `gh` CLI for everything on GitHub: issues, sub-issues, labels, milestones, PRs, reviews, CI runs and project boards.

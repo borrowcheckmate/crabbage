@@ -394,9 +394,9 @@ The upload route's body limit is `DefaultBodyLimit` of 10 MiB (`MAX_UPLOAD_BYTES
 | `policy/module_root.rs` | Ensures `mod.rs` only declares and re-exports |
 | `policy/length.rs` | Maximum lines per Rust file |
 | `policy/layout.rs` | Allowed documents, forbidden files (`.env`, keys), size limit |
-| `policy/leaks.rs` | Personal emails, home paths, tokens, image metadata, `authors` |
+| `policy/leaks.rs` | Personal emails (anonymous, placeholder, service and `noreply` addresses excepted), home paths, tokens, image metadata, `authors` |
 | `policy/identity.rs` | Anonymous git author and committer emails |
-| `policy/commit.rs` | Conventional commits, no tool attribution |
+| `policy/commit.rs` | Conventional commit headers for commits and PR titles; messages, PR titles and bodies are checked for leaks |
 | `repo.rs` | Git queries |
 
 To add a check, add a submodule under `policy/`, call it from `repository.rs` (file rules) or `commit.rs` (message rules), and test it in the same file.
