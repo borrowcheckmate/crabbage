@@ -30,25 +30,26 @@ Their responsibilities:
 
 | Module | Responsibility |
 | --- | --- |
+| `tests/domain/main.rs` | Declares the domain test modules, all built into one test binary |
 | `src/membership.rs` | `Role` (`Admin`, `Member`), `Claims` (groups, optional role and household claims) and `Membership`, derived by `Membership::from_claims`: admin if the admin group is present or the trimmed role claim is `admin`, households are full prefixed group names plus trimmed custom household values, sorted and deduplicated. `has_household_features` is true only with an active household |
-| `tests/membership.rs` | Role, household matching, deduplication and the feature check |
+| `tests/domain/membership.rs` | Role, household matching, deduplication and the feature check |
 | `src/quantity/mod.rs` | Declares the quantity submodules and re-exports `Dimension`, `Unit`, `Quantity` and `ImperialUnit` |
 | `src/quantity/unit.rs` | `Dimension` (`Mass`, `Volume`, `Count`, `Unitless`) and `Unit`: `ALL` (in form order), `from_symbol`, `dimension`, `factor` to the base unit (g, ml or piece; `None` for unitless), `symbol` |
 | `src/quantity/amount.rs` | `Quantity` (finite, non-negative amount and unit, `new` returns `None` otherwise): `convert_to` within a dimension, `checked_add` (same unit adds as it is, mixed units add in the base unit), `display` (g below 1000 g else kg; ml below 1000 ml else l; tsp and tbsp kept; count and unitless unchanged) |
 | `src/quantity/imperial.rs` | `ImperialUnit` (oz, lb, cup, fl oz): `to_metric` gives the displayed metric quantity |
-| `tests/quantity.rs` | Conversion within and across dimensions, spoons, display, addition, imperial input, unitless amounts and rejection of negative or non-finite amounts |
+| `tests/domain/quantity.rs` | Conversion within and across dimensions, spoons, display, addition, imperial input, unitless amounts and rejection of negative or non-finite amounts |
 | `src/scaling.rs` | `Servings` (at least one, `new` returns `None` for zero) and `scale`: multiplies by the servings ratio, displays, then rounds per unit (g and ml by size, kg and l to 0.05, spoons to 0.25, pieces to 0.5). Non-zero amounts never round to zero; equal servings and unitless amounts are returned unchanged |
-| `tests/scaling.rs` | Ratio scaling, per-unit rounding, the smallest step for tiny amounts, display boundary after rounding, identity at equal servings, unitless amounts, zero servings and overflow |
+| `tests/domain/scaling.rs` | Ratio scaling, per-unit rounding, the smallest step for tiny amounts, display boundary after rounding, identity at equal servings, unitless amounts, zero servings and overflow |
 | `src/shopping.rs` | `Item` (`Ingredient` by id, or `Text`) and `Line` (item and amounts). `merge(items)`: same-ingredient items share a line at the first one's position, text items never merge, each amount is added to the first `checked_add`-able amount on its line or appended, `None` amounts add nothing |
-| `tests/shopping.rs` | Merging to the best unit, amounts in different dimensions kept apart in order, spoons added in the base unit, text items never merged, first-seen order, items without amounts, unitless amounts kept apart unless equal |
+| `tests/domain/shopping.rs` | Merging to the best unit, amounts in different dimensions kept apart in order, spoons added in the base unit, text items never merged, first-seen order, items without amounts, unitless amounts kept apart unless equal |
 | `src/durations.rs` | `detect_durations(text)`: the durations a step's text names, in order, as `std::time::Duration`. English and Dutch amounts (`25 minutes`, `1,5 uur`, `anderhalf uur`, `een half uur`), short units and whole words only, a range gives its upper bound, and a smaller unit after a larger one (`1 hour 30 minutes`, `1 uur en 30 minuten`) makes one duration. Zero amounts are left out |
-| `tests/durations.rs` | Every form of the durations in both languages, case, whole-word units, numbers without units, combinations and the ones that stay apart |
+| `tests/domain/durations.rs` | Every form of the durations in both languages, case, whole-word units, numbers without units, combinations and the ones that stay apart |
 | `src/permissions.rs` | `can_manage_catalog(role)`: true only for `Role::Admin`. `can_edit_recipe(role, user, owner, editors)`: admin, owner or a listed editor. `can_delete_recipe` and `can_manage_editors(role, user, owner)`: admin or owner. Anyone signed in may create a recipe |
-| `tests/permissions.rs` | Admins manage the catalog, members do not; owner, listed editor, admin and other member for each recipe rule |
+| `tests/domain/permissions.rs` | Admins manage the catalog, members do not; owner, listed editor, admin and other member for each recipe rule |
 | `src/planner.rs` | `plan(days, candidates, history, lookback_weeks, rng)`: chooses a recipe in each requested category, excludes recipes planned within the lookback, chooses randomly among remaining recipes, falls back to the least recently planned recipe (never planned first, ties by id), and preserves rest and empty categories as `None`. Planning dates are ordered integer day numbers |
 | `src/dates.rs` | Converts Gregorian dates to and from integer day numbers and parses and formats ISO dates, with leap-year validation |
-| `tests/planner.rs` | Category membership, lookback exclusion, least-recent fallback, rest days, empty categories and no repeats when enough candidates exist |
-| `tests/unit_symbols.rs` | `Unit::from_symbol` finds every unit by its symbol and nothing else |
+| `tests/domain/planner.rs` | Category membership, lookback exclusion, least-recent fallback, rest days, empty categories and no repeats when enough candidates exist |
+| `tests/domain/unit_symbols.rs` | `Unit::from_symbol` finds every unit by its symbol and nothing else |
 
 ## crates/crabbage-import
 
@@ -56,16 +57,17 @@ Parses free-text ingredient lines, matches their names to catalogue ingredients,
 
 | Module | Responsibility |
 | --- | --- |
+| `tests/import/main.rs` | Declares the import test modules, all built into one test binary |
 | `src/lib.rs` | Crate doc and the `ai`, `lines`, `matching`, `mealie`, `pipeline` and `web` modules |
 | `src/lines/mod.rs` | Declares the line modules, re-exports `parse_line` and `ParsedLine`, and re-exports `measure_of` for the crate |
 | `src/lines/line.rs` | `parse_line(text)`: collapses whitespace, reads the amount, unit, name and note. `ParsedLine` (`amount`, `amount_max`, `unit`, `name`, `note`, `original`, `parsed`). A line is parsed when its name has a letter or digit; otherwise it keeps its collapsed text, with no amount, unit or note. A comma or parenthesis starts the note |
 | `src/lines/numbers.rs` | Amounts: integers, decimals with a comma or dot, `1/2`, `1 1/2`, unicode fractions (`½ ¼ ¾ ⅓ ⅔ ⅛`, also glued as `1½`), and ranges with `-`, `–`, `tot`, `to`, `à` |
 | `src/lines/units.rs` | `Measure` and the English and Dutch unit table. Domain units map directly; `dl` and `cl` scale to ml; `cup`, `oz`, `lb` and `fl oz` convert to metric through `ImperialUnit`. Units without a domain counterpart (`clove`, `teen`, `blik`) stay in the name. `measure_of(symbol)` (crate-only) finds the measure of a whole symbol, ignoring case, for the AI draft check and the merge. Drops a `.` and a following `of` or `of the` after a unit |
 | `src/lines/words.rs` | `strip`: whole-word, case-insensitive match at the start of a text |
-| `tests/lines/main.rs`, `tests/lines/table.rs` | Table tests for amounts, units, names and notes in both languages, unparsed lines and whitespace |
+| `tests/import/lines/mod.rs`, `tests/import/lines/cases.rs`, `tests/import/lines/table.rs` | Table tests for amounts, units, names and notes in both languages, unparsed lines and whitespace |
 | `src/matching.rs` | `normalise` (lowercase, trimmed, whitespace collapsed, Latin-1 diacritics folded to ASCII), `Candidate` (id, name, aliases), `match_ingredient` (first normalised name match, then first alias match, empty input matches nothing), `match_all` (`Matches`: one link per input in order, and the original spellings of unmatched names, once per normalised name, in first-seen order) |
 | `src/mealie/mapping.rs` | Pure Mealie mapping: foods resolve to existing ingredients or deduplicated pending-review creation requests; recipes map servings, image id, rating, categories/tags, instructions and ingredient lines using the shared matching and unit conversion rules; category and tag names resolve against existing categories or become deduplicated new names |
-| `tests/matching.rs` | Case, whitespace and diacritics, exact name and alias matches, names beating aliases, no partial matches, empty input, unmatched names in order and once |
+| `tests/import/matching.rs` | Case, whitespace and diacritics, exact name and alias matches, names beating aliases, no partial matches, empty input, unmatched names in order and once |
 | `src/web/mod.rs` | Declares the web submodules and re-exports `import`, `extract`, `fetch`, `fetch_bytes`, `Fetched`, `Limits`, `Draft`, `ImportError` and `is_public` |
 | `src/web/language.rs` | `html_lang(html)` (crate-only): the `lang` attribute of the `<html` tag, the name matched without case, the value with or without quotes, empty values as none. `xml:lang` is not read |
 | `src/web/draft.rs` | `Draft`: title, servings, `language`, image, ingredient lines, steps, and the prep, cook and total times as `Duration`. `language` is the recipe's `inLanguage` string, else the page's `html` `lang`, else none |
@@ -75,40 +77,40 @@ Parses free-text ingredient lines, matches their names to catalogue ingredients,
 | `src/web/fetch.rs` | `Limits` (timeout 10 s, 5 MiB, `allow_private` false by default) and `fetch(url, limits)` and `fetch_bytes(url, limits)` (the raw body as `Fetched`: bytes and the declared `Content-Type`, with the same checks; `fetch` reads it as UTF-8 text): http and https only, every resolved address checked with `address::is_public`, the connection pinned to the checked address, no proxy, redirects followed by hand (at most five) with the same checks, body size checked by `Content-Length` and while reading, non-success status as `Status` |
 | `src/web/address.rs` | `is_public(ip)`: false for loopback, unspecified, private, link-local, CGNAT, broadcast, documentation, multicast and unique-local addresses, and for IPv4 mapped into IPv6 |
 | `src/web/import.rs` | `import(url, limits)`: `fetch` then `extract` |
-| `tests/web/main.rs` | Declares the web test modules |
-| `tests/web/extract.rs` | Recipe fields from the fixtures, `@graph`, type lists, sections, string instructions, yield, image and duration forms, invalid scripts, and pages without a recipe |
-| `tests/web/fetch.rs` | Loopback server: body, redirect, declared and streamed size limits, timeout, 404, `import`, refused schemes and private addresses, and `fetch_bytes` with its content type |
-| `tests/web/address.rs` | Public addresses allowed and private, special and mapped addresses refused |
-| `tests/web/errors.rs` | Display text of every `ImportError` variant |
-| `tests/web/language.rs` | The language from `inLanguage`, from the `html` `lang` (quotes, case, other attributes, `xml:lang` ignored), and none when neither is given |
+| `tests/import/web/mod.rs` | Declares the web test modules |
+| `tests/import/web/extract.rs` | Recipe fields from the fixtures, `@graph`, type lists, sections, string instructions, yield, image and duration forms, invalid scripts, and pages without a recipe |
+| `tests/import/web/fetch.rs` | Loopback server: body, redirect, declared and streamed size limits, timeout, 404, `import`, refused schemes and private addresses, and `fetch_bytes` with its content type |
+| `tests/import/web/address.rs` | Public addresses allowed and private, special and mapped addresses refused |
+| `tests/import/web/errors.rs` | Display text of every `ImportError` variant |
+| `tests/import/web/language.rs` | The language from `inLanguage`, from the `html` `lang` (quotes, case, other attributes, `xml:lang` ignored), and none when neither is given |
 | `src/mealie/mod.rs` | Declares and re-exports the Mealie client, errors and API models |
 | `src/mealie/client.rs` | `MealieClient` validates an HTTP(S) base URL, sends the API token as a bearer token, reads paginated recipe summaries, foods, units, categories and tags, fetches a recipe by slug, and downloads its original image up to 5 MiB |
 | `src/mealie/model.rs` | Serde models for Mealie recipe summaries, recipes, ingredients, foods, units, categories, tags and instructions; optional fields default when absent or null |
 | `src/mealie/error.rs` | `MealieError` reports invalid URLs, refused tokens, missing resources, non-Mealie responses, timeouts, network failures, other statuses and oversized images without exposing the token |
-| `tests/mealie/main.rs`, `tests/mealie/client.rs` | Loopback API server: pagination for every collection, bearer token, recipe model, image download, refused token, invalid URL and non-Mealie responses |
-| `tests/fixtures/mealie/recipe.json` | Invented Mealie v1 recipe response used to test deserialization |
-| `tests/fixtures/web/*.html` | Small invented pages: plain, `@graph`, type list, sections, string instructions, article only, invalid script before a recipe, and no JSON-LD |
+| `tests/import/mealie/mod.rs`, `tests/import/mealie/harness.rs`, `tests/import/mealie/client.rs` | Loopback API server: pagination for every collection, bearer token, recipe model, image download, refused token, invalid URL and non-Mealie responses |
+| `tests/import/fixtures/mealie/recipe.json` | Invented Mealie v1 recipe response used to test deserialization |
+| `tests/import/fixtures/web/*.html` | Small invented pages: plain, `@graph`, type list, sections, string instructions, article only, invalid script before a recipe, and no JSON-LD |
 | `src/ai/mod.rs` | Declares the AI submodules and re-exports `AiClient`, `AiDraft`, `AiLine`, `AiStep`, `parse`, `AiError`, `Image` and `Prompt` |
 | `src/ai/client.rs` | `AiClient` (base URL, optional API key, model, timeout 60 s; `with_timeout`). `complete(prompt)` posts to `{base}/chat/completions` with bearer auth only when a key is set, and reads `choices[0].message.content` through `parse`. Timeouts, non-success statuses, connection failures and answers without a message map to `AiError`. `Debug` prints the key as `<redacted>` |
 | `src/ai/request.rs` | `Prompt` (instructions, text, `Image`s) and `Image` (media type, bytes). Builds the chat body: JSON object response format, a system message with the instructions and the shape of the draft, and a user message with the text part (left out when empty) and one `data:` URL image part per photo |
 | `src/ai/draft.rs` | `AiDraft`, `AiLine`, `AiStep`, `AiPhoto` (serde) and `parse(content)`: strips a ```json fence, reads the draft and checks it: non-blank title, lines and steps present, names and step texts non-blank, amounts not negative, step line indexes existing, normalized photo bounds within 0..1. Unit words are retained for merge to normalize. Failures are `AiError::Invalid` with the reason |
 | `src/ai/error.rs` | `AiError` (`Timeout`, `Status(u16)`, `Network(text)`, `Invalid(reason)`) with user-facing messages (401, 403 and 429 have their own text) and `std::error::Error` |
-| `tests/ai/main.rs` | Declares the AI test modules and the loopback mock server, which records raw requests and answers with a canned status and body, or never answers |
-| `tests/ai/client.rs` | Request path with and without a trailing slash on the base, bearer auth with and without a key, body parts and the image data URL, the text part left out, a valid answer, and timeouts |
-| `tests/ai/parse.rs` | A full valid draft, fenced content, optional fields, every invalid case with its reason, and the line parser's units (`cup`, `oz`, `fl oz`, `dl`) accepted |
-| `tests/ai/errors.rs` | Display text of every `AiError`, statuses 401, 429 and 500, unreachable service, answers without a message, and the API key absent from errors and `Debug` output for each error case |
+| `tests/import/ai/mod.rs`, `tests/import/ai/harness.rs` | Declares the AI test modules; the harness holds the loopback mock server, which records raw requests and answers with a canned status and body, or never answers |
+| `tests/import/ai/client.rs` | Request path with and without a trailing slash on the base, bearer auth with and without a key, body parts and the image data URL, the text part left out, a valid answer, and timeouts |
+| `tests/import/ai/parse.rs` | A full valid draft, fenced content, optional fields, every invalid case with its reason, and the line parser's units (`cup`, `oz`, `fl oz`, `dl`) accepted |
+| `tests/import/ai/errors.rs` | Display text of every `AiError`, statuses 401, 429 and 500, unreachable service, answers without a message, and the API key absent from errors and `Debug` output for each error case |
 | `src/pipeline/mod.rs` | Declares the pipeline submodules and re-exports `from_draft`, `merge`, `complete`, `Imported`, `ImportedLine` and `ImportedStep` |
 | `src/pipeline/imported.rs` | `Imported` (title, servings, image, optional AI dish-photo crop, selected category ids, lines, steps, `unmatched`, `ai_error`), `ImportedLine` (amount, domain unit, name, note, `ingredient_id`, `original`) and `ImportedStep` (text, sorted `line_positions`). Units are always metric or domain units |
 | `src/pipeline/deterministic.rs` | `from_draft(draft, candidates)`: each line parsed with `parse_line`, matched by name with `match_all` (unparsed lines are unmatched by their text), and each step linked to the parsed lines whose normalised names it contains as whole words (a letter or digit on either side blocks the match) |
 | `src/pipeline/merge.rs` | `merge(ai, base, candidates)`: the AI's title, lines and steps; servings from the AI or else the page; the page's photo. Each line's unit is converted to metric (`Unit::from_symbol` first, else `measure_of` and `Measure::quantity`; a measure without an amount is dropped). An unknown unit is dropped while its word is kept in the note. The AI's `ingredient_id` is kept only when it is a candidate's id, else the name is matched again. Step positions are sorted and deduplicated, and `unmatched` is recomputed from the lines without an id |
 | `src/pipeline/photos.rs` | `from_photos(images, candidates, categories, client, instance_language)`: one AI request with the shared instructions, up to 400 candidate ingredients, available categories, and every photo, merged onto an empty reading; an `AiError` is returned |
 | `src/pipeline/run.rs` | `complete(draft, candidates, categories, ai, instance_language)`: `from_draft`, then one AI completion whenever an AI client is configured. The prompt carries up to 400 candidate ingredient ids and names, all category ids and names, language, unit symbols and the zero-based line indexes. The AI's names, notes, amounts, units, ingredient ids and category ids are merged when valid; failures keep the reading and set `ai_error` |
-| `tests/pipeline/main.rs` | Shared fixtures: a draft, candidates, a complete `Imported` |
-| `tests/pipeline/from_draft.rs` | Matched, alias-matched, unmatched and unparsed lines, unmatched names once, step links by whole word in English and Dutch, unparsed lines linking to nothing, and a name named twice in a step linked once |
-| `tests/pipeline/merge.rs` | Imperial units to metric (cup, oz, dl), a measure without an amount, domain units and amounts kept, bogus and valid ingredient ids, step positions from the AI, the title from the AI and the photo from the page, servings fallback, recomputed unmatched names, and the line text |
-| `tests/pipeline/photos.rs` | Loopback AI: every photo is sent as a `data:` URL part with the language instruction and the answer becomes the recipe, an AI error is returned |
-| `tests/pipeline/complete.rs` | Loopback AI server: not called for a complete draft, called for an unmatched line (its request carries the title and lines) and merged, called for another page language, an AI 500 keeps the reading with `ai_error`, and no AI config returns the reading |
-| `tests/pipeline/server.rs` | The loopback server that records raw requests and answers with a canned status and body |
+| `tests/import/pipeline/mod.rs`, `tests/import/pipeline/harness.rs` | Declares the pipeline test modules; the harness holds the shared fixtures: a draft, candidates, a complete `Imported` |
+| `tests/import/pipeline/from_draft.rs` | Matched, alias-matched, unmatched and unparsed lines, unmatched names once, step links by whole word in English and Dutch, unparsed lines linking to nothing, and a name named twice in a step linked once |
+| `tests/import/pipeline/merge.rs` | Imperial units to metric (cup, oz, dl), a measure without an amount, domain units and amounts kept, bogus and valid ingredient ids, step positions from the AI, the title from the AI and the photo from the page, servings fallback, recomputed unmatched names, and the line text |
+| `tests/import/pipeline/photos.rs` | Loopback AI: every photo is sent as a `data:` URL part with the language instruction and the answer becomes the recipe, an AI error is returned |
+| `tests/import/pipeline/complete.rs` | Loopback AI server: not called for a complete draft, called for an unmatched line (its request carries the title and lines) and merged, called for another page language, an AI 500 keeps the reading with `ai_error`, and no AI config returns the reading |
+| `tests/import/pipeline/server.rs` | The loopback server that records raw requests and answers with a canned status and body |
 
 ## crates/crabbage-store
 
@@ -147,25 +149,26 @@ SQLite via `sqlx` (bundled SQLite, tokio runtime, no TLS). `open(data_dir)` crea
 | `src/recipes/standing.rs` | `rate(pool, recipe, user, stars)` (upsert; `InvalidStars` for anything outside 1 to 5 before the database is touched; `false` for a missing recipe), and `set_favourite(pool, recipe, user, bool)` (`false` for a missing recipe). Both writes run in `begin_write` |
 | `src/recipes/image.rs` | `set_image(pool, id, Option<&str>)`: sets or clears the file name of the recipe's photo (the `image` column of `recipes`, from migration 0004) and returns the name it replaced, `None` when there was none or the recipe is missing |
 | `src/recipes/editors.rs` | `add_editor` (false for a missing recipe or user; adding twice changes nothing) and `remove_editor` |
+| `tests/store/main.rs` | Declares the store test modules and `common`, all built into one test binary |
 | `migrations/` | SQL migrations, applied in file-name order. `0008_planner.sql` stores household planner settings and weekday categories, and dated recipe or rest entries; deleting a household cascades, deleting a category clears weekday choices, and deleting a recipe turns its plan entry into rest. `0011_catalog_seed.sql` adds the one-row seed marker; `0013_household_name.sql` adds an optional friendly household name |
 | `defaults/catalog.json` | Versioned English and Dutch defaults: 12 ordered store sections, 197 ingredients with aliases, and 12 dinner categories |
-| `tests/open.rs` | Fresh and existing databases, pragmas, nested data dir |
-| `tests/concurrent_writes.rs` | Many concurrent creates and renames all succeed |
-| `tests/recipes_images.rs` | `set_image` returns the replaced name, clears it, reads back through `get` and `list`, and does nothing for a missing recipe |
-| `tests/users.rs`, `tests/sessions.rs`, `tests/login_attempts.rs`, `tests/households.rs` | Store behaviour; `tests/common` opens a migrated database in a temp dir |
-| `tests/catalog_ingredients.rs`, `tests/catalog_aliases.rs`, `tests/catalog_merge.rs`, `tests/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines and shopping items inserted with SQL, both re-pointed), section ordering and renumbering |
-| `tests/catalog_categories.rs` | Category order by name, unique names regardless of case, rename, and delete taking the category off its recipes |
-| `tests/defaults.rs`, `src/defaults.rs` tests | One-time seed behavior, existing catalog preservation, deleted defaults remaining deleted, and translated data uniqueness |
-| `tests/planner.rs` | Settings defaults and per-household round trips; recipe and rest entry upserts, inclusive ordered ranges, recipe history and household isolation; invalid dates and servings |
-| `tests/recipes_categories.rs` | Categories stored by name with unknown ids ignored, replaced on update, the list filtered by category |
-| `tests/recipes_round_trip.rs` | Lines and steps round-trip in order with step-line links, unknown ingredients created pending, alias and case-insensitive resolution, list order, `UnknownLine` |
-| `tests/recipes_update.rs` | Update replaces lines and steps, a missing recipe is unchanged, a bad link changes nothing |
-| `tests/recipes_editors.rs` | Editors added, listed and removed; missing recipe or user refused; user list by name |
-| `tests/recipes_delete.rs` | Delete removes lines, steps, step links, editors, ratings and favourites (ratings and favourites inserted with SQL) |
-| `tests/recipes_ratings.rs` | A user's rating changes in place, out-of-range stars are refused before storing, rating a missing recipe changes nothing, the average and count cover every user |
-| `tests/recipes_favourites.rs` | Favourites belong to one user and toggle, a missing recipe changes nothing, the list filters by the viewer's favourites alone and with a category |
-| `tests/shopping.rs` | Recipe lines scaled and skipped, unknown recipe, manual items trimmed and edited, blank refused, edit refuses ingredient items, checked items last, clearing, other households refused in every change, household delete removes items |
-| `tests/recipes_search.rs` | Search by title, ingredient and alternative name, case-insensitively, `%`, `_` and `\` literal, blank search is none, and search combined with the category and favourites filters |
+| `tests/store/open.rs` | Fresh and existing databases, pragmas, nested data dir |
+| `tests/store/concurrent_writes.rs` | Many concurrent creates and renames all succeed |
+| `tests/store/recipes_images.rs` | `set_image` returns the replaced name, clears it, reads back through `get` and `list`, and does nothing for a missing recipe |
+| `tests/store/users.rs`, `tests/store/sessions.rs`, `tests/store/login_attempts.rs`, `tests/store/households.rs` | Store behaviour; `tests/store/common` opens a migrated database in a temp dir |
+| `tests/store/catalog_ingredients.rs`, `tests/store/catalog_aliases.rs`, `tests/store/catalog_merge.rs`, `tests/store/catalog_sections.rs` | Name and alias rules in every case, `InUse`, the review queue, merging (recipe lines and shopping items inserted with SQL, both re-pointed), section ordering and renumbering |
+| `tests/store/catalog_categories.rs` | Category order by name, unique names regardless of case, rename, and delete taking the category off its recipes |
+| `tests/store/defaults.rs`, `src/defaults.rs` tests | One-time seed behavior, existing catalog preservation, deleted defaults remaining deleted, and translated data uniqueness |
+| `tests/store/planner.rs` | Settings defaults and per-household round trips; recipe and rest entry upserts, inclusive ordered ranges, recipe history and household isolation; invalid dates and servings |
+| `tests/store/recipes_categories.rs` | Categories stored by name with unknown ids ignored, replaced on update, the list filtered by category |
+| `tests/store/recipes_round_trip.rs` | Lines and steps round-trip in order with step-line links, unknown ingredients created pending, alias and case-insensitive resolution, list order, `UnknownLine` |
+| `tests/store/recipes_update.rs` | Update replaces lines and steps, a missing recipe is unchanged, a bad link changes nothing |
+| `tests/store/recipes_editors.rs` | Editors added, listed and removed; missing recipe or user refused; user list by name |
+| `tests/store/recipes_delete.rs` | Delete removes lines, steps, step links, editors, ratings and favourites (ratings and favourites inserted with SQL) |
+| `tests/store/recipes_ratings.rs` | A user's rating changes in place, out-of-range stars are refused before storing, rating a missing recipe changes nothing, the average and count cover every user |
+| `tests/store/recipes_favourites.rs` | Favourites belong to one user and toggle, a missing recipe changes nothing, the list filters by the viewer's favourites alone and with a category |
+| `tests/store/shopping.rs` | Recipe lines scaled and skipped, unknown recipe, manual items trimmed and edited, blank refused, edit refuses ingredient items, checked items last, clearing, other households refused in every change, household delete removes items |
+| `tests/store/recipes_search.rs` | Search by title, ingredient and alternative name, case-insensitively, `%`, `_` and `\` literal, blank search is none, and search combined with the category and favourites filters |
 
 Migrations:
 
@@ -379,7 +382,7 @@ The upload route's body limit is `DefaultBodyLimit` of 10 MiB (`MAX_UPLOAD_BYTES
 
 ## xtask
 
-`cargo xtask demo` starts the shared fake issuer, loads localized demo data through `crabbage-store` and serves the SSR app. The loader in `crates/crabbage-dev/src/demo.rs` creates recipes and gradient PNGs, ratings and favourites, current and next week planner entries and a checked shopping list; a database marker makes repeat loads a no-op.
+`cargo xtask demo` starts the shared fake issuer, loads localized demo data through `crabbage-store` and serves the SSR app (`cargo leptos serve`, or `cargo leptos watch` with `--watch`). The loader in `crates/crabbage-dev/src/demo.rs` creates recipes and gradient PNGs, ratings and favourites, current and next week planner entries and a checked shopping list; a database marker makes repeat loads a no-op.
 `cargo xtask browser` builds the frontend, runs the local app with fake issuer and demo data in English and Dutch, drives Chrome through the issuer sign-in page, and writes PNG captures plus a CSV metrics report under `target/browser-shots`. It finds Chrome from `CHROME`, common installation paths or `PATH`; it is separate from `cargo xtask ci`. The `browser` CI job uploads those artifacts. Browser checks are regression aids, not accessibility certification.
 
 | Module | Responsibility |

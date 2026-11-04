@@ -22,13 +22,7 @@ pub(crate) fn plan(command: &Command) -> Vec<Action> {
         Command::PrCheck => vec![Action::PrCheck],
         Command::Docker => vec![docker(), Action::Smoke],
         Command::Wasm => vec![wasm()],
-        Command::PreCommit => vec![
-            Action::Identity(None),
-            Action::Policy,
-            fmt(true),
-            lint(),
-            test(),
-        ],
+        Command::PreCommit => vec![Action::Identity(None), Action::Policy, fmt(true), lint()],
         Command::Ci => vec![
             fmt(true),
             Action::Policy,
@@ -117,7 +111,6 @@ fn frontend() -> Action {
     Action::Run(Step::cargo(&[
         "leptos",
         "build",
-        "--release",
         "--frontend-only",
         "--cargo-locked",
     ]))
@@ -186,7 +179,18 @@ mod tests {
         let actions = plan(&Command::PreCommit);
         assert_eq!(actions[0], Action::Identity(None));
         assert_eq!(actions[1], Action::Policy);
-        assert_eq!(actions.len(), 5);
+        assert_eq!(actions.len(), 4);
+    }
+
+    #[test]
+    fn pre_commit_formats_and_lints_but_leaves_tests_to_ci() {
+        let lines = shell_lines(&Command::PreCommit);
+        assert!(lines.iter().any(|line| line.contains("fmt --all --check")));
+        assert!(lines.iter().any(|line| line.contains("clippy")));
+        assert!(
+            !lines.iter().any(|line| line.contains("cargo test")),
+            "{lines:?}"
+        );
     }
 
     #[test]
@@ -201,10 +205,14 @@ mod tests {
             "cargo test",
             "cargo deny",
             "wasm32",
-            "leptos build --release --frontend-only",
+            "leptos build --frontend-only",
         ] {
             assert!(lines.iter().any(|line| line.contains(needle)), "{needle}");
         }
+        assert!(
+            !lines.iter().any(|line| line.contains("--release")),
+            "the release frontend is built by Docker: {lines:?}"
+        );
     }
 
     #[test]

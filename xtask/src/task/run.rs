@@ -22,9 +22,10 @@ pub(crate) fn run(command: &Command) -> Result<(), String> {
         keep,
         language,
         ai,
+        watch,
     } = command
     {
-        return demo(&root, *port, *keep, language, ai.as_deref());
+        return demo(&root, *port, *keep, language, ai.as_deref(), *watch);
     }
     if matches!(command, Command::Browser) {
         return browser(&root);
@@ -168,6 +169,7 @@ fn demo(
     keep: bool,
     language: &str,
     ai: Option<&str>,
+    watch: bool,
 ) -> Result<(), String> {
     if !matches!(language, "en" | "nl") {
         return Err("--language must be en or nl".to_owned());
@@ -194,7 +196,7 @@ fn demo(
         }
         let mut child = Process::new("cargo");
         child
-            .args(["leptos", "serve"])
+            .args(["leptos", demo_server(watch)])
             .current_dir(root)
             .env("OIDC_ISSUER_URL", issuer.url())
             .env("OIDC_CLIENT_ID", "crabbage")
@@ -213,6 +215,11 @@ fn demo(
             Err(format!("cargo leptos serve failed: {status}"))
         }
     })
+}
+
+/// The `cargo leptos` command that serves the demo: `watch` rebuilds and reloads on change.
+const fn demo_server(watch: bool) -> &'static str {
+    if watch { "watch" } else { "serve" }
 }
 
 fn execute(action: &Action, root: &Path) -> Result<(), String> {
@@ -273,5 +280,16 @@ fn run_step(step: &Step, root: &Path) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!("`{step}` failed with {status}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::demo_server;
+
+    #[test]
+    fn the_demo_watches_only_when_asked() {
+        assert_eq!(demo_server(false), "serve");
+        assert_eq!(demo_server(true), "watch");
     }
 }

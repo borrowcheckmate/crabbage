@@ -18,12 +18,12 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 1. Every change starts from an issue. Split large work into sub-issues.
 2. Branch from `main`, keep the change focused on one issue.
 3. Write tests first or alongside. Every behaviour needs an automated test; nothing should depend on manual checks.
-4. `cargo xtask pre-commit` runs on commit. `cargo xtask ci` runs the full suite locally.
+4. `cargo xtask pre-commit` runs on commit: identity, policy, format and clippy. Run `cargo xtask test` while working and `cargo xtask ci` before opening a PR; CI runs everything again.
 5. Open a PR with a conventional title. PRs are squash-merged, so the title becomes the commit.
 
 ## Tasks
 
-`cargo xtask demo` builds and serves a local demo instance. It accepts `--port`, `--language en|nl`, `--ai <base-url>`, and `--keep` to retain its database under `target/demo-data`.
+`cargo xtask demo` builds and serves a local demo instance. It accepts `--port`, `--language en|nl`, `--ai <base-url>`, `--keep` to retain its database under `target/demo-data`, and `--watch` to rebuild and reload the browser when a source file changes.
 `cargo xtask browser` needs a local Chrome or Chromium executable (`CHROME` may select its path); it builds the frontend and saves hydrated page captures and metrics under `target/browser-shots`. Browser checks run separately from `cargo xtask ci`.
 
 | Command | Purpose |
@@ -38,7 +38,7 @@ Coverage and dependency checks need `cargo install --locked cargo-llvm-cov cargo
 | `cargo xtask identity` | Anonymous git identity |
 | `cargo xtask wasm` | Clippy on the WASM (hydrate) build, warnings denied |
 | `cargo xtask docker` | Build the container image and smoke-test `/healthz` (needs Docker) |
-| `cargo xtask ci` | Everything CI runs except coverage and docker, plus the release frontend build (about 2 extra minutes on a cold cache) |
+| `cargo xtask ci` | Everything CI runs except coverage and docker, plus a development frontend build; the release frontend is built by `cargo xtask docker` |
 | `cargo xtask browser` | Hydrated Chrome checks and screenshot artifacts (needs Chrome or Chromium) |
 
 ## Commits
