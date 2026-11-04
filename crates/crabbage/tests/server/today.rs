@@ -31,16 +31,17 @@ async fn household(harness: &Harness) -> i64 {
     .expect("household exists")
 }
 
-#[tokio::test]
-async fn today_shows_household_meal_upcoming_preview_and_shopping_count() {
-    let harness = Harness::start("today-planned").await;
+/// Today's page for a household with a recipe tonight, a rest day tomorrow, the same recipe the day
+/// after and one item to buy, with the recipe's id.
+async fn planned_today(name: &str) -> (String, i64) {
+    let harness = Harness::start(name).await;
     let token = sign_in_as(&harness, "today-member", &[HOME]).await;
     let home = household(&harness).await;
     let recipe = create(&harness, &token, "Planned dinner").await;
     let (day, today) = current_date();
     for entry in [
         PlanEntry {
-            date: today.clone(),
+            date: today,
             recipe_id: Some(recipe),
             servings: 3,
         },
@@ -64,7 +65,12 @@ async fn today_shows_household_meal_upcoming_preview_and_shopping_count() {
         .expect("shopping item saved");
     let response = harness.get("/", Some(&token)).await;
     assert_eq!(response.status(), StatusCode::OK);
-    let body = body_text(response).await;
+    (body_text(response).await, recipe)
+}
+
+#[tokio::test]
+async fn today_shows_household_meal_upcoming_preview_and_shopping_count() {
+    let (body, recipe) = planned_today("today-planned").await;
     for expected in [
         "today-home",
         "Tonight’s plan",
@@ -81,6 +87,43 @@ async fn today_shows_household_meal_upcoming_preview_and_shopping_count() {
     assert!(
         body.contains(&format!("/recipes/{recipe}/cook?servings=3")),
         "{body}"
+    );
+}
+
+#[tokio::test]
+async fn today_opens_planned_recipes_at_their_servings() {
+    let (body, recipe) = planned_today("today-links").await;
+    assert!(
+        body.contains(&format!(
+            "<h2><a href=\"/recipes/{recipe}?servings=3\">Planned dinner</a></h2>"
+        )),
+        "today's recipe opens from its title: {body}"
+    );
+    assert!(
+        body.contains(&format!(
+            "<a href=\"/recipes/{recipe}?servings=3\" tabindex=\"-1\" aria-hidden=\"true\" aria-label=\"Planned dinner\" class=\"today-feature-photo\">"
+        )),
+        "today's recipe opens from its labelled photo, skipped by keyboard and screen readers: {body}"
+    );
+    assert!(
+        body.contains(&format!(
+            "<a href=\"/recipes/{recipe}?servings=5\" class=\"today-next\">"
+        )),
+        "an upcoming recipe opens from its row: {body}"
+    );
+    assert_eq!(
+        body.matches("class=\"today-next\">").count(),
+        2,
+        "one upcoming recipe row and one rest day: {body}"
+    );
+    assert_eq!(
+        body.matches("\" class=\"today-next\">").count(),
+        1,
+        "only the recipe row is a link: {body}"
+    );
+    assert!(
+        body.contains("<div class=\"today-next\"><span>"),
+        "a rest day is not a link: {body}"
     );
 }
 

@@ -205,12 +205,13 @@ fn today_view(data: TodayData) -> impl IntoView {
                             let id = meal.recipe_id.unwrap_or_default();
                             let title = meal.title.unwrap_or_default();
                             let photo = meal.photo;
+                            let recipe_href = recipe_href(id, meal.servings);
                             view! { <article class="today-feature">
-                                {photo.map_or_else(
-                                    || view! { <div class="today-photo-fallback" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Z"/><path d="M6 10a6 6 0 0 1 12 0M8 4l1 2m7-2-1 2"/></svg></div> }.into_any(),
+                                <a class="today-feature-photo" href=recipe_href.clone() tabindex="-1" aria-hidden="true" aria-label=title.clone()>{photo.map_or_else(
+                                    || view! { <div class="today-photo-fallback"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Z"/><path d="M6 10a6 6 0 0 1 12 0M8 4l1 2m7-2-1 2"/></svg></div> }.into_any(),
                                     |name| view! { <img src=format!("/images/{name}") alt=""/> }.into_any(),
-                                )}
-                                <div class="today-feature-copy"><p class="today-feature-eyebrow">{t("home.today_meal")}</p><h2>{title}</h2>
+                                )}</a>
+                                <div class="today-feature-copy"><p class="today-feature-eyebrow">{t("home.today_meal")}</p><h2><a href=recipe_href>{title}</a></h2>
                                 <p class="today-feature-meta"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m6-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a4 4 0 0 1 0 7m4 4v-2a4 4 0 0 0-3-3.87"/></svg>{servings_text(meal.servings)}</p>
                                 <a class="today-action" href=format!("/recipes/{id}/cook?servings={}", meal.servings)><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Zm3 0a6 6 0 0 1 12 0M8 4l1 2m7-2-1 2M12 14v3"/></svg>{t("recipe.button.start_cooking")}<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
                             </article> }.into_any()
@@ -221,7 +222,7 @@ fn today_view(data: TodayData) -> impl IntoView {
                 <div class="today-side">
                     <section class="today-upcoming"><div class="today-section-heading"><h2>{t("home.coming_up")}</h2><a href="/plan">{t("home.see_week")}</a></div>
                         <For each=move || upcoming.get_value() key=|item| item.date.clone() let(item)>
-                            <div class="today-next"><span>{t(weekday_short_key(item.weekday))}</span><div><h3>{match item.title.clone() { Some(title) => title, None if item.rest => t("home.rest").to_owned(), None => t("home.empty_short").to_owned() }}</h3>{item.title.is_some().then(|| view! { <p>{servings_text(item.servings)}</p> })}</div></div>
+                            {upcoming_row(item)}
                         </For>
                         {no_upcoming.then(|| view! { <p class="today-muted">{t("home.no_upcoming")}</p> })}
                     </section>
@@ -230,6 +231,26 @@ fn today_view(data: TodayData) -> impl IntoView {
             </div>
         </Show>
     }
+}
+
+fn recipe_href(id: i64, servings: i64) -> String {
+    format!("/recipes/{id}?servings={servings}")
+}
+
+fn upcoming_row(item: TodayMeal) -> AnyView {
+    let day = view! { <span>{t(weekday_short_key(item.weekday))}</span> };
+    if let (Some(id), Some(title)) = (item.recipe_id, item.title) {
+        return view! {
+            <a class="today-next" href=recipe_href(id, item.servings)>{day}<div><h3>{title}</h3><p>{servings_text(item.servings)}</p></div><svg class="today-next-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></a>
+        }
+        .into_any();
+    }
+    let label = if item.rest {
+        t("home.rest")
+    } else {
+        t("home.empty_short")
+    };
+    view! { <div class="today-next">{day}<div><h3>{label.to_owned()}</h3></div></div> }.into_any()
 }
 
 fn weekday_key(index: usize) -> &'static str {
