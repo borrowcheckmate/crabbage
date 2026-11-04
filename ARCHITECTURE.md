@@ -235,7 +235,7 @@ To add a language: add `locales/<code>.json` with the same keys, add a `Language
 
 ### Styling
 
-Pages get their look from `style/main.css` and never from inline styles. The stylesheet defines the light and dark product tokens, bounded 1024px workspace, 68ch readable text measure, 560px paired-pane and 900px side-navigation breakpoints, compact top bar, safe-area-aware bottom navigation, control states, focus and reduced-motion rules. Use the plain elements (`button`, `input`, `select`, `label`, `form`) and these shared classes:
+Pages get their look from `style/main.css` and never from inline styles. The stylesheet defines the light and dark product tokens, bounded 1024px workspace, 68ch readable text measure, 560px paired-pane and 900px side-navigation breakpoints, compact top bar and side navigation that stay in view on desktops at least 501px tall (`--topbar-height` offsets the other sticky panels and anchor scrolling), safe-area-aware bottom navigation, control states, focus and reduced-motion rules. Use the plain elements (`button`, `input`, `select`, `label`, `form`) and these shared classes:
 
 | Class | Use |
 | --- | --- |
@@ -244,6 +244,7 @@ Pages get their look from `style/main.css` and never from inline styles. The sty
 | `.badge` | A small rounded tag, such as Waiting for review or a recipe's category |
 | `.filters` | The category filter links above the recipe list, each at least 44px tall |
 | `.stepper` | The servings stepper of a recipe page: its minus, plus and Reset links, each at least 44px |
+| `.recipe-compact`, `.recipe-compact-back`, `.recipe-compact-photo`, `.recipe-compact-title` | The recipe page's compact header: back link, thumbnail and title in a sticky sub-bar flush below the top bar, its surface bleeding to the side navigation and window edge (clipped by `.shell-layout`), that fades in while the title scrolls under the top bar, driven by the `--recipe-hero` view timeline. Hidden where scroll-driven animations are unsupported |
 | `.cook-instruction`, `.cook-step`, `.cook-needs`, `.cook-nav`, `.cook-dots`, `.cook-dot` | The cook page: unboxed serif instruction, a soft ingredient panel, equal-height Back and Next step controls, and 44px step links in a horizontally scrollable row |
 | `.timer-starts`, `.timer-tray`, `.timer-list`, `.timer-row`, `.timer-label`, `.timer-time` | The cook page's timers: quiet start buttons under the instruction, and an expandable timer panel in the page flow (hidden while no timer runs), one row per timer, the finished ones in the accent colour |
 | `.row` | A horizontal group that wraps, such as the up and down buttons of a section |

@@ -115,9 +115,11 @@ fn recipe_view(
     let (shown, scaled) = scaled_lines(requested, servings, &lines);
     let cook = start_href(id, requested.map(|_| shown));
     let back_href = safe_return_to(return_to);
+    let compact = compact_header(back_href.clone(), image.clone(), title.clone());
     let image_view = detail_photo(image, &title);
     view! {
         <article class="recipe-detail">
+        {compact}
         <a class="recipe-back" href=back_href><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M20 12H9"/></svg>{t("recipe.back")}</a>
         <header class="recipe-detail-header">
             <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
@@ -196,6 +198,17 @@ fn detail_photo(image: Option<String>, title: &str) -> AnyView {
         || view! { <span class="recipe-photo-fallback" aria-hidden="true"></span> }.into_any(),
         |name| view! { <img class="recipe-detail-photo" src=format!("/images/{name}") alt=title.to_owned()/> }.into_any(),
     )
+}
+
+fn compact_header(back_href: String, image: Option<String>, title: String) -> impl IntoView {
+    let thumbnail = image.map(|name| view! { <img src=format!("/images/{name}") alt=""/> });
+    view! {
+        <div class="recipe-compact">
+            <a class="recipe-compact-back" href=back_href><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M20 12H9"/></svg><span>{t("recipe.back")}</span></a>
+            <span class="recipe-compact-photo" aria-hidden="true">{thumbnail}</span>
+            <p class="recipe-compact-title">{title}</p>
+        </div>
+    }
 }
 
 fn ingredient_row(line: &LineRow, messages: &crate::i18n::Messages) -> impl IntoView {

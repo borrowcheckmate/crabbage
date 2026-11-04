@@ -85,6 +85,96 @@ fn navigation_labels_fit_without_breaking_words() {
 }
 
 #[test]
+fn desktop_top_bar_and_side_navigation_stay_in_view() {
+    let css = stylesheet();
+    let (_, desktop) = css
+        .split_once("@media (min-width:900px) and (min-height:501px) {")
+        .unwrap();
+    let topbar = declarations_of(desktop, ".topbar").unwrap_or_default();
+    let navigation = declarations_of(desktop, ".primary-nav").unwrap_or_default();
+    assert!(topbar.contains("position:sticky") && topbar.contains("top:0"));
+    assert!(topbar.contains("height:var(--topbar-height)"));
+    assert!(navigation.contains("position:sticky"));
+    assert!(navigation.contains("top:var(--topbar-height)"));
+    assert!(navigation.contains("overflow-y:auto"));
+    for panel in [".shopping-review", ".plan-editor", ".import-source-desktop"] {
+        let declarations = css
+            .split('}')
+            .filter_map(|block| block.split_once('{'))
+            .find(|(selector, body)| {
+                selector.trim_end().ends_with(panel) && body.contains("sticky")
+            })
+            .map(|(_, body)| body)
+            .unwrap_or_default();
+        assert!(
+            declarations.contains("var(--topbar-height, 0px)"),
+            "{panel} must stick below the top bar"
+        );
+    }
+}
+
+#[test]
+fn recipe_compact_header_appears_once_the_title_scrolls_away() {
+    let css = stylesheet();
+    assert!(
+        declarations_of(&css, ".recipe-compact").is_some_and(|rule| rule.contains("display:none"))
+    );
+    let (_, supported) = css
+        .split_once("@supports (animation-timeline: view()) {")
+        .unwrap();
+    let hero = declarations_of(supported, ".recipe-detail-header").unwrap_or_default();
+    let compact = declarations_of(supported, ".recipe-compact").unwrap_or_default();
+    assert!(hero.contains("view-timeline-name:--recipe-hero"));
+    assert!(hero.contains("view-timeline-inset:var(--topbar-height, 0px)"));
+    assert!(compact.contains("position:sticky"));
+    assert!(compact.contains("top:var(--topbar-height, 0px)"));
+    let bleed = declarations_of(supported, ".recipe-compact::before").unwrap_or_default();
+    assert!(
+        bleed.contains("inset:0 -100vw") && bleed.contains("border-bottom:1px solid var(--border)")
+    );
+    let shell = declarations_of(supported, ".shell-layout").unwrap_or_default();
+    assert!(
+        shell.contains("overflow-x:clip"),
+        "the full-bleed bar must not scroll sideways"
+    );
+    assert!(compact.contains("visibility:hidden"));
+    assert!(compact.contains("animation-timeline:--recipe-hero"));
+    assert!(css.contains("@keyframes recipe-compact-reveal"));
+    let back = declarations_of(&css, ".recipe-compact-back").unwrap_or_default();
+    assert!(back.contains("min-height:44px") && back.contains("min-width:44px"));
+}
+
+#[test]
+fn recipe_pages_fill_the_workspace_like_today() {
+    let css = stylesheet();
+    for selector in [
+        ".recipe-list-heading",
+        ".recipe-list-content",
+        ".recipe-detail",
+    ] {
+        let capped = css
+            .split('}')
+            .filter_map(|block| block.split_once('{'))
+            .any(|(selectors, body)| {
+                selectors
+                    .split(',')
+                    .map(str::trim)
+                    .any(|listed| listed == selector)
+                    && body.contains("max-width")
+            });
+        assert!(
+            !capped,
+            "{selector} must share the workspace edges with the other pages"
+        );
+    }
+    let (_, wide) = css
+        .split_once("@container main-workspace (min-width:880px) {")
+        .unwrap();
+    let grid = declarations_of(wide, ".recipe-grid").unwrap_or_default();
+    assert!(grid.contains("repeat(3,minmax(0,1fr))"));
+}
+
+#[test]
 fn today_side_heading_aligns_with_the_left_column() {
     let css = stylesheet();
     let heading = declarations_of(&css, ".today-side .today-section-heading").unwrap_or_default();
