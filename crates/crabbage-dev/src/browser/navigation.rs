@@ -47,7 +47,7 @@ pub(super) async fn exercise_navigation(
         .map_err(|error| format!("no-JavaScript navigation: {error}"))
 }
 
-async fn set_viewport(page: &Page, width: u32, height: u32) -> Result<(), String> {
+pub(super) async fn set_viewport(page: &Page, width: u32, height: u32) -> Result<(), String> {
     let viewport = SetDeviceMetricsOverrideParams::builder()
         .width(width)
         .height(height)

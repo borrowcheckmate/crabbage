@@ -50,7 +50,7 @@ sqlx = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 wasm-bindgen = { workspace = true, optional = true }
-web-sys = { workspace = true, features = ["AudioContext", "AudioDestinationNode", "AudioNode", "AudioParam", "AudioScheduledSourceNode", "BaseAudioContext", "Document", "Element", "Event", "EventSource", "EventTarget", "FocusOptions", "GainNode", "History", "HtmlElement", "MessageEvent", "Navigator", "OscillatorNode", "Storage", "Touch", "TouchEvent", "TouchList", "VisibilityState", "Window"], optional = true }
+web-sys = { workspace = true, features = ["AudioContext", "AudioDestinationNode", "AudioNode", "AudioParam", "AudioScheduledSourceNode", "BaseAudioContext", "Document", "Element", "Event", "EventSource", "EventTarget", "FocusOptions", "FormData", "GainNode", "History", "HtmlElement", "HtmlFormElement", "MessageEvent", "Navigator", "OscillatorNode", "RequestInit", "RequestRedirect", "Response", "ResponseType", "Storage", "Touch", "TouchEvent", "TouchList", "UrlSearchParams", "VisibilityState", "Window"], optional = true }
 
 [dev-dependencies]
 http-body-util.workspace = true

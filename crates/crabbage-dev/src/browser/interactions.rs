@@ -21,7 +21,7 @@ pub(super) async fn exercise_interactions(
     exercise_households(page, base_url, failures).await?;
     exercise_cook(page, base_url, failures).await?;
     exercise_import(page, base_url, output, failures).await?;
-    exercise_shopping(page, base_url, output, failures).await?;
+    super::shopping::exercise_shopping(page, base_url, output, failures).await?;
     exercise_plan(page, base_url, output, failures).await?;
     Ok(())
 }
@@ -418,46 +418,6 @@ fn photo_pending_state_is_valid(state: &Value) -> bool {
         && state.get("currentStageIndex").and_then(Value::as_i64) == Some(1)
 }
 
-async fn exercise_shopping(
-    page: &Page,
-    base_url: &str,
-    output: &Path,
-    failures: &mut Vec<String>,
-) -> Result<(), String> {
-    goto_hydrated(page, &format!("{base_url}/shopping")).await?;
-    tokio::time::sleep(Duration::from_millis(300)).await;
-    let state: Value = page
-        .evaluate("(() => { const item=[...document.querySelectorAll('button.shopping-item')].find(button=>button.getAttribute('aria-pressed')==='false') || document.querySelector('button.shopping-item'); const form=item?.closest('form'); const ids=form?.querySelector('input[name=ids]')?.value; const before=item?.getAttribute('aria-pressed'); item?.click(); return {ids,before}; })()")
-        .await
-        .map_err(|error| error.to_string())?
-        .into_value()
-        .map_err(|error| error.to_string())?;
-    let ids = state.get("ids").and_then(Value::as_str).unwrap_or_default();
-    let before = state
-        .get("before")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
-    let mut changed = false;
-    for _ in 0..40 {
-        let pressed: Result<bool, String> = page
-            .evaluate(format!("[...document.querySelectorAll('form.shopping-row input[name=ids]')].find(input=>input.value==='{}')?.closest('form')?.querySelector('button.shopping-item')?.getAttribute('aria-pressed') === 'true'", ids.replace('\\', "\\\\").replace('\'', "\\'")))
-            .await
-            .map_err(|error| error.to_string())
-            .and_then(|value| value.into_value().map_err(|error| error.to_string()));
-        if let Ok(pressed) = pressed {
-            changed = pressed != (before == "true");
-            if changed {
-                break;
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(125)).await;
-    }
-    if !changed {
-        failures.push("shopping check-off did not change pressed state".to_owned());
-    }
-    save_interaction_screenshot(page, output, "shopping").await
-}
-
 async fn exercise_plan(
     page: &Page,
     base_url: &str,
@@ -487,7 +447,11 @@ async fn exercise_plan(
     save_interaction_screenshot(page, output, "plan").await
 }
 
-async fn save_interaction_screenshot(page: &Page, output: &Path, name: &str) -> Result<(), String> {
+pub(super) async fn save_interaction_screenshot(
+    page: &Page,
+    output: &Path,
+    name: &str,
+) -> Result<(), String> {
     page.save_screenshot(
         ScreenshotParams::builder()
             .format(CaptureScreenshotFormat::Png)

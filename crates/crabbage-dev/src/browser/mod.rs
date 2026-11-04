@@ -5,6 +5,7 @@ mod interactions;
 mod navigation;
 mod no_javascript;
 mod run;
+mod shopping;
 
 #[cfg(test)]
 mod tests;
