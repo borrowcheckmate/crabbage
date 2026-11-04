@@ -13,6 +13,7 @@ use crate::i18n::{current_language, t};
 use crate::navigation::focus_main;
 use crate::navigation::{HistoryScroll, RouteFocus};
 use crate::navigation_transition::navigation_pending;
+use crate::page_title::RouteTitle;
 use crate::plan_page::PlanPage;
 use crate::recipes::{
     CookPage, RecipeEditPage, RecipeImportPage, RecipeNewPage, RecipePage, RecipesPage,
@@ -29,8 +30,8 @@ pub fn App() -> impl IntoView {
     let is_pending = navigation_pending(is_routing);
     let (is_history_navigation, set_is_history_navigation) = signal(false);
     view! {
-        <Title text=t("app.title")/>
         <Router set_is_routing=set_is_routing>
+            <RouteTitle/>
             <a class="skip-link" href="#main-content" on:click=move |_| {
                 #[cfg(feature = "hydrate")]
                 focus_main();
@@ -80,6 +81,7 @@ pub fn App() -> impl IntoView {
 fn NotFound() -> impl IntoView {
     view! {
         <section class="state-card" role="status">
+            <Title text=t("system.not_found.heading")/>
             <h1>{t("system.not_found.heading")}</h1>
             <p>{t("system.not_found.message")}</p>
             <a class="button-link" href="/">{t("system.not_found.home")}</a>
@@ -200,6 +202,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
             <head>
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                 <HashedStylesheet id="leptos" options=options.clone()/>
                 <AutoReload options=options.clone()/>
                 <HydrationScripts options/>

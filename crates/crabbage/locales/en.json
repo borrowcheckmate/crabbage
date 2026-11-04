@@ -113,6 +113,7 @@
   "cook.progress.label": "Cooking progress",
   "cook.mode.label": "Cook mode",
   "cook.heading": "Cook",
+  "cook.page_title": "Cooking {title}",
   "cook.done.mark": "✓ Done",
   "cook.mark_done": "Mark done",
   "cook.mark_not_done": "Not done",

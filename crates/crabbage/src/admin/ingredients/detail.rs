@@ -18,6 +18,7 @@ use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, failure, message};
 use crate::route::route_id;
 use crate::user::current_user;
+use leptos_meta::Title;
 
 type IngredientDetailData = (
     Option<i64>,
@@ -156,6 +157,7 @@ fn ingredient_view(
     view! {
         <section class="admin-page admin-detail">
         <p><a href="/admin/ingredients">{t("admin.ingredients.back")}</a></p>
+        <Title text=row.name.clone()/>
         <h1>{row.name.clone()}</h1>
         {row.pending_review.then(|| view! { <p class="notice">{t("admin.ingredients.pending")}</p> })}
         {ingredient_failures(actions)}

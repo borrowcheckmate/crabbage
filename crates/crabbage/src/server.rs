@@ -18,6 +18,7 @@ use crate::api;
 use crate::app::{App, shell};
 use crate::auth;
 use crate::config::Config;
+use crate::favicon;
 use crate::household;
 use crate::images;
 use crate::planner::routes as planner_routes;
@@ -36,9 +37,9 @@ fn route_list() -> Vec<AxumRouteListing> {
 
 /// Builds the router for the app.
 ///
-/// It serves the health check, sign-in, the rendered pages and the site files. Every route except
-/// the health check, sign-in and the site files needs a session. The `OpenID` Connect provider is
-/// not contacted here; sign-in discovers it on first use.
+/// It serves the health check, sign-in, the icon, the rendered pages and the site files. Every
+/// route except the health check, sign-in, the icon and the site files needs a session. The
+/// `OpenID` Connect provider is not contacted here; sign-in discovers it on first use.
 ///
 /// # Errors
 ///
@@ -72,6 +73,7 @@ pub fn router(
     Ok(Router::<AppState>::new()
         .route("/healthz", get(|| async { "ok" }))
         .merge(auth::routes())
+        .merge(favicon::routes())
         .merge(household::routes())
         .merge(api::routes())
         .merge(images::routes())

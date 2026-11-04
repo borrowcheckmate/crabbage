@@ -244,6 +244,6 @@ async fn a_user_without_households_loads_recipes_without_household_features() {
     assert!(
         body_text(response)
             .await
-            .contains("<title>crabbage</title>")
+            .contains("<title>Today · crabbage</title>")
     );
 }

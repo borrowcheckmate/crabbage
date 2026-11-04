@@ -49,6 +49,13 @@ mod navigation;
 )]
 mod navigation_transition;
 
+#[expect(
+    unreachable_pub,
+    clippy::same_name_method,
+    reason = "the component props builder adds pub methods"
+)]
+mod page_title;
+
 mod route;
 
 #[expect(
@@ -89,6 +96,9 @@ mod auth;
 
 #[cfg(feature = "ssr")]
 pub use auth::SessionUser;
+
+#[cfg(feature = "ssr")]
+mod favicon;
 
 #[cfg(feature = "ssr")]
 mod household;

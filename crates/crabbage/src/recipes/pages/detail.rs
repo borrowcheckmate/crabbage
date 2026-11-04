@@ -21,6 +21,7 @@ use crate::recipes::servings::{scale_lines, shown_servings};
 use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
 use crate::recipes::write::DeleteRecipe;
 use crate::route::route_id;
+use leptos_meta::Title;
 
 type RecipePageData = (
     Option<i64>,
@@ -121,6 +122,7 @@ fn recipe_view(
         <a class="recipe-back" href=back_href><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M20 12H9"/></svg>{t("recipe.back")}</a>
         <header class="recipe-detail-header">
             <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
+            <Title text=title.clone()/>
             <h1>{title.clone()}</h1>
         </header>
         <div class="recipe-detail-image">{image_view}</div>
