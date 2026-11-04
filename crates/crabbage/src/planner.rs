@@ -210,18 +210,14 @@ async fn reroll(
         .weekdays
         .get(weekday(day_number))
         .copied()
-        .flatten()
-        .ok_or(StatusCode::BAD_REQUEST)?;
+        .flatten();
     let existing = planner::entries(&state.pool, household, &day, &day)
         .await
         .map_err(internal_error)?;
     let current = existing.first().and_then(|entry| entry.recipe_id);
-    let ids = planner::recipes_in_categories(&state.pool, &[category])
-        .await
-        .map_err(internal_error)?;
-    let mut choices: Vec<_> = ids
+    let mut choices: Vec<_> = reroll_candidates(&state, category)
+        .await?
         .into_iter()
-        .map(|(_, id)| id)
         .filter(|id| Some(*id) != current)
         .collect();
     if choices.is_empty() {
@@ -254,6 +250,19 @@ async fn reroll(
     .map_err(internal_error)?;
     state.shopping.publish(household);
     redirect_week(&day)
+}
+
+async fn reroll_candidates(
+    state: &AppState,
+    category: Option<i64>,
+) -> Result<Vec<i64>, StatusCode> {
+    let ids = match category {
+        Some(category) => planner::recipes_in_categories(&state.pool, &[category])
+            .await
+            .map(|pairs| pairs.into_iter().map(|(_, id)| id).collect()),
+        None => planner::recipe_ids(&state.pool).await,
+    };
+    ids.map_err(internal_error)
 }
 
 async fn recipe(
