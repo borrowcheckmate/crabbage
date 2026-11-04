@@ -207,7 +207,7 @@ fn today_view(data: TodayData) -> impl IntoView {
                             let photo = meal.photo;
                             let recipe_href = recipe_href(id, meal.servings);
                             view! { <article class="today-feature">
-                                <a class="today-feature-photo" href=recipe_href.clone() tabindex="-1" aria-hidden="true">{photo.map_or_else(
+                                <a class="today-feature-photo" href=recipe_href.clone() tabindex="-1" aria-hidden="true" aria-label=title.clone()>{photo.map_or_else(
                                     || view! { <div class="today-photo-fallback"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Z"/><path d="M6 10a6 6 0 0 1 12 0M8 4l1 2m7-2-1 2"/></svg></div> }.into_any(),
                                     |name| view! { <img src=format!("/images/{name}") alt=""/> }.into_any(),
                                 )}</a>

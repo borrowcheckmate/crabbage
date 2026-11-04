@@ -101,9 +101,9 @@ async fn today_opens_planned_recipes_at_their_servings() {
     );
     assert!(
         body.contains(&format!(
-            "<a href=\"/recipes/{recipe}?servings=3\" tabindex=\"-1\" aria-hidden=\"true\" class=\"today-feature-photo\">"
+            "<a href=\"/recipes/{recipe}?servings=3\" tabindex=\"-1\" aria-hidden=\"true\" aria-label=\"Planned dinner\" class=\"today-feature-photo\">"
         )),
-        "today's recipe opens from its photo, skipped by keyboard and screen readers: {body}"
+        "today's recipe opens from its labelled photo, skipped by keyboard and screen readers: {body}"
     );
     assert!(
         body.contains(&format!(
