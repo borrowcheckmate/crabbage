@@ -108,6 +108,33 @@ async fn generate_keeps_existing_entries_and_reroll_changes_only_the_requested_d
 }
 
 #[tokio::test]
+async fn reroll_on_a_weekday_without_category_picks_from_all_recipes() {
+    let (harness, token, owner, recipes) = setup("planner-reroll-rest").await;
+    let home = household(&harness, owner).await;
+    save_settings(
+        &harness.pool,
+        home,
+        &PlannerSettings {
+            lookback_weeks: 0,
+            servings: 3,
+            weekdays: [None; 7],
+        },
+    )
+    .await
+    .expect("settings saved");
+    assert_eq!(
+        post(&harness, &token, "/plan/2024-02-27/reroll", "").await,
+        StatusCode::SEE_OTHER
+    );
+    let rows = entries(&harness.pool, home, "2024-02-27", "2024-02-27")
+        .await
+        .expect("entry read");
+    assert_eq!(rows.len(), 1);
+    assert!(rows[0].recipe_id.is_some_and(|id| recipes.contains(&id)));
+    assert_eq!(rows[0].servings, 3);
+}
+
+#[tokio::test]
 async fn manual_recipe_rest_servings_settings_and_household_scope_work() {
     let (harness, token, owner, recipes) = setup("planner-manual").await;
     let home = household(&harness, owner).await;

@@ -28,6 +28,17 @@ pub async fn recipes_in_categories(
     Ok(query.build_query_as().fetch_all(pool).await?)
 }
 
+/// Returns every recipe id, ordered by id.
+///
+/// # Errors
+///
+/// Returns an error if the query fails.
+pub async fn recipe_ids(pool: &SqlitePool) -> Result<Vec<i64>, StoreError> {
+    Ok(sqlx::query_scalar("SELECT id FROM recipes ORDER BY id")
+        .fetch_all(pool)
+        .await?)
+}
+
 /// Returns whether a recipe exists.
 ///
 /// # Errors
