@@ -58,6 +58,9 @@ pub(crate) enum Command {
         language: String,
         #[arg(long)]
         ai: Option<String>,
+        /// Rebuild and reload the browser when a source file changes.
+        #[arg(long)]
+        watch: bool,
     },
     /// Run hydrated browser checks and save screenshots under target/browser-shots.
     Browser,
@@ -95,6 +98,7 @@ mod tests {
             "nl",
             "--ai",
             "http://127.0.0.1:8080/v1",
+            "--watch",
         ])
         .unwrap();
         assert_eq!(
@@ -104,6 +108,7 @@ mod tests {
                 keep: true,
                 language: "nl".to_owned(),
                 ai: Some("http://127.0.0.1:8080/v1".to_owned()),
+                watch: true,
             }
         );
         assert_eq!(

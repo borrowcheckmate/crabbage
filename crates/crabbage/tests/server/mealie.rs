@@ -28,7 +28,7 @@ async fn answer(mut stream: TcpStream, unauthorized: bool) {
         (401, "{}".to_owned())
     } else if target.starts_with("/api/recipes/citrus-cakes") {
         let mut recipe: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../crabbage-import/tests/fixtures/mealie/recipe.json"
+            "../../../crabbage-import/tests/import/fixtures/mealie/recipe.json"
         ))
         .unwrap_or_default();
         if let Some(lines) = recipe
