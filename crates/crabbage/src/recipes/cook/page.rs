@@ -12,6 +12,7 @@ use super::tray::{TimerTray, start_button};
 use crate::i18n::{messages, t, t_with};
 use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, message};
+use crate::recipes::allergens::allergen_line;
 use crate::recipes::line_text::line_text;
 use crate::recipes::read::get_recipe;
 use crate::recipes::servings::{scale_lines, shown_servings};
@@ -90,6 +91,7 @@ fn cook(
         servings,
         lines,
         steps,
+        allergens,
         ..
     } = recipe;
     let total = steps.len();
@@ -123,6 +125,7 @@ fn cook(
             </a>
             <Title text=t_with("cook.page_title", &[("title", &title)])/>
             <p class="cook-recipe-name">{title}</p>
+            {allergen_line(&allergens)}
             <h1 class="cook-title">{t("cook.heading")}</h1>
             <div class="cook-progress" aria-live="polite">
                 <p>{t_with("cook.progress", &[("step", &current.to_string()), ("total", &total.to_string())])}</p>

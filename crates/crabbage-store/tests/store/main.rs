@@ -18,6 +18,7 @@ mod login_attempts;
 mod open;
 mod planner;
 mod planner_meal_types;
+mod recipes_allergens;
 mod recipes_categories;
 mod recipes_delete;
 mod recipes_editors;
