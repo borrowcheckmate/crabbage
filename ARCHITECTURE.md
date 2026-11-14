@@ -420,7 +420,7 @@ To add a task, add a variant to `cli.rs` and map it in `task/plan.rs`. Prefer co
 | `site` | `cargo leptos build --release --frontend-only`: the WASM bundle, JS and CSS with hashed names in `target/site`, copied to `/out/site`, and `target/release/hash.txt`, copied next to the binary; the image sets `LEPTOS_HASH_FILES=true` |
 | `server` | `cargo build` of `crabbage` with `ssr` for the native musl target `$(uname -m)-unknown-linux-musl`. Bundled SQLite is C code compiled with `musl-gcc`; rustls needs no system libraries, so the binary is static |
 | `data` | `/data` owned by 65532:65532 |
-| final | `FROM scratch`. Copies `/data`, `/site` and `/crabbage`. Sets `CRABBAGE_DATA_DIR`, `LEPTOS_SITE_ROOT`, `LEPTOS_OUTPUT_NAME` and `LEPTOS_SITE_ADDR`. Runs as `65532:65532`, exposes 3000, declares `/data` as a volume, and uses `/crabbage --healthcheck` as its exec-form healthcheck |
+| final | `FROM scratch`. Copies `/data`, `/site`, `/crabbage` and the build image's CA bundle (`/etc/ssl/certs/ca-certificates.crt`, read by reqwest's platform verifier). Sets `CRABBAGE_DATA_DIR`, `LEPTOS_SITE_ROOT`, `LEPTOS_OUTPUT_NAME` and `LEPTOS_SITE_ADDR`. Runs as `65532:65532`, exposes 3000, declares `/data` as a volume, and uses `/crabbage --healthcheck` as its exec-form healthcheck |
 
 The cargo-leptos version and its checksum are pinned in `ARG` and in the `tools` stage. CI's `image` job is a matrix with one leg per platform. Each leg builds its platform with its own GitHub Actions cache scope and pushes the image by digest on pushes to `main`. The `manifest` job then combines the digests into `ghcr.io/borrowcheckmate/crabbage:main` and `:sha-<short>`.
 
