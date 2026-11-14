@@ -51,6 +51,8 @@ pub(crate) struct RecipeDetail {
     pub(crate) categories: Vec<CategoryRow>,
     /// The codes of the recipe's meal types, in form order.
     pub(crate) meal_types: Vec<String>,
+    /// The codes of the allergens of its ingredients, in the fixed allergen order.
+    pub(crate) allergens: Vec<String>,
     /// The file name of the recipe's photo, if it has one.
     pub(crate) image: Option<String>,
     /// Whether the signed-in user may change the recipe.

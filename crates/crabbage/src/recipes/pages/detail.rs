@@ -11,9 +11,11 @@ use leptos_router::hooks::{use_navigate, use_query_map};
 
 use super::rating_section::rating_section;
 use super::stepper::servings_stepper;
+use crate::catalog::CategoryRow;
 use crate::i18n::{messages, t, t_with};
 use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, failure, message};
+use crate::recipes::allergens::allergen_line;
 use crate::recipes::cook::start_href;
 use crate::recipes::duration::duration_text;
 use crate::recipes::line_text::ingredient_parts;
@@ -103,6 +105,7 @@ fn recipe_view(
         servings,
         categories,
         meal_types,
+        allergens,
         lines,
         steps,
         image,
@@ -125,11 +128,7 @@ fn recipe_view(
         <article class="recipe-detail">
         {compact}
         <a class="recipe-back" href=back_href><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M20 12H9"/></svg>{t("recipe.back")}</a>
-        <header class="recipe-detail-header">
-            <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{meal_types.iter().filter_map(|code| MealType::from_code(code)).map(|meal| view! { <span>{t(meal_key(meal))}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
-            <Title text=title.clone()/>
-            <h1>{title.clone()}</h1>
-        </header>
+        {detail_header(&title, categories, &meal_types, &allergens, favourite)}
         <div class="recipe-detail-image">{image_view}</div>
         <div class="recipe-detail-columns">
             <section class="recipe-ingredients">
@@ -157,6 +156,23 @@ fn recipe_view(
         </article>
     }
     .into_any()
+}
+
+fn detail_header(
+    title: &str,
+    categories: Vec<CategoryRow>,
+    meal_types: &[String],
+    allergens: &[String],
+    favourite: bool,
+) -> impl IntoView {
+    view! {
+        <header class="recipe-detail-header">
+        <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{meal_types.iter().filter_map(|code| MealType::from_code(code)).map(|meal| view! { <span>{t(meal_key(meal))}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
+            <Title text=title.to_owned()/>
+            <h1>{title.to_owned()}</h1>
+            {allergen_line(allergens)}
+        </header>
+    }
 }
 
 fn recipe_links(id: i64) -> (String, String, String) {
