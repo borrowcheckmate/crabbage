@@ -3,7 +3,7 @@
 use crate::common::database;
 use crabbage_store::StoreError;
 use crabbage_store::planner::{
-    PlanEntry, PlannerSettings, categories_exist, entries, history, recipe_exists,
+    PlanEntry, PlannerSettings, categories_exist, entries, history, recipe_exists, recipe_titles,
     recipes_in_categories, remove_entry, save_settings, set_entry, settings,
 };
 use crabbage_store::users::upsert_user;
@@ -218,6 +218,15 @@ async fn planner_recipe_lookups_cover_candidates_and_existence() {
     assert_eq!(recipes_in_categories(&pool, &[]).await.unwrap(), []);
     assert!(recipe_exists(&pool, first).await.unwrap());
     assert!(!recipe_exists(&pool, i64::MAX).await.unwrap());
+    sqlx::query("UPDATE recipes SET title = 'apple pie' WHERE id = ?")
+        .bind(second)
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        recipe_titles(&pool).await.unwrap(),
+        [(second, "apple pie".to_owned()), (first, "Soup".to_owned())]
+    );
     assert!(
         categories_exist(&pool, &[Some(1), Some(2), None, None, None, None, None])
             .await
