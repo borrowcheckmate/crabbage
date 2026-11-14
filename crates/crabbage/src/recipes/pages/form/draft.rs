@@ -51,6 +51,8 @@ pub(crate) struct Draft {
     pub(crate) steps: RwSignal<Vec<StepSignals>>,
     /// The ids of the categories the recipe is filed under.
     pub(crate) categories: RwSignal<Vec<i64>>,
+    /// The codes of the recipe's meal types.
+    pub(crate) meal_types: RwSignal<Vec<String>>,
     next_key: RwSignal<usize>,
 }
 
@@ -86,6 +88,7 @@ impl Draft {
                 .iter()
                 .map(|category| category.id)
                 .collect(),
+            meal_types: recipe.meal_types.clone(),
         })
     }
 
@@ -96,6 +99,7 @@ impl Draft {
             lines: RwSignal::new(Vec::new()),
             steps: RwSignal::new(Vec::new()),
             categories: RwSignal::new(draft.categories.clone()),
+            meal_types: RwSignal::new(draft.meal_types.clone()),
             next_key: RwSignal::new(0),
         };
         for line in &draft.lines {
@@ -168,6 +172,16 @@ impl Draft {
         });
     }
 
+    /// Marks the recipe with meal type `code`, or takes it off when `on` is false.
+    pub(crate) fn set_meal_type(&self, code: &str, on: bool) {
+        self.meal_types.update(|codes| {
+            codes.retain(|other| other != code);
+            if on {
+                codes.push(code.to_owned());
+            }
+        });
+    }
+
     /// The draft as the form currently shows it. Each step's links are the positions of its lines.
     pub(crate) fn current(&self) -> RecipeDraft {
         let keys = self.line_keys();
@@ -197,6 +211,7 @@ impl Draft {
                 })
                 .collect(),
             categories: self.categories.get(),
+            meal_types: self.meal_types.get(),
         }
     }
 

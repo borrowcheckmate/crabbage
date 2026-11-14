@@ -49,6 +49,8 @@ pub(crate) struct RecipeDetail {
     pub(crate) editors: Vec<PersonRow>,
     /// The categories the recipe is filed under.
     pub(crate) categories: Vec<CategoryRow>,
+    /// The codes of the recipe's meal types, in form order.
+    pub(crate) meal_types: Vec<String>,
     /// The file name of the recipe's photo, if it has one.
     pub(crate) image: Option<String>,
     /// Whether the signed-in user may change the recipe.
@@ -115,6 +117,8 @@ pub(crate) struct RecipeDraft {
     pub(crate) steps: Vec<StepDraft>,
     /// The ids of the categories the recipe is filed under.
     pub(crate) categories: Vec<i64>,
+    /// The codes of the recipe's meal types. Unknown codes are left out when it is saved.
+    pub(crate) meal_types: Vec<String>,
 }
 
 /// An ingredient line of a recipe form.

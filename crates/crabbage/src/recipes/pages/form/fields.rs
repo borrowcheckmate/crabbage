@@ -1,6 +1,7 @@
 //! The fields of the recipe form: the title, the servings, the ingredient rows and the step rows,
 //! each row with a button to remove it.
 
+use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
 use leptos::prelude::*;
 use leptos::prelude::{event_target_checked, event_target_value};
@@ -8,6 +9,7 @@ use leptos::prelude::{event_target_checked, event_target_value};
 use super::draft::{Draft, LineSignals, StepSignals};
 use crate::catalog::CategoryRow;
 use crate::i18n::{messages, t};
+use crate::recipes::meal_types::meal_key;
 use crate::recipes::types::{LineDraft, StepDraft};
 use crate::recipes::units::unit_option_text;
 
@@ -94,7 +96,21 @@ pub(crate) fn CategoryBoxes(draft: Draft, categories: Vec<CategoryRow>) -> impl 
                 <legend>{t("recipe.categories.heading")}</legend>
                 {categories.into_iter().map(|category| category_box(draft, category)).collect_view()}
             </fieldset>
+            <fieldset>
+                <legend>{t("recipe.label.meal_types")}</legend>
+                {MealType::ALL.into_iter().map(|meal| meal_box(draft, meal)).collect_view()}
+            </fieldset>
         </details>
+    }
+}
+
+fn meal_box(draft: Draft, meal: MealType) -> impl IntoView {
+    let code = meal.code();
+    view! {
+        <label>
+            <input type="checkbox" value=code checked=move || draft.meal_types.get().iter().any(|other| other == code) on:change=move |ev| draft.set_meal_type(code, event_target_checked(&ev))/>
+            {t(meal_key(meal))}
+        </label>
     }
 }
 

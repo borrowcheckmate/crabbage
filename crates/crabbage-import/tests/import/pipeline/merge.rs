@@ -1,3 +1,4 @@
+use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
 use crabbage_import::ai::{AiDraft, AiLine, AiStep};
 use crabbage_import::pipeline::{from_draft, merge};
@@ -25,6 +26,7 @@ fn ai_draft(lines: Vec<AiLine>, steps: Vec<AiStep>) -> AiDraft {
         cook_minutes: None,
         photo: None,
         categories: Vec::new(),
+        meal_types: Vec::new(),
     }
 }
 
@@ -234,6 +236,16 @@ fn an_unknown_unit_precedes_an_existing_note() {
         result.lines[0].original,
         "1 lange vingers, zakken, gebroken"
     );
+}
+
+#[test]
+fn the_ai_meal_types_are_kept_once_in_order_and_unknown_ones_dropped() {
+    let mut ai = ai_draft(Vec::new(), Vec::new());
+    ai.meal_types = ["dessert", "supper", "Breakfast", "dessert"]
+        .map(str::to_owned)
+        .to_vec();
+    let result = merge(&ai, &complete_recipe(), &[], &[], &[]);
+    assert_eq!(result.meal_types, [MealType::Breakfast, MealType::Dessert]);
 }
 
 #[test]

@@ -5,6 +5,7 @@ use axum::http::StatusCode;
 
 use crate::common::{Harness, body_text, sign_in_as};
 use crate::recipes::create;
+use crabbage_domain::meal_types::MealType;
 use crabbage_store::catalog::categories;
 use crabbage_store::recipes::{LineInput, RecipeInput};
 
@@ -118,6 +119,7 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
         ],
         steps: Vec::new(),
         category_ids: Vec::new(),
+        meal_types: Vec::new(),
     };
     let id = crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
         .await
@@ -294,6 +296,7 @@ async fn filed_recipe(harness: &Harness, title: &str, category_ids: Vec<i64>) ->
         lines: Vec::new(),
         steps: Vec::new(),
         category_ids,
+        meal_types: Vec::new(),
     };
     crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
         .await
@@ -365,6 +368,49 @@ async fn a_recipe_page_shows_its_categories_in_the_header() {
 }
 
 #[tokio::test]
+async fn meal_types_show_on_the_recipe_check_on_the_form_and_filter_the_list() {
+    let harness = Harness::start("recipe-pages-meal-types").await;
+    let member = sign_in_as(&harness, OWNER, &[]).await;
+    let owner_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE subject = ?")
+        .bind(OWNER)
+        .fetch_one(&harness.pool)
+        .await
+        .unwrap();
+    let input = RecipeInput {
+        title: "Stew".to_owned(),
+        servings: 2,
+        lines: Vec::new(),
+        steps: Vec::new(),
+        category_ids: Vec::new(),
+        meal_types: vec![MealType::Dinner],
+    };
+    let id = crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
+        .await
+        .unwrap();
+    filed_recipe(&harness, "Toast", Vec::new()).await;
+
+    let body = page(&harness, &member, &format!("/recipes/{id}")).await;
+    assert!(
+        body.contains("class=\"recipe-detail-categories\"><!><span>Dinner</span>"),
+        "{body}"
+    );
+    let body = page(&harness, &member, &format!("/recipes/{id}/edit")).await;
+    assert!(body.contains("Meal type</legend>"), "{body}");
+    assert!(body.contains("value=\"dinner\" checked"), "{body}");
+    assert!(!body.contains("value=\"lunch\" checked"), "{body}");
+
+    let body = page(&harness, &member, "/recipes?meal=dinner").await;
+    assert!(body.contains("Stew") && !body.contains("Toast"), "{body}");
+    assert!(
+        body.contains("href=\"/recipes\" aria-current=\"page\">Dinner</a>"),
+        "{body}"
+    );
+    assert!(body.contains("href=\"/recipes?meal=dessert\""), "{body}");
+    let body = page(&harness, &member, "/recipes?meal=bogus").await;
+    assert!(body.contains("Stew") && body.contains("Toast"), "{body}");
+}
+
+#[tokio::test]
 async fn the_forms_offer_a_checkbox_per_category_checked_for_the_recipe() {
     let harness = Harness::start("recipe-pages-category-boxes").await;
     let member = sign_in_as(&harness, OWNER, &[]).await;
@@ -398,7 +444,7 @@ async fn the_edit_page_offers_each_line_to_each_step_with_the_linked_ones_checke
         3,
         "{body}"
     );
-    assert_eq!(body.matches("type=\"checkbox\"").count(), 9, "{body}");
+    assert_eq!(body.matches("type=\"checkbox\"").count(), 16, "{body}");
     assert_eq!(body.matches("checked>2 Egg</label>").count(), 1, "{body}");
     assert_eq!(
         body.matches("checked>250 g Flour, sifted</label>").count(),

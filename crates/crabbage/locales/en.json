@@ -1,4 +1,13 @@
 {
+  "meal.breakfast": "Breakfast",
+  "meal.lunch": "Lunch",
+  "meal.dinner": "Dinner",
+  "meal.dessert": "Dessert",
+  "meal.side": "Side dish",
+  "meal.snack": "Snack",
+  "meal.drink": "Drink",
+  "recipes.meal_types.label": "Meal types",
+  "recipe.label.meal_types": "Meal type",
   "app.title": "crabbage",
   "app.sign_out": "Sign out",
   "admin.nav.ingredients": "Ingredients",

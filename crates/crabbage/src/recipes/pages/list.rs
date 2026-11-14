@@ -6,12 +6,16 @@ use leptos::prelude::*;
 use leptos_router::components::Form;
 use leptos_router::hooks::use_query_map;
 
+use crabbage_domain::meal_types::MealType;
+use leptos_router::params::ParamsMap;
+
 use crate::catalog::CategoryRow;
 use crate::i18n::{t, t_with};
 use crate::navigation_transition::NavigationTransition;
 use crate::notice::{error_notice, message};
 use crate::recipes::categories::list_recipe_categories;
 use crate::recipes::list::list_recipes;
+use crate::recipes::meal_types::meal_key;
 use crate::recipes::rating_text::rating_text;
 use crate::recipes::types::RecipeSummaryRow;
 
@@ -23,16 +27,7 @@ type RecipeListData = (Filters, RecipeListResult);
 #[component]
 pub(crate) fn RecipesPage() -> impl IntoView {
     let query = use_query_map();
-    let data = Resource::new(
-        move || {
-            query.with(|map| Filters {
-                category: map.get("category").and_then(|id| id.parse().ok()),
-                favourites: map.get("favourites").as_deref() == Some("1"),
-                search: map.get("q").unwrap_or_default().trim().to_owned(),
-            })
-        },
-        load,
-    );
+    let data = Resource::new(move || query.with(Filters::from_query), load);
     view! {
         <header class="recipe-list-heading">
             <h1>{t("recipes.heading")}</h1>
@@ -40,11 +35,7 @@ pub(crate) fn RecipesPage() -> impl IntoView {
             <a class="button secondary" href="/recipes/import">{t("recipes.import")}</a></div>
         </header>
         <div class="recipe-list-content">
-            {move || query.with(|map| search_form(&Filters {
-                category: map.get("category").and_then(|id| id.parse().ok()),
-                favourites: map.get("favourites").as_deref() == Some("1"),
-                search: map.get("q").unwrap_or_default().trim().to_owned(),
-            }))}
+            {move || query.with(|map| search_form(&Filters::from_query(map)))}
         </div>
         <NavigationTransition fallback=|| ()>
             {move || {
@@ -54,20 +45,38 @@ pub(crate) fn RecipesPage() -> impl IntoView {
     }
 }
 
-/// The filters the address names: a category, the favourites alone and a search text.
+/// The filters the address names: a category, a meal type code, the favourites alone and a search
+/// text.
 #[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 struct Filters {
     category: Option<i64>,
+    meal: Option<String>,
     favourites: bool,
     search: String,
 }
 
 impl Filters {
+    /// The filters in `map`; an unknown meal type is no meal filter.
+    fn from_query(map: &ParamsMap) -> Self {
+        Self {
+            category: map.get("category").and_then(|id| id.parse().ok()),
+            meal: map
+                .get("meal")
+                .and_then(|code| MealType::from_code(&code))
+                .map(|meal| meal.code().to_owned()),
+            favourites: map.get("favourites").as_deref() == Some("1"),
+            search: map.get("q").unwrap_or_default().trim().to_owned(),
+        }
+    }
+
     /// The address of the list with these filters.
     fn href(&self) -> String {
         let mut parts = Vec::new();
         if let Some(id) = self.category {
             parts.push(format!("category={id}"));
+        }
+        if let Some(meal) = &self.meal {
+            parts.push(format!("meal={meal}"));
         }
         if self.favourites {
             parts.push("favourites=1".to_owned());
@@ -113,6 +122,7 @@ async fn load_rows(filters: &Filters) -> RecipeListResult {
         list_recipe_categories().await?,
         list_recipes(
             filters.category,
+            filters.meal.clone(),
             filters.favourites,
             Some(filters.search.clone()),
         )
@@ -126,26 +136,31 @@ fn empty_text(filters: &Filters) -> String {
         t_with("recipes.empty_search", &[("q", &filters.search)])
     } else if filters.favourites {
         t("recipes.empty_favourites").to_owned()
-    } else if filters.category.is_some() {
+    } else if filters.category.is_some() || filters.meal.is_some() {
         t("recipes.empty_category").to_owned()
     } else {
         t("recipes.empty").to_owned()
     }
 }
 
-/// The search form: a search box for `q`, and hidden fields that keep the category and favourites
-/// filters when the search is submitted.
+/// The search form: a search box for `q`, and hidden fields that keep the category, meal type and
+/// favourites filters when the search is submitted.
 fn search_form(filters: &Filters) -> impl IntoView + use<> {
     let search = filters.search.clone();
     let category = filters
         .category
         .map(|id| view! { <input type="hidden" name="category" value=id/> });
+    let meal = filters
+        .meal
+        .clone()
+        .map(|meal| view! { <input type="hidden" name="meal" value=meal/> });
     let favourites = filters
         .favourites
         .then(|| view! { <input type="hidden" name="favourites" value="1"/> });
     view! {
         <Form attr:class="recipe-search-form" method="get" action="/recipes" attr:role="search">
             {category}
+            {meal}
             {favourites}
             <label class="recipe-search-label"><span class="recipe-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input type="search" name="q" aria-label=t("recipes.search.label") placeholder=t("recipes.search.placeholder") value=search/></label>
         </Form>
@@ -156,9 +171,10 @@ fn search_form(filters: &Filters) -> impl IntoView + use<> {
 /// for assistive tech. Every link keeps the search text; All clears the other two filters and the
 /// others keep the filter they do not change.
 fn filter_links(categories: Vec<CategoryRow>, filters: &Filters) -> impl IntoView {
-    let unfiltered = filters.category.is_none() && !filters.favourites;
+    let unfiltered = filters.category.is_none() && filters.meal.is_none() && !filters.favourites;
     let all = Filters {
         category: None,
+        meal: None,
         favourites: false,
         ..filters.clone()
     }
@@ -182,6 +198,28 @@ fn filter_links(categories: Vec<CategoryRow>, filters: &Filters) -> impl IntoVie
                     }
                     .href();
                     view! { <a href=href aria-current=current>{category.name}</a> }
+                })
+                .collect_view()}
+        </nav>
+        {meal_links(filters)}
+    }
+}
+
+/// One link per meal type. The active one is marked and leads back to the list without a meal
+/// filter; the others keep every other filter.
+fn meal_links(filters: &Filters) -> impl IntoView + use<> {
+    view! {
+        <nav class="row filters" aria-label=t("recipes.meal_types.label")>
+            {MealType::ALL
+                .into_iter()
+                .map(|meal| {
+                    let active = filters.meal.as_deref() == Some(meal.code());
+                    let href = Filters {
+                        meal: (!active).then(|| meal.code().to_owned()),
+                        ..filters.clone()
+                    }
+                    .href();
+                    view! { <a href=href aria-current=active.then_some("page")>{t(meal_key(meal))}</a> }
                 })
                 .collect_view()}
         </nav>

@@ -9,6 +9,7 @@ fn soup() -> RecipeInput {
         title: "Soup".to_owned(),
         servings: 2,
         category_ids: vec![],
+        meal_types: Vec::new(),
         lines: vec![],
         steps: vec![],
     }
@@ -31,7 +32,7 @@ async fn set_image_returns_the_replaced_name_and_reads_back() {
         Some("a.jpg")
     );
     assert_eq!(
-        list(&pool, None, false, None, owner).await.unwrap()[0]
+        list(&pool, None, None, false, None, owner).await.unwrap()[0]
             .image
             .as_deref(),
         Some("a.jpg")

@@ -2,6 +2,7 @@
 //! show only to the users who may use them, and delete asks first, which the `confirm` value in the
 //! address asks for.
 
+use crabbage_domain::meal_types::MealType;
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
@@ -16,6 +17,7 @@ use crate::notice::{error_notice, failure, message};
 use crate::recipes::cook::start_href;
 use crate::recipes::duration::duration_text;
 use crate::recipes::line_text::ingredient_parts;
+use crate::recipes::meal_types::meal_key;
 use crate::recipes::read::get_recipe;
 use crate::recipes::servings::{scale_lines, shown_servings};
 use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
@@ -100,6 +102,7 @@ fn recipe_view(
         title,
         servings,
         categories,
+        meal_types,
         lines,
         steps,
         image,
@@ -124,7 +127,7 @@ fn recipe_view(
         <a class="recipe-back" href=back_href><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M20 12H9"/></svg>{t("recipe.back")}</a>
         <header class="recipe-detail-header">
             <div class="recipe-detail-title">
-                <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
+                <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{meal_types.iter().filter_map(|code| MealType::from_code(code)).map(|meal| view! { <span>{t(meal_key(meal))}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
                 <Title text=title.clone()/>
                 <h1>{title.clone()}</h1>
             </div>

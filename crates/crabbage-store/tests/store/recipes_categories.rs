@@ -14,6 +14,7 @@ fn recipe(title: &str, category_ids: Vec<i64>) -> RecipeInput {
         lines: vec![],
         steps: vec![],
         category_ids,
+        meal_types: Vec::new(),
     }
 }
 
@@ -22,7 +23,7 @@ fn recipe(title: &str, category_ids: Vec<i64>) -> RecipeInput {
     reason = "test helpers stop the test on setup failure"
 )]
 async fn titles(pool: &SqlitePool, viewer: i64, category: Option<i64>) -> Vec<String> {
-    list(pool, category, false, None, viewer)
+    list(pool, category, None, false, None, viewer)
         .await
         .expect("list reads")
         .into_iter()
