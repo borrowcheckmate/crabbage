@@ -76,6 +76,68 @@ pub(crate) fn step_durations(text: &str, stored: Option<i64>) -> Vec<u32> {
     unique
 }
 
+/// The line shown on the closed tray: the soonest timer's label and time left, or `done` once it
+/// has ended.
+pub(crate) fn summary(timers: &[Timer], now_ms: f64, done: &str) -> Option<String> {
+    timers
+        .iter()
+        .min_by(|first, second| first.ends_at_ms.total_cmp(&second.ends_at_ms))
+        .map(|timer| {
+            let time = if finished(timer, now_ms) {
+                done.to_owned()
+            } else {
+                clock(remaining_ms(timer, now_ms))
+            };
+            format!("{} · {time}", timer.label)
+        })
+}
+
+pub(crate) fn any_finished(timers: &[Timer], now_ms: f64) -> bool {
+    timers.iter().any(|timer| finished(timer, now_ms))
+}
+
+#[cfg(any(feature = "hydrate", test))]
+const ALARM_EVERY_MS: f64 = 3_500.0;
+#[cfg(any(feature = "hydrate", test))]
+const ALARM_FOR_MS: f64 = 60_000.0;
+
+/// The alarms of the timers that have ended: the time each last sounded, by timer id.
+#[cfg(any(feature = "hydrate", test))]
+#[derive(Default)]
+pub(crate) struct Alarms(Vec<(u64, f64)>);
+
+#[cfg(any(feature = "hydrate", test))]
+impl Alarms {
+    /// Sounds the alarm of each timer that is due at `now_ms`: once when it ends, then about every
+    /// few seconds for a minute, or until it is cancelled. Returns each timer that sounds, and
+    /// whether it is sounding for the first time.
+    pub(crate) fn ring(&mut self, timers: &[Timer], now_ms: f64) -> Vec<(Timer, bool)> {
+        let mut rang = Vec::new();
+        for timer in timers {
+            let last = self
+                .0
+                .iter()
+                .find(|(id, _)| *id == timer.id)
+                .map(|(_, at)| *at);
+            if alarm_due(timer, now_ms, last) {
+                self.0.retain(|(id, _)| *id != timer.id);
+                self.0.push((timer.id, now_ms));
+                rang.push((timer.clone(), last.is_none()));
+            }
+        }
+        self.0
+            .retain(|(id, _)| timers.iter().any(|timer| timer.id == *id));
+        rang
+    }
+}
+
+#[cfg(any(feature = "hydrate", test))]
+fn alarm_due(timer: &Timer, now_ms: f64, last_ms: Option<f64>) -> bool {
+    finished(timer, now_ms)
+        && now_ms < timer.ends_at_ms + ALARM_FOR_MS
+        && last_ms.is_none_or(|last| now_ms - last >= ALARM_EVERY_MS)
+}
+
 #[cfg(any(feature = "hydrate", test))]
 pub(crate) fn encode(timers: &[Timer]) -> String {
     serde_json::to_string(timers).unwrap_or_default()
@@ -90,7 +152,8 @@ pub(crate) fn decode(text: &str) -> Vec<Timer> {
 mod tests {
     use super::step_durations;
     use super::{
-        Timer, cancel, clock, decode, encode, finished, remaining_ms, soonest_first, start,
+        Alarms, Timer, any_finished, cancel, clock, decode, encode, finished, remaining_ms,
+        soonest_first, start, summary,
     };
 
     fn timer(id: u64, ends_at_ms: f64) -> Timer {
@@ -200,6 +263,74 @@ mod tests {
             step_durations("Stir in the flour", Some(-5)),
             Vec::<u32>::new()
         );
+    }
+
+    #[test]
+    fn the_summary_shows_the_soonest_timer_and_its_time_left() {
+        let timers = vec![timer(1, 300_000.0), timer(2, 272_000.0)];
+        assert_eq!(
+            summary(&timers, 0.0, "Done!").as_deref(),
+            Some("Step 2 · 04:32")
+        );
+        assert_eq!(summary(&[], 0.0, "Done!"), None);
+    }
+
+    #[test]
+    fn the_summary_shows_done_once_the_soonest_timer_has_ended() {
+        let timers = vec![timer(1, 5_000.0), timer(2, 9_000.0)];
+        assert_eq!(
+            summary(&timers, 6_000.0, "Klaar!").as_deref(),
+            Some("Step 1 · Klaar!")
+        );
+        assert!(any_finished(&timers, 6_000.0));
+        assert!(!any_finished(&timers, 4_000.0));
+    }
+
+    fn rang_ids(alarms: &mut Alarms, timers: &[Timer], now_ms: f64) -> Vec<(u64, bool)> {
+        alarms
+            .ring(timers, now_ms)
+            .into_iter()
+            .map(|(timer, first)| (timer.id, first))
+            .collect()
+    }
+
+    #[test]
+    fn an_alarm_sounds_when_a_timer_ends_then_repeats_for_a_minute() {
+        let timers = vec![timer(1, 10_000.0)];
+        let mut alarms = Alarms::default();
+        assert_eq!(rang_ids(&mut alarms, &timers, 9_000.0), Vec::new());
+        assert_eq!(rang_ids(&mut alarms, &timers, 10_000.0), [(1, true)]);
+        assert_eq!(rang_ids(&mut alarms, &timers, 11_000.0), Vec::new());
+        assert_eq!(rang_ids(&mut alarms, &timers, 13_500.0), [(1, false)]);
+        assert_eq!(rang_ids(&mut alarms, &timers, 17_000.0), [(1, false)]);
+        assert_eq!(rang_ids(&mut alarms, &timers, 69_999.0), [(1, false)]);
+        assert_eq!(rang_ids(&mut alarms, &timers, 70_000.0), Vec::new());
+    }
+
+    #[test]
+    fn the_alarm_stops_a_minute_after_the_timer_ends() {
+        let timers = vec![timer(1, 10_000.0)];
+        let mut alarms = Alarms::default();
+        assert_eq!(rang_ids(&mut alarms, &timers, 10_000.0), [(1, true)]);
+        assert_eq!(rang_ids(&mut alarms, &timers, 13_600.0), [(1, false)]);
+        assert_eq!(rang_ids(&mut alarms, &timers, 70_000.0), Vec::new());
+        assert_eq!(rang_ids(&mut alarms, &timers, 200_000.0), Vec::new());
+    }
+
+    #[test]
+    fn a_timer_that_ended_long_before_the_page_loaded_does_not_sound() {
+        let timers = vec![timer(1, 10_000.0)];
+        let mut alarms = Alarms::default();
+        assert_eq!(rang_ids(&mut alarms, &timers, 500_000.0), Vec::new());
+    }
+
+    #[test]
+    fn a_cancelled_timer_stops_sounding_and_others_keep_theirs() {
+        let mut alarms = Alarms::default();
+        let both = vec![timer(1, 10_000.0), timer(2, 10_000.0)];
+        assert_eq!(rang_ids(&mut alarms, &both, 10_000.0).len(), 2);
+        let left = vec![timer(2, 10_000.0)];
+        assert_eq!(rang_ids(&mut alarms, &left, 13_600.0), [(2, false)]);
     }
 
     #[test]
