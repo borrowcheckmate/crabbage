@@ -9,6 +9,7 @@ ignore = [
     { id = "RUSTSEC-2024-0436", reason = "paste is a build-time macro dependency of leptos (via either_of, reactive_graph and tachys); no safe upgrade exists" },
     { id = "RUSTSEC-2023-0071", reason = "rsa, pulled in by openidconnect, is only used to verify RS256 signatures with the provider's public key; the Marvin attack needs private-key operations, and no fixed release exists" },
     { id = "RUSTSEC-2026-0387", reason = "crypto-bigint 0.5, pulled in by openidconnect through p256 and p384 for signature verification; the flaw affects secret-scalar arithmetic and openidconnect 4 pins this line" },
+    { id = "RUSTSEC-2026-0459", reason = "bundled SQLite in libsqlite3-sys 0.37, pinned below the fixed 0.39 by sqlx-sqlite 0.9; the flaw needs a crafted -wal file next to the database, and crabbage only opens its own database in its data directory" },
 ]
 
 [licenses]
