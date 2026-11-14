@@ -28,6 +28,7 @@ async fn delete_removes_everything_that_belongs_to_the_recipe() {
             unit: Some("piece".to_owned()),
             ingredient: Some("Onion".to_owned()),
             note: None,
+            section_id: None,
         }],
         steps: vec![StepInput {
             text: "Chop".to_owned(),

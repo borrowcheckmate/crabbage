@@ -39,6 +39,19 @@ pub async fn recipe_ids(pool: &SqlitePool) -> Result<Vec<i64>, StoreError> {
         .await?)
 }
 
+/// Returns every recipe id and title, ordered by title ignoring case, then id.
+///
+/// # Errors
+///
+/// Returns an error if the query fails.
+pub async fn recipe_titles(pool: &SqlitePool) -> Result<Vec<(i64, String)>, StoreError> {
+    Ok(
+        sqlx::query_as("SELECT id, title FROM recipes ORDER BY title COLLATE NOCASE, id")
+            .fetch_all(pool)
+            .await?,
+    )
+}
+
 /// Returns whether a recipe exists.
 ///
 /// # Errors

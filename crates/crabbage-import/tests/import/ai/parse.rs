@@ -22,6 +22,7 @@ fn a_valid_draft_is_read_in_full() {
                 name: "flour".to_owned(),
                 note: None,
                 ingredient_id: None,
+                section_id: None,
             },
             AiLine {
                 amount: Some(1.0),
@@ -29,6 +30,7 @@ fn a_valid_draft_is_read_in_full() {
                 name: "egg".to_owned(),
                 note: None,
                 ingredient_id: None,
+                section_id: None,
             },
         ],
         steps: vec![AiStep {

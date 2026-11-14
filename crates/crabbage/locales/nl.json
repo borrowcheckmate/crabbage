@@ -318,6 +318,7 @@
   "plan.agenda": "Dagen van deze week",
   "plan.no_recipe": "Geen recept gekozen",
   "plan.recipe": "Recept",
+  "plan.recipe_placeholder": "Zoek een recept",
   "plan.view_recipe": "Recept bekijken",
   "home.shopping_count.one": "{count} artikel te halen",
   "home.shopping_count.many": "{count} artikelen te halen",

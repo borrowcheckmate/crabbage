@@ -12,6 +12,7 @@ fn plain_line(ingredient: &str) -> LineInput {
         unit: Some("piece".to_owned()),
         ingredient: Some(ingredient.to_owned()),
         note: None,
+        section_id: None,
     }
 }
 

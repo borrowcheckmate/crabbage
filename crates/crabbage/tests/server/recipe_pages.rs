@@ -100,6 +100,7 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
         unit: Some(unit.to_owned()),
         ingredient: Some(ingredient.to_owned()),
         note: None,
+        section_id: None,
     };
     let input = RecipeInput {
         title: "Pannenkoeken".to_owned(),
@@ -113,6 +114,7 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
                 unit: Some("to taste".to_owned()),
                 ingredient: Some("Zout".to_owned()),
                 note: None,
+                section_id: None,
             },
         ],
         steps: Vec::new(),

@@ -20,6 +20,7 @@ fn recipe(title: &str, ingredients: &[&str], category_ids: Vec<i64>) -> RecipeIn
                 unit: None,
                 ingredient: Some(name.to_owned()),
                 note: None,
+                section_id: None,
             })
             .collect(),
         steps: vec![],

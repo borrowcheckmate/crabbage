@@ -12,17 +12,19 @@ use super::{Imported, ImportedLine, ImportedStep};
 /// The AI's title, lines and steps replace the reading's. The servings fall back to the reading's and
 /// the photo is always the reading's. Every amount is metric afterwards. A line keeps the AI's
 /// ingredient id only when it is one of the candidates' ids, otherwise it is matched by name again.
+/// A line that matches no ingredient keeps the AI's store section when it is one of `sections`.
 #[must_use]
 pub fn merge(
     ai: &AiDraft,
     base: &Imported,
     candidates: &[Candidate<'_>],
     categories: &[i64],
+    sections: &[i64],
 ) -> Imported {
     let lines: Vec<ImportedLine> = ai
         .lines
         .iter()
-        .map(|line| merged_line(line, candidates))
+        .map(|line| merged_line(line, candidates, sections))
         .collect();
     let steps = ai
         .steps
@@ -61,13 +63,17 @@ fn valid_categories(selected: &[i64], available: &[i64]) -> Vec<i64> {
     valid
 }
 
-fn merged_line(line: &AiLine, candidates: &[Candidate<'_>]) -> ImportedLine {
+fn merged_line(line: &AiLine, candidates: &[Candidate<'_>], sections: &[i64]) -> ImportedLine {
     let name = line.name.trim().to_owned();
     let (amount, unit, unknown_unit) = metric(line.amount, line.unit.as_deref());
     let ingredient_id = line
         .ingredient_id
         .filter(|id| candidates.iter().any(|candidate| candidate.id == *id))
         .or_else(|| match_ingredient(&name, candidates));
+    let section_id = match ingredient_id {
+        Some(_) => None,
+        None => line.section_id.filter(|id| sections.contains(id)),
+    };
     let existing_note = line
         .note
         .as_deref()
@@ -86,6 +92,7 @@ fn merged_line(line: &AiLine, candidates: &[Candidate<'_>]) -> ImportedLine {
         name,
         note,
         ingredient_id,
+        section_id,
     }
 }
 

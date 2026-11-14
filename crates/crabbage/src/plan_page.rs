@@ -207,11 +207,18 @@ fn PlanEditor(day: PlanDay, recipes: Vec<(i64, String)>, week: String) -> impl I
     let recipe_action = format!("/plan/{date}/recipe");
     let servings_action = format!("/plan/{date}/servings");
     let reroll_action = format!("/plan/{date}/reroll");
+    let current_choice = day.recipe.clone().unwrap_or_else(|| {
+        if day.is_rest {
+            t("plan.rest").to_owned()
+        } else {
+            String::new()
+        }
+    });
     view! {
         <section class="plan-editor"><p class="plan-date-label">{format!("{} {} {}", t(weekday_short_key(day.weekday)), t("plan.separator"), t("plan.dinner"))}</p><h2>{day_title(&day)}</h2>
             {selected_photo.map_or_else(|| view! { <div class="plan-editor-photo plan-photo-fallback" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Zm3 0a6 6 0 0 1 12 0"/></svg></div> }.into_any(), |photo| view! { <img class="plan-editor-photo" src=format!("/images/{photo}") alt=""/> }.into_any())}
             <div class="plan-servings"><span>{t("recipe.servings")}</span><form method="post" action=servings_action.clone()><input type="hidden" name="servings" value=(day.servings - 1).max(1)/><button aria-label=t("plan.decrease_servings") disabled={day.servings <= 1}>-</button></form><strong>{day.servings}</strong><form method="post" action=servings_action><input type="hidden" name="servings" value=(day.servings + 1).min(99)/><button aria-label=t("plan.increase_servings") disabled={day.servings >= 99}>+</button></form></div>
-            <form method="post" action=recipe_action class="plan-recipe-picker"><label>{t("plan.recipe")}<select name="recipe"><option value="rest">{t("plan.rest")}</option>{recipes.iter().map(|recipe| view! { <option value=recipe.0.to_string() selected=day.recipe_id == Some(recipe.0)>{recipe.1.clone()}</option> }).collect_view()}</select></label><button>{t("plan.change_recipe")}</button></form>
+            <form method="post" action=recipe_action class="plan-recipe-picker"><label>{t("plan.recipe")}<input type="search" name="recipe" list="plan-recipes" autocomplete="off" required value=current_choice placeholder=t("plan.recipe_placeholder")/></label><datalist id="plan-recipes"><option value=t("plan.rest")></option>{recipes.iter().map(|recipe| view! { <option value=recipe.1.clone()></option> }).collect_view()}</datalist><button>{t("plan.change_recipe")}</button></form>
             <form class="plan-reroll" method="post" action=reroll_action><button class="secondary">{t("plan.reroll")}</button></form>
             <form class="plan-editor-shopping" method="post" action="/plan/shopping"><input type="hidden" name="week" value=week/><button class="secondary">{t("plan.add_shopping")}</button></form>
             {day.recipe_id.map(|id| view! { <div class="plan-recipe-links"><a href=format!("/recipes/{id}?servings={}", day.servings)>{t("plan.view_recipe")}</a><a href=format!("/recipes/{id}/cook?servings={}", day.servings)>{t("plan.cook")}</a></div> })}

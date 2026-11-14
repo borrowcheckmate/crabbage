@@ -415,6 +415,7 @@ fn sample_recipe(category: i64) -> RecipeInput {
             unit: unit.map(str::to_owned),
             ingredient: Some(ingredient.to_owned()),
             note: note.map(str::to_owned),
+            section_id: None,
         };
     RecipeInput {
         title: "Pancakes".to_owned(),

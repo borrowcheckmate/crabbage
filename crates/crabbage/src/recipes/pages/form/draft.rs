@@ -20,6 +20,8 @@ pub(crate) struct LineSignals {
     pub(crate) ingredient: RwSignal<String>,
     /// The note, as typed.
     pub(crate) note: RwSignal<String>,
+    /// The store section chosen for an ingredient new to the catalogue, carried through the form.
+    pub(crate) section_id: Option<i64>,
 }
 
 /// A step row of the form.
@@ -117,6 +119,7 @@ impl Draft {
             unit: RwSignal::new(line.unit),
             ingredient: RwSignal::new(line.ingredient),
             note: RwSignal::new(line.note),
+            section_id: line.section_id,
         };
         self.lines.update(|rows| rows.push(row));
     }
@@ -194,6 +197,7 @@ impl Draft {
                     unit: row.unit.get(),
                     ingredient: row.ingredient.get(),
                     note: row.note.get(),
+                    section_id: row.section_id,
                 })
                 .collect(),
             steps: self
@@ -272,6 +276,7 @@ fn line_draft(line: &LineRow) -> LineDraft {
         unit: line.unit.clone().unwrap_or_default(),
         ingredient: line.ingredient.clone().unwrap_or_default(),
         note: line.note.clone().unwrap_or_default(),
+        section_id: None,
     }
 }
 

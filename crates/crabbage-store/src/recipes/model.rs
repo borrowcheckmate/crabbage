@@ -35,6 +35,9 @@ pub struct LineInput {
     pub ingredient: Option<String>,
     /// A note for the cook, such as "finely chopped".
     pub note: Option<String>,
+    /// The store section of the ingredient when this line creates it for review. Ignored when the
+    /// name matches an existing ingredient or the section does not exist.
+    pub section_id: Option<i64>,
 }
 
 /// A step to write.

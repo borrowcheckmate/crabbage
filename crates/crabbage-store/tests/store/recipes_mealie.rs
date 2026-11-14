@@ -31,6 +31,7 @@ async fn mealie_recipe_ids_and_pending_ingredient_aliases_are_persisted() {
             unit: None,
             ingredient: Some("Okra".to_owned()),
             note: None,
+            section_id: None,
         }],
         steps: vec![StepInput {
             text: "Cook".to_owned(),

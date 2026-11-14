@@ -65,6 +65,9 @@ pub struct AiLine {
     /// The catalogue ingredient the model matched, if any.
     #[serde(default)]
     pub ingredient_id: Option<i64>,
+    /// The store section the model chose for an ingredient new to the catalogue, if any.
+    #[serde(default)]
+    pub section_id: Option<i64>,
 }
 
 /// One method step of a draft.

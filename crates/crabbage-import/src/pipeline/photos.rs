@@ -1,7 +1,7 @@
 use crate::ai::{AiClient, AiError, Image, Prompt};
 use crate::matching::Candidate;
 
-use super::run::{instructions, known_ingredients_and_categories};
+use super::run::{ids, instructions, known_ingredients_categories_and_sections};
 use super::{Imported, merge};
 
 /// Reads a recipe from photos of a cookbook page or recipe card with the AI. The imported recipe
@@ -14,6 +14,7 @@ pub async fn from_photos(
     images: Vec<Image>,
     candidates: &[Candidate<'_>],
     categories: &[(i64, &str)],
+    sections: &[(i64, &str)],
     client: &AiClient,
     instance_language: &str,
 ) -> Result<Imported, AiError> {
@@ -24,7 +25,7 @@ pub async fn from_photos(
              Return null for text-only pages, ads, or pages without a finished-dish photo.",
             instructions(instance_language)
         ),
-        text: known_ingredients_and_categories(candidates, categories),
+        text: known_ingredients_categories_and_sections(candidates, categories, sections),
         images,
     };
     let ai = client.complete(&prompt).await?;
@@ -40,6 +41,11 @@ pub async fn from_photos(
         unmatched: Vec::new(),
         ai_error: None,
     };
-    let category_ids = categories.iter().map(|(id, _)| *id).collect::<Vec<_>>();
-    Ok(merge(&ai, &base, candidates, &category_ids))
+    Ok(merge(
+        &ai,
+        &base,
+        candidates,
+        &ids(categories),
+        &ids(sections),
+    ))
 }

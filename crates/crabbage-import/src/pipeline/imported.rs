@@ -42,6 +42,8 @@ pub struct ImportedLine {
     pub note: Option<String>,
     /// The catalogue ingredient the name matches, if any.
     pub ingredient_id: Option<i64>,
+    /// The store section the AI chose for an ingredient new to the catalogue, if it chose a valid one.
+    pub section_id: Option<i64>,
     /// The line as it was read.
     pub original: String,
 }

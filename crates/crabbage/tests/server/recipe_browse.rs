@@ -46,6 +46,7 @@ async fn stored(
                 unit: Some("g".to_owned()),
                 ingredient: Some(name.to_owned()),
                 note: None,
+                section_id: None,
             })
             .collect(),
         steps: Vec::new(),

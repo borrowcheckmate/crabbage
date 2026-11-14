@@ -41,6 +41,7 @@ impl DemoRecipe {
                 unit: Some(unit.to_owned()),
                 ingredient: Some((*ingredient).to_owned()),
                 note: None,
+                section_id: None,
             })
             .collect();
         let steps = vec![
