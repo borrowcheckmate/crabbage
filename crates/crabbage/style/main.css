@@ -781,7 +781,7 @@ button.danger, button.destructive { color:var(--on-danger); }
 .shopping-add input { flex:1; min-width:0; min-height:44px; padding:0; border:0; background:transparent; box-shadow:none; }
 .shopping-add button { display:grid; flex:none; place-items:center; width:44px; min-height:44px; padding:0; border:0; background:transparent; color:var(--text); }
 .shopping-add svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
-.shopping-visually-hidden, .import-amount-missing { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.shopping-visually-hidden,.timer-announce,.import-amount-missing { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .shopping-add input::placeholder { color:var(--muted); }
 .shopping-layout { display:grid; gap:1.5rem; }
 .shopping-group { margin:0 0 1.25rem; }
@@ -1168,7 +1168,8 @@ button.timer-start { display:inline-flex; align-items:center; justify-content:ce
 .cook-dot[aria-current="step"] { outline:3px solid var(--focus); outline-offset:2px; }
 .timer-tray { position:static; margin:1rem 0 0; padding:0; border:1px solid var(--border); border-radius:var(--radius-panel); background:var(--surface); }
 .timer-tray:not(:has(.timer-row)) { display:none; }
-.timer-summary { display:flex; align-items:center; min-height:48px; padding:.5rem 1rem; color:var(--text); cursor:pointer; font-weight:650; }
+.timer-summary { display:flex; align-items:center; min-height:48px; padding:.5rem 1rem; color:var(--text); cursor:pointer; font-weight:650; font-variant-numeric:tabular-nums; }
+.timer-summary.finished { color:var(--accent); }
 .timer-panel { max-height:min(45dvh,24rem); overflow:auto; padding:0 1rem 1rem; }
 .timer-list { display:grid; gap:.65rem; margin:0; padding:0; list-style:none; }
 .timer-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:.5rem; padding:.65rem 0; border-top:1px solid var(--border); }

@@ -1,5 +1,6 @@
 //! The parsed fields of every line in the table, and the rules for notes and ranges.
 
+use super::counts::COUNT_LINES;
 use super::table::{LINES, UNPARSED};
 use crabbage_domain::quantity::Unit;
 use crabbage_import::lines::parse_line;
@@ -14,7 +15,7 @@ fn same(actual: Option<f64>, expected: Option<f64>) -> bool {
 
 #[test]
 fn lines_read_amount_unit_name_and_note() {
-    for (input, amount, amount_max, unit, name, note) in LINES.iter().copied() {
+    for (input, amount, amount_max, unit, name, note) in LINES.iter().chain(COUNT_LINES).copied() {
         let line = parse_line(input);
         assert!(line.parsed, "{input}: {line:?}");
         assert!(same(line.amount, amount), "{input}: amount {line:?}");

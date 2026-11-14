@@ -182,9 +182,24 @@ async fn finish_and_dismiss_timers(
     failures: &mut Vec<String>,
 ) -> Result<(), String> {
     goto_hydrated(page, &format!("{base_url}/recipes/{recipe}/cook?step=1")).await?;
+    let summary: String = page
+        .evaluate("(() => { const tray=document.querySelector('.timer-tray'); return tray && !tray.open && tray.getClientRects().length > 0 ? document.querySelector('.timer-summary')?.innerText || '' : ''; })()")
+        .await.map_err(|error| error.to_string())?.into_value().map_err(|error| error.to_string())?;
+    if !summary.contains(" · ") {
+        failures.push(format!("closed timer tray shows no summary: {summary:?}"));
+    }
     let tray: String = page.evaluate("(() => { const tray=document.querySelector('.timer-tray'); tray?.querySelector('summary')?.click(); const timers=JSON.parse(sessionStorage.getItem('crabbage.timers')||'[]'); Date.now=()=>Math.max(...timers.map(timer=>timer.ends_at_ms))+1000; return tray?.innerText||''; })()")
         .await.map_err(|error| error.to_string())?.into_value().map_err(|error| error.to_string())?;
     tokio::time::sleep(Duration::from_millis(1100)).await;
+    let announced: String = page
+        .evaluate("document.querySelector('.timer-announce')?.textContent?.trim() || ''")
+        .await
+        .map_err(|error| error.to_string())?
+        .into_value()
+        .map_err(|error| error.to_string())?;
+    if !announced.contains("timer done") && !announced.contains("timer klaar") {
+        failures.push(format!("finished timer was not announced: {announced:?}"));
+    }
     let finished: u64 = page
         .evaluate("document.querySelectorAll('.timer-row.finished').length")
         .await

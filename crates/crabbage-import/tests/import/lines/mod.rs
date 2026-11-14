@@ -2,4 +2,5 @@
 //! unparsed.
 
 mod cases;
+mod counts;
 mod table;

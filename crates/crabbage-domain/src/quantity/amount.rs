@@ -32,8 +32,8 @@ impl Quantity {
 
     /// Converts to `unit` through the base unit of the dimension.
     ///
-    /// `None` when `unit` measures another dimension. Unitless units (pinch, to taste) convert
-    /// only to themselves. `None` also when the result is not finite.
+    /// `None` when `unit` measures another dimension. Named units (slice, clove, ...) and unitless
+    /// units (pinch, to taste) convert only to themselves. `None` also when the result is not finite.
     #[must_use]
     pub fn convert_to(self, unit: Unit) -> Option<Self> {
         if self.unit == unit {
@@ -50,8 +50,8 @@ impl Quantity {
     ///
     /// Units that are the same are added as they are, so two teaspoons stay teaspoons and two
     /// pinches make two pinches. Units of one dimension that differ are added in the base unit
-    /// (g, ml or piece). `None` when the dimensions differ, when the units are unitless and not
-    /// equal, or when the sum is not finite.
+    /// (g, ml or piece). `None` when the dimensions differ, when the units are named or unitless
+    /// and not equal, or when the sum is not finite.
     #[must_use]
     pub fn checked_add(self, other: Self) -> Option<Self> {
         if self.unit == other.unit {
@@ -67,7 +67,7 @@ impl Quantity {
     /// - Mass: grams below 1000 g, kilograms from 1000 g up.
     /// - Volume: millilitres below 1000 ml, litres from 1000 ml up. Teaspoon and tablespoon
     ///   amounts are kept as they are, because spoons read better than millilitres.
-    /// - Count and unitless amounts are returned unchanged.
+    /// - Count, named and unitless amounts are returned unchanged.
     #[must_use]
     pub fn display(self) -> Self {
         let (small, large) = match self.unit.dimension() {
@@ -76,7 +76,7 @@ impl Quantity {
                 return self;
             }
             Dimension::Volume => (Unit::Millilitre, Unit::Litre),
-            Dimension::Count | Dimension::Unitless => return self,
+            Dimension::Count | Dimension::Named | Dimension::Unitless => return self,
         };
         let Some(in_small) = self.convert_to(small) else {
             return self;
@@ -97,6 +97,6 @@ const fn base_unit(dimension: Dimension) -> Option<Unit> {
         Dimension::Mass => Some(Unit::Gram),
         Dimension::Volume => Some(Unit::Millilitre),
         Dimension::Count => Some(Unit::Piece),
-        Dimension::Unitless => None,
+        Dimension::Named | Dimension::Unitless => None,
     }
 }
