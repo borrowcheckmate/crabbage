@@ -283,6 +283,20 @@ fn import_method_disclosure_has_one_rotating_marker_and_divider() {
 }
 
 #[test]
+fn recipe_page_pairs_its_columns_on_desktop_and_keeps_rating_in_one_row() {
+    let css = stylesheet();
+    let (_, desktop) = css.split_once("@media (min-width:64rem) {").unwrap();
+    let columns = declarations_of(desktop, ".recipe-detail-columns").unwrap_or_default();
+    let ingredients = declarations_of(desktop, ".recipe-ingredients").unwrap_or_default();
+    let rating = declarations_of(&css, ".recipe-secondary-actions .card").unwrap_or_default();
+    let delete = declarations_of(&css, "a.button.recipe-delete").unwrap_or_default();
+    assert!(columns.contains("grid-template-columns:minmax(16rem,22rem) minmax(0,1fr)"));
+    assert!(ingredients.contains("position:sticky") && ingredients.contains("align-self:start"));
+    assert!(rating.contains("display:flex") && rating.contains("flex-wrap:wrap"));
+    assert!(delete.contains("color:var(--danger)"));
+}
+
+#[test]
 fn no_fixed_width_is_wider_than_a_phone_screen() {
     let css = stylesheet();
     for declaration in css.split([';', '{', '}']).map(str::trim) {

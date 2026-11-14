@@ -149,6 +149,19 @@ async fn edit_and_delete_show_only_to_those_who_may_use_them() {
     assert!(body.contains(&edit_link), "{body}");
     assert!(body.contains(&delete_link), "{body}");
     assert!(!body.contains("class=\"danger\""), "{body}");
+    let header = body
+        .split("class=\"recipe-detail-header\"")
+        .nth(1)
+        .and_then(|rest| rest.split("</header>").next())
+        .unwrap_or_default();
+    assert!(
+        header.contains("class=\"recipe-edit-actions\"") && header.contains(&delete_link),
+        "{header}"
+    );
+    assert!(
+        body.contains("class=\"button quiet recipe-delete\""),
+        "{body}"
+    );
 
     let other = sign_in_as(&harness, OTHER, &[]).await;
     let body = page(&harness, &other, &format!("/recipes/{id}")).await;
