@@ -1,11 +1,12 @@
-//! Ingredients, their aliases, store sections, the review queue and merging.
+//! Ingredients, their aliases and allergens, store sections, the review queue and merging.
 
+use crabbage_domain::allergens::Allergen;
 use sqlx::sqlite::SqlitePool;
 
 use super::names::{capitalized, ensure_not_a_name, ensure_not_an_alias, unique_or_database};
 use crate::StoreError;
 
-/// An ingredient with its aliases.
+/// An ingredient with its aliases and allergens.
 #[derive(Clone, Debug, PartialEq, Eq, sqlx::FromRow)]
 pub struct Ingredient {
     /// The ingredient's id.
@@ -19,6 +20,9 @@ pub struct Ingredient {
     /// The alternative names, ordered by alias.
     #[sqlx(skip)]
     pub aliases: Vec<String>,
+    /// The allergens it contains, in [`Allergen::ALL`] order.
+    #[sqlx(skip)]
+    pub allergens: Vec<Allergen>,
 }
 
 /// Every ingredient, ordered by name.
@@ -54,7 +58,14 @@ async fn load(pool: &SqlitePool, sql: &'static str) -> Result<Vec<Ingredient>, S
         sqlx::query_as("SELECT ingredient_id, alias FROM ingredient_aliases ORDER BY alias")
             .fetch_all(pool)
             .await?;
+    let mut allergens = super::allergens::all(pool).await?;
+    allergens.sort_unstable();
     for ingredient in &mut ingredients {
+        ingredient.allergens = allergens
+            .iter()
+            .filter(|(owner, _)| *owner == ingredient.id)
+            .map(|(_, allergen)| *allergen)
+            .collect();
         ingredient.aliases = aliases
             .iter()
             .filter(|(owner, _)| *owner == ingredient.id)
@@ -235,7 +246,7 @@ pub async fn approve(pool: &SqlitePool, id: i64) -> Result<bool, StoreError> {
 }
 
 /// Merges the ingredient `from` into `into`: recipe lines, shopping items and aliases move to
-/// `into`, the name of `from` becomes an alias of `into`, and `from` is deleted.
+/// `into`, `into` gets the allergens of `from` too, the name of `from` becomes an alias of `into`, and `from` is deleted.
 ///
 /// Returns `false`, and changes nothing, when either ingredient is missing or both are the same.
 ///
@@ -279,6 +290,14 @@ pub async fn merge(pool: &SqlitePool, from: i64, into: i64) -> Result<bool, Stor
         .bind(from)
         .execute(&mut *tx)
         .await?;
+    sqlx::query(
+        "INSERT OR IGNORE INTO ingredient_allergens (ingredient_id, allergen) \
+         SELECT ?, allergen FROM ingredient_allergens WHERE ingredient_id = ?",
+    )
+    .bind(into)
+    .bind(from)
+    .execute(&mut *tx)
+    .await?;
     sqlx::query("DELETE FROM ingredients WHERE id = ?")
         .bind(from)
         .execute(&mut *tx)

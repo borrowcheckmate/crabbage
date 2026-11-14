@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-/// An ingredient with its aliases.
+/// An ingredient with its aliases and allergens.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct IngredientRow {
     /// The ingredient's id.
@@ -15,6 +15,8 @@ pub(crate) struct IngredientRow {
     pub(crate) pending_review: bool,
     /// The alternative names.
     pub(crate) aliases: Vec<String>,
+    /// The codes of its allergens, in the fixed allergen order.
+    pub(crate) allergens: Vec<String>,
 }
 
 /// A store section.

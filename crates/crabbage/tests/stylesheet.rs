@@ -328,6 +328,13 @@ fn planner_meal_type_boxes_sit_in_a_wrapping_row_beside_their_names() {
 }
 
 #[test]
+fn allergen_boxes_fill_columns_that_fit_a_phone() {
+    let css = stylesheet();
+    let boxes = declarations_of(&css, ".admin-allergens fieldset").unwrap_or_default();
+    assert!(boxes.contains("grid-template-columns:repeat(auto-fill,minmax(min(10rem,100%),1fr))"));
+}
+
+#[test]
 fn no_fixed_width_is_wider_than_a_phone_screen() {
     let css = stylesheet();
     for declaration in css.split([';', '{', '}']).map(str::trim) {

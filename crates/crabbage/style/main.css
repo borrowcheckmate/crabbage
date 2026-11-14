@@ -1020,6 +1020,7 @@ a.today-next:hover .today-next-arrow { stroke: var(--accent); }
 .recipe-metadata { padding:1rem; border:1px solid var(--border); border-radius:var(--radius-control); background:var(--surface); }
 .recipe-metadata summary { min-height:44px; display:flex; align-items:center; color:var(--accent); font-weight:600; cursor:pointer; }
 .recipe-metadata fieldset { display:grid; gap:.6rem; margin-top:.8rem; }
+.admin-allergens fieldset { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(10rem,100%),1fr)); gap:0 1rem; margin-bottom:.8rem; }
 .recipe-form .rows { display:grid; gap:.8rem; }
 .recipe-row { display:grid; grid-template-columns:1fr; gap:.8rem; padding:1rem; background:var(--bg); }
 .recipe-row textarea { min-height:7rem; }
