@@ -1,7 +1,7 @@
 # Each platform is built on a runner of that platform, so no emulated compiler runs. Every
 # downloaded tool is pinned and verified by SHA-256.
 
-FROM rust:1.99.1-trixie@sha256:09027f873d45b8ecd1dc86f1fa13b7a62b875c961f017a0e331267b350430137 AS tools
+FROM rust:1.99.1-trixie@sha256:8a4e90c7946b74626488b1446f712c0fe0ed1a596cbd3d871684bc9c5433ae07 AS tools
 ARG CARGO_LEPTOS_VERSION=0.3.11
 RUN set -eux; \
     apt-get update; \
