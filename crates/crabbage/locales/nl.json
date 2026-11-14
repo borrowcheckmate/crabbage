@@ -1,4 +1,12 @@
 {
+  "recipe.warnings": "Afgeraden tijdens zwangerschap:",
+  "recipe.label.warnings": "Zwangerschap",
+  "warning.raw_egg": "Rauw ei",
+  "warning.raw_fish": "Rauwe vis",
+  "warning.rare_meat": "Rauw vlees",
+  "warning.unpasteurised_cheese": "Rauwmelkse kaas",
+  "warning.liver": "Lever",
+  "warning.alcohol": "Alcohol",
   "recipe.allergens": "Bevat:",
   "allergen.gluten": "Gluten",
   "allergen.crustaceans": "Schaaldieren",

@@ -270,6 +270,7 @@ fn recipe_input(mapped: crabbage_import::mealie::MappedRecipe, catalog: &Catalog
         steps,
         category_ids: recipe_categories,
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 
@@ -304,6 +305,7 @@ fn recipe_lines(
                 },
                 ingredient,
                 section_id: None,
+                allergens: Vec::new(),
             }
         })
         .collect()

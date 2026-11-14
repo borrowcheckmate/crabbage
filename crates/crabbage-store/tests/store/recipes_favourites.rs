@@ -14,6 +14,7 @@ fn recipe(title: &str, category_ids: Vec<i64>) -> RecipeInput {
         steps: vec![],
         category_ids,
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 

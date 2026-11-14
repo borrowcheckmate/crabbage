@@ -21,11 +21,13 @@ fn recipe(title: &str, ingredients: &[&str], category_ids: Vec<i64>) -> RecipeIn
                 ingredient: Some(name.to_owned()),
                 note: None,
                 section_id: None,
+                allergens: Vec::new(),
             })
             .collect(),
         steps: vec![],
         category_ids,
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 

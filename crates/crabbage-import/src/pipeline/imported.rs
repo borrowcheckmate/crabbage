@@ -1,5 +1,7 @@
+use crabbage_domain::allergens::Allergen;
 use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
+use crabbage_domain::warnings::Warning;
 
 use crate::ai::AiPhoto;
 
@@ -19,6 +21,8 @@ pub struct Imported {
     pub categories: Vec<i64>,
     /// The meal types, in [`MealType::ALL`] order.
     pub meal_types: Vec<MealType>,
+    /// The dietary warnings, in [`Warning::ALL`] order.
+    pub warnings: Vec<Warning>,
     /// The ingredient lines in order.
     pub lines: Vec<ImportedLine>,
     /// The method steps in order.
@@ -44,6 +48,8 @@ pub struct ImportedLine {
     pub ingredient_id: Option<i64>,
     /// The store section the AI chose for an ingredient new to the catalogue, if it chose a valid one.
     pub section_id: Option<i64>,
+    /// The allergens the AI chose for an ingredient new to the catalogue, in [`Allergen::ALL`] order.
+    pub allergens: Vec<Allergen>,
     /// The line as it was read.
     pub original: String,
 }

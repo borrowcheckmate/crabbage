@@ -33,6 +33,7 @@ pub fn from_draft(draft: &Draft, candidates: &[Candidate<'_>]) -> Imported {
             },
             original: line.original.clone(),
             section_id: None,
+            allergens: Vec::new(),
         })
         .collect();
     let mut unmatched = matches.unmatched;
@@ -54,6 +55,7 @@ pub fn from_draft(draft: &Draft, candidates: &[Candidate<'_>]) -> Imported {
         photo: None,
         categories: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
         lines,
         steps,
         unmatched,

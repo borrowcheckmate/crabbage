@@ -101,6 +101,7 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
         ingredient: Some(ingredient.to_owned()),
         note: None,
         section_id: None,
+        allergens: Vec::new(),
     };
     let input = RecipeInput {
         title: "Pannenkoeken".to_owned(),
@@ -115,11 +116,13 @@ async fn a_dutch_recipe_page_uses_dutch_words_and_a_decimal_comma() {
                 ingredient: Some("Zout".to_owned()),
                 note: None,
                 section_id: None,
+                allergens: Vec::new(),
             },
         ],
         steps: Vec::new(),
         category_ids: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     };
     let id = crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
         .await
@@ -284,6 +287,7 @@ async fn filed_recipe(harness: &Harness, title: &str, category_ids: Vec<i64>) ->
         steps: Vec::new(),
         category_ids,
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     };
     crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
         .await
@@ -370,6 +374,7 @@ async fn meal_types_show_on_the_recipe_check_on_the_form_and_filter_the_list() {
         steps: Vec::new(),
         category_ids: Vec::new(),
         meal_types: vec![MealType::Dinner],
+        warnings: Vec::new(),
     };
     let id = crabbage_store::recipes::create(&harness.pool, owner_id, &input, 0)
         .await

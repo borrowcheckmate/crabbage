@@ -70,6 +70,10 @@ pub async fn update(pool: &SqlitePool, id: i64, input: &RecipeInput) -> Result<b
         .bind(id)
         .execute(&mut *tx)
         .await?;
+    sqlx::query("DELETE FROM recipe_warnings WHERE recipe_id = ?")
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
     sqlx::query("DELETE FROM steps WHERE recipe_id = ?")
         .bind(id)
         .execute(&mut *tx)
@@ -97,30 +101,14 @@ pub async fn delete(pool: &SqlitePool, id: i64) -> Result<bool, StoreError> {
     Ok(result.rows_affected() > 0)
 }
 
-/// Files recipe `recipe_id` under its categories and meal types, then writes the lines and the steps. The
-/// categories and the lines must not exist yet.
+/// Files recipe `recipe_id` under its categories, meal types and warnings, then writes the lines and
+/// the steps. The categories and the lines must not exist yet.
 async fn write_contents(
     conn: &mut SqliteConnection,
     recipe_id: i64,
     input: &RecipeInput,
 ) -> Result<(), StoreError> {
-    for &category_id in &input.category_ids {
-        sqlx::query(
-            "INSERT OR IGNORE INTO recipe_categories (recipe_id, category_id) \
-             SELECT ?, id FROM categories WHERE id = ?",
-        )
-        .bind(recipe_id)
-        .bind(category_id)
-        .execute(&mut *conn)
-        .await?;
-    }
-    for meal in &input.meal_types {
-        sqlx::query("INSERT OR IGNORE INTO recipe_meal_types (recipe_id, meal_type) VALUES (?, ?)")
-            .bind(recipe_id)
-            .bind(meal.code())
-            .execute(&mut *conn)
-            .await?;
-    }
+    write_tags(conn, recipe_id, input).await?;
     let mut line_ids = Vec::with_capacity(input.lines.len());
     for (position, line) in (0_i64..).zip(&input.lines) {
         let line_id = write_line(conn, recipe_id, position, line).await?;
@@ -151,6 +139,39 @@ async fn write_contents(
     Ok(())
 }
 
+/// Files recipe `recipe_id` under its categories, meal types and warnings.
+async fn write_tags(
+    conn: &mut SqliteConnection,
+    recipe_id: i64,
+    input: &RecipeInput,
+) -> Result<(), StoreError> {
+    for &category_id in &input.category_ids {
+        sqlx::query(
+            "INSERT OR IGNORE INTO recipe_categories (recipe_id, category_id) \
+             SELECT ?, id FROM categories WHERE id = ?",
+        )
+        .bind(recipe_id)
+        .bind(category_id)
+        .execute(&mut *conn)
+        .await?;
+    }
+    for meal in &input.meal_types {
+        sqlx::query("INSERT OR IGNORE INTO recipe_meal_types (recipe_id, meal_type) VALUES (?, ?)")
+            .bind(recipe_id)
+            .bind(meal.code())
+            .execute(&mut *conn)
+            .await?;
+    }
+    for warning in &input.warnings {
+        sqlx::query("INSERT OR IGNORE INTO recipe_warnings (recipe_id, warning) VALUES (?, ?)")
+            .bind(recipe_id)
+            .bind(warning.code())
+            .execute(&mut *conn)
+            .await?;
+    }
+    Ok(())
+}
+
 async fn write_line(
     conn: &mut SqliteConnection,
     recipe_id: i64,
@@ -158,7 +179,7 @@ async fn write_line(
     line: &LineInput,
 ) -> Result<i64, StoreError> {
     let ingredient_id = match line.ingredient.as_deref().map(str::trim) {
-        Some(name) if !name.is_empty() => Some(ingredient_id(conn, name, line.section_id).await?),
+        Some(name) if !name.is_empty() => Some(ingredient_id(conn, name, line).await?),
         Some(_) | None => None,
     };
     let id = sqlx::query_scalar(
@@ -177,11 +198,11 @@ async fn write_line(
 }
 
 /// The id of the ingredient whose name or alias is `name`, ignoring case. An unknown name creates
-/// an ingredient waiting for review.
+/// an ingredient waiting for review, with the store section and allergens of `line`.
 async fn ingredient_id(
     conn: &mut SqliteConnection,
     name: &str,
-    section_id: Option<i64>,
+    line: &LineInput,
 ) -> Result<i64, StoreError> {
     let known: Option<i64> = sqlx::query_scalar(
         "SELECT id FROM ingredients WHERE name = ?1 \
@@ -198,8 +219,17 @@ async fn ingredient_id(
          VALUES (?, 1, (SELECT id FROM store_sections WHERE id = ?)) RETURNING id",
     )
     .bind(capitalized(name))
-    .bind(section_id)
-    .fetch_one(conn)
+    .bind(line.section_id)
+    .fetch_one(&mut *conn)
     .await?;
+    for allergen in &line.allergens {
+        sqlx::query(
+            "INSERT OR IGNORE INTO ingredient_allergens (ingredient_id, allergen) VALUES (?, ?)",
+        )
+        .bind(id)
+        .bind(allergen.code())
+        .execute(&mut *conn)
+        .await?;
+    }
     Ok(id)
 }

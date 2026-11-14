@@ -10,6 +10,7 @@ fn soup() -> RecipeInput {
         servings: 2,
         category_ids: vec![],
         meal_types: Vec::new(),
+        warnings: Vec::new(),
         lines: vec![],
         steps: vec![],
     }

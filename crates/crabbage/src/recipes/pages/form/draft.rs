@@ -22,6 +22,8 @@ pub(crate) struct LineSignals {
     pub(crate) note: RwSignal<String>,
     /// The store section chosen for an ingredient new to the catalogue, carried through the form.
     pub(crate) section_id: Option<i64>,
+    /// The allergen codes chosen for an ingredient new to the catalogue, carried through the form.
+    pub(crate) allergens: StoredValue<Vec<String>>,
 }
 
 /// A step row of the form.
@@ -53,6 +55,8 @@ pub(crate) struct Draft {
     pub(crate) categories: RwSignal<Vec<i64>>,
     /// The codes of the recipe's meal types.
     pub(crate) meal_types: RwSignal<Vec<String>>,
+    /// The codes of the recipe's dietary warnings.
+    pub(crate) warnings: RwSignal<Vec<String>>,
     next_key: RwSignal<usize>,
 }
 
@@ -89,6 +93,7 @@ impl Draft {
                 .map(|category| category.id)
                 .collect(),
             meal_types: recipe.meal_types.clone(),
+            warnings: recipe.warnings.clone(),
         })
     }
 
@@ -100,6 +105,7 @@ impl Draft {
             steps: RwSignal::new(Vec::new()),
             categories: RwSignal::new(draft.categories.clone()),
             meal_types: RwSignal::new(draft.meal_types.clone()),
+            warnings: RwSignal::new(draft.warnings.clone()),
             next_key: RwSignal::new(0),
         };
         for line in &draft.lines {
@@ -120,6 +126,7 @@ impl Draft {
             ingredient: RwSignal::new(line.ingredient),
             note: RwSignal::new(line.note),
             section_id: line.section_id,
+            allergens: StoredValue::new(line.allergens),
         };
         self.lines.update(|rows| rows.push(row));
     }
@@ -174,12 +181,12 @@ impl Draft {
 
     /// Marks the recipe with meal type `code`, or takes it off when `on` is false.
     pub(crate) fn set_meal_type(&self, code: &str, on: bool) {
-        self.meal_types.update(|codes| {
-            codes.retain(|other| other != code);
-            if on {
-                codes.push(code.to_owned());
-            }
-        });
+        toggle(self.meal_types, code, on);
+    }
+
+    /// Marks the recipe with dietary warning `code`, or takes it off when `on` is false.
+    pub(crate) fn set_warning(&self, code: &str, on: bool) {
+        toggle(self.warnings, code, on);
     }
 
     /// The draft as the form currently shows it. Each step's links are the positions of its lines.
@@ -198,6 +205,7 @@ impl Draft {
                     ingredient: row.ingredient.get(),
                     note: row.note.get(),
                     section_id: row.section_id,
+                    allergens: row.allergens.get_value(),
                 })
                 .collect(),
             steps: self
@@ -212,6 +220,7 @@ impl Draft {
                 .collect(),
             categories: self.categories.get(),
             meal_types: self.meal_types.get(),
+            warnings: self.warnings.get(),
         }
     }
 
@@ -225,6 +234,15 @@ impl Draft {
         self.next_key.set(key + 1);
         key
     }
+}
+
+fn toggle(codes: RwSignal<Vec<String>>, code: &str, on: bool) {
+    codes.update(|codes| {
+        codes.retain(|other| other != code);
+        if on {
+            codes.push(code.to_owned());
+        }
+    });
 }
 
 /// The positions in `keys` of the keys in `linked`, in order. A linked key that is no longer in `keys`
@@ -277,6 +295,7 @@ fn line_draft(line: &LineRow) -> LineDraft {
         ingredient: line.ingredient.clone().unwrap_or_default(),
         note: line.note.clone().unwrap_or_default(),
         section_id: None,
+        allergens: Vec::new(),
     }
 }
 

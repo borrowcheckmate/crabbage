@@ -1,5 +1,7 @@
+use crabbage_domain::allergens::Allergen;
 use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
+use crabbage_domain::warnings::Warning;
 
 use crate::ai::{AiDraft, AiLine};
 use crate::lines::measure_of;
@@ -12,7 +14,8 @@ use super::{Imported, ImportedLine, ImportedStep};
 /// The AI's title, lines and steps replace the reading's. The servings fall back to the reading's and
 /// the photo is always the reading's. Every amount is metric afterwards. A line keeps the AI's
 /// ingredient id only when it is one of the candidates' ids, otherwise it is matched by name again.
-/// A line that matches no ingredient keeps the AI's store section when it is one of `sections`.
+/// A line that matches no ingredient keeps the AI's allergens, and its store section when it is one
+/// of `sections`. Unknown meal type, warning and allergen codes are dropped.
 #[must_use]
 pub fn merge(
     ai: &AiDraft,
@@ -46,6 +49,7 @@ pub fn merge(
         photo: ai.photo,
         categories: valid_categories(&ai.categories, categories),
         meal_types: MealType::from_codes(ai.meal_types.iter().map(String::as_str)),
+        warnings: Warning::from_codes(ai.warnings.iter().map(String::as_str)),
         unmatched: match_all(&names, candidates).unmatched,
         lines,
         steps,
@@ -70,9 +74,12 @@ fn merged_line(line: &AiLine, candidates: &[Candidate<'_>], sections: &[i64]) ->
         .ingredient_id
         .filter(|id| candidates.iter().any(|candidate| candidate.id == *id))
         .or_else(|| match_ingredient(&name, candidates));
-    let section_id = match ingredient_id {
-        Some(_) => None,
-        None => line.section_id.filter(|id| sections.contains(id)),
+    let (section_id, allergens) = match ingredient_id {
+        Some(_) => (None, Vec::new()),
+        None => (
+            line.section_id.filter(|id| sections.contains(id)),
+            Allergen::from_codes(line.allergens.iter().map(String::as_str)),
+        ),
     };
     let existing_note = line
         .note
@@ -93,6 +100,7 @@ fn merged_line(line: &AiLine, candidates: &[Candidate<'_>], sections: &[i64]) ->
         note,
         ingredient_id,
         section_id,
+        allergens,
     }
 }
 

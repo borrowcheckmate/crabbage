@@ -271,6 +271,7 @@ async fn a_recipe_without_steps_shows_a_message_in_place_of_the_step() {
             steps: Vec::new(),
             category_ids: Vec::new(),
             meal_types: Vec::new(),
+            warnings: Vec::new(),
         },
         0,
     )
@@ -347,6 +348,7 @@ async fn one_step(harness: &Harness, text: &str, duration_seconds: Option<i64>) 
             }],
             category_ids: Vec::new(),
             meal_types: Vec::new(),
+            warnings: Vec::new(),
         },
         0,
     )

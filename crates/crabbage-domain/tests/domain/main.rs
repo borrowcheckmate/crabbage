@@ -10,3 +10,4 @@ mod quantity;
 mod scaling;
 mod shopping;
 mod unit_symbols;
+mod warnings;

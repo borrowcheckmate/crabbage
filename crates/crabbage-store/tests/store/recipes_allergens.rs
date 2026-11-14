@@ -14,6 +14,7 @@ fn line(ingredient: &str) -> LineInput {
         ingredient: Some(ingredient.to_owned()),
         note: None,
         section_id: None,
+        allergens: Vec::new(),
     }
 }
 
@@ -40,6 +41,7 @@ async fn a_recipe_has_the_allergens_of_its_ingredients_once_in_order() {
         steps: Vec::new(),
         category_ids: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     };
     let id = create(&pool, owner, &input, 0).await.unwrap();
     let plain = create(

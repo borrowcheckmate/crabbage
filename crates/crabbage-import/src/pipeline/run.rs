@@ -70,7 +70,12 @@ pub(super) fn instructions(instance_language: &str) -> String {
          when a provided candidate clearly matches. Choose categories only from the provided \
          category ids. For an ingredient line whose ingredient is not a known ingredient, set \
          section_id to the store section it is shopped in, only from the provided store section \
-         ids; otherwise leave section_id out. Use only these \
+         ids, and set allergens to the allergens it contains, chosen only from gluten, \
+         crustaceans, eggs, fish, peanuts, soy, milk, tree_nuts, celery, mustard, sesame, \
+         sulphites, lupin, molluscs and meat; otherwise leave section_id and allergens out. Set \
+         warnings to what the finished dish holds that is advised against in pregnancy, chosen \
+         only from raw_egg, raw_fish, rare_meat, unpasteurised_cheese, liver and alcohol (alcohol \
+         only when it is not cooked off). Use only these \
          unit symbols: g, kg, ml, l, tsp, tbsp, piece, slice, clove, can, pack, bunch, pinch, or \
          none. Give every step the \
          zero-based indexes of the ingredient lines it uses. Keep the amounts for the stated \

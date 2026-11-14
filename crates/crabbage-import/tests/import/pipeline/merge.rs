@@ -1,5 +1,7 @@
+use crabbage_domain::allergens::Allergen;
 use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
+use crabbage_domain::warnings::Warning;
 use crabbage_import::ai::{AiDraft, AiLine, AiStep};
 use crabbage_import::pipeline::{from_draft, merge};
 
@@ -13,6 +15,7 @@ fn ai_line(amount: Option<f64>, unit: Option<&str>, name: &str) -> AiLine {
         note: None,
         ingredient_id: None,
         section_id: None,
+        allergens: Vec::new(),
     }
 }
 
@@ -27,6 +30,7 @@ fn ai_draft(lines: Vec<AiLine>, steps: Vec<AiStep>) -> AiDraft {
         photo: None,
         categories: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 
@@ -281,4 +285,30 @@ fn only_unmatched_lines_keep_a_store_section() {
     assert_eq!(result.lines[0].ingredient_id, Some(1));
     assert_eq!(result.lines[0].section_id, None);
     assert_eq!(result.lines[1].section_id, Some(3));
+}
+
+#[test]
+fn the_ai_warnings_are_kept_once_in_order_and_unknown_ones_dropped() {
+    let mut ai = ai_draft(Vec::new(), Vec::new());
+    ai.warnings = ["alcohol", "sushi", "Raw_Egg", "alcohol"]
+        .map(str::to_owned)
+        .to_vec();
+    let result = merge(&ai, &complete_recipe(), &[], &[], &[]);
+    assert_eq!(result.warnings, [Warning::RawEgg, Warning::Alcohol]);
+}
+
+#[test]
+fn only_unmatched_lines_keep_the_ai_allergens_and_unknown_ones_are_dropped() {
+    let flour = candidate(1, "flour");
+    let mut known = ai_line(Some(200.0), Some("g"), "flour");
+    known.allergens = vec!["gluten".to_owned()];
+    let mut new = ai_line(Some(250.0), Some("g"), "mascarpone");
+    new.allergens = ["nuts", "milk"].map(str::to_owned).to_vec();
+    let ai = ai_draft(
+        vec![known, new],
+        vec![step("Mix.", vec![0]), step("Serve.", vec![1])],
+    );
+    let result = merge(&ai, &complete_recipe(), &[flour], &[], &[]);
+    assert_eq!(result.lines[0].allergens, Vec::<Allergen>::new());
+    assert_eq!(result.lines[1].allergens, [Allergen::Milk]);
 }

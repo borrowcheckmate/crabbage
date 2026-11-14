@@ -19,12 +19,14 @@ fn soup() -> RecipeInput {
         servings: 2,
         category_ids: vec![],
         meal_types: Vec::new(),
+        warnings: Vec::new(),
         lines: vec![LineInput {
             amount: Some(1.0),
             unit: Some("piece".to_owned()),
             ingredient: Some("Onion".to_owned()),
             note: None,
             section_id: None,
+            allergens: Vec::new(),
         }],
         steps: vec![StepInput {
             text: "Chop".to_owned(),

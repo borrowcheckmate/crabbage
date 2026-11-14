@@ -13,6 +13,7 @@ fn plain_line(ingredient: &str) -> LineInput {
         ingredient: Some(ingredient.to_owned()),
         note: None,
         section_id: None,
+        allergens: Vec::new(),
     }
 }
 
@@ -24,6 +25,7 @@ fn input(title: &str, lines: Vec<LineInput>, steps: Vec<StepInput>) -> RecipeInp
         steps,
         category_ids: vec![],
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 

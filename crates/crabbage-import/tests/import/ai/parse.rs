@@ -23,6 +23,7 @@ fn a_valid_draft_is_read_in_full() {
                 note: None,
                 ingredient_id: None,
                 section_id: None,
+                allergens: Vec::new(),
             },
             AiLine {
                 amount: Some(1.0),
@@ -31,6 +32,7 @@ fn a_valid_draft_is_read_in_full() {
                 note: None,
                 ingredient_id: None,
                 section_id: None,
+                allergens: Vec::new(),
             },
         ],
         steps: vec![AiStep {
@@ -42,6 +44,7 @@ fn a_valid_draft_is_read_in_full() {
         photo: None,
         categories: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     };
     assert_eq!(parse(VALID), Ok(expected));
 }

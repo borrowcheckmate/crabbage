@@ -85,6 +85,11 @@ pub(crate) fn detail(recipe: Recipe, rights: Rights) -> RecipeDetail {
             .iter()
             .map(|allergen| allergen.code().to_owned())
             .collect(),
+        warnings: recipe
+            .warnings
+            .iter()
+            .map(|warning| warning.code().to_owned())
+            .collect(),
         image: recipe.image,
         can_edit: rights.edit,
         can_delete: rights.delete,

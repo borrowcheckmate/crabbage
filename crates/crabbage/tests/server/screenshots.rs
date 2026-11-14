@@ -417,6 +417,7 @@ fn sample_recipe(category: i64) -> RecipeInput {
             ingredient: Some(ingredient.to_owned()),
             note: note.map(str::to_owned),
             section_id: None,
+            allergens: Vec::new(),
         };
     RecipeInput {
         title: "Pancakes".to_owned(),
@@ -446,6 +447,7 @@ fn sample_recipe(category: i64) -> RecipeInput {
         ],
         category_ids: vec![category],
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 

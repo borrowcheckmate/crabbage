@@ -25,6 +25,7 @@ fn recipe(title: &str, ingredient: &str) -> RecipeInput {
             ingredient: Some(ingredient.to_owned()),
             note: None,
             section_id: None,
+            allergens: Vec::new(),
         }],
         steps: vec![StepInput {
             text: "Mix.".to_owned(),
@@ -33,6 +34,7 @@ fn recipe(title: &str, ingredient: &str) -> RecipeInput {
         }],
         category_ids: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 

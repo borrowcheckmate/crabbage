@@ -32,6 +32,7 @@ async fn mealie_recipe_ids_and_pending_ingredient_aliases_are_persisted() {
             ingredient: Some("Okra".to_owned()),
             note: None,
             section_id: None,
+            allergens: Vec::new(),
         }],
         steps: vec![StepInput {
             text: "Cook".to_owned(),
@@ -40,6 +41,7 @@ async fn mealie_recipe_ids_and_pending_ingredient_aliases_are_persisted() {
         }],
         category_ids: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     };
     create_mealie(&pool, user, &input, 1, "m-1").await.unwrap();
     assert_eq!(imported_mealie_ids(&pool).await.unwrap().len(), 1);

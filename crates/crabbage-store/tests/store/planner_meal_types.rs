@@ -29,6 +29,7 @@ async fn only_recipes_of_the_planned_meal_types_or_of_none_qualify() {
             steps: Vec::new(),
             category_ids: vec![category],
             meal_types,
+            warnings: Vec::new(),
         };
         ids.push(create(&pool, owner, &input, 0).await.unwrap());
     }

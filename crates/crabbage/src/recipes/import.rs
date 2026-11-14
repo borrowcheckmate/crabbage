@@ -50,6 +50,11 @@ pub(crate) fn recipe_draft(imported: &Imported) -> RecipeDraft {
             ingredient: line.name.clone(),
             note: line.note.clone().unwrap_or_default(),
             section_id: line.section_id,
+            allergens: line
+                .allergens
+                .iter()
+                .map(|allergen| allergen.code().to_owned())
+                .collect(),
         })
         .collect();
     let line_count = lines.len();
@@ -80,6 +85,11 @@ pub(crate) fn recipe_draft(imported: &Imported) -> RecipeDraft {
             .meal_types
             .iter()
             .map(|meal| meal.code().to_owned())
+            .collect(),
+        warnings: imported
+            .warnings
+            .iter()
+            .map(|warning| warning.code().to_owned())
             .collect(),
     }
 }
@@ -271,7 +281,9 @@ fn failure(error: &ImportError) -> ServerFnError {
 
 #[cfg(test)]
 mod tests {
+    use crabbage_domain::allergens::Allergen;
     use crabbage_domain::quantity::Unit;
+    use crabbage_domain::warnings::Warning;
     use crabbage_import::pipeline::{ImportedLine, ImportedStep};
     use crabbage_store::catalog::ingredients;
     use crabbage_store::recipes::create;
@@ -286,6 +298,7 @@ mod tests {
             note: Some("chopped".to_owned()),
             ingredient_id: id,
             section_id: None,
+            allergens: Vec::new(),
             original: name.to_owned(),
         }
     }
@@ -298,6 +311,7 @@ mod tests {
             photo: None,
             categories: Vec::new(),
             meal_types: Vec::new(),
+            warnings: Vec::new(),
             lines,
             steps,
             unmatched: Vec::new(),
@@ -332,6 +346,7 @@ mod tests {
                 ingredient: "Okra".to_owned(),
                 note: "chopped".to_owned(),
                 section_id: None,
+                allergens: Vec::new(),
             }
         );
         assert_eq!(draft.lines[1].amount, "0.5");
@@ -344,6 +359,17 @@ mod tests {
             ..imported
         };
         assert_eq!(recipe_draft(&served).servings, "6");
+    }
+
+    #[test]
+    fn warnings_and_the_allergens_of_new_ingredients_fill_the_form_as_codes() {
+        let mut mascarpone = line("Mascarpone", 250.0, Some(Unit::Gram), None);
+        mascarpone.allergens = vec![Allergen::Milk];
+        let mut imported = recipe(vec![mascarpone], Vec::new());
+        imported.warnings = vec![Warning::RawEgg, Warning::Alcohol];
+        let draft = recipe_draft(&imported);
+        assert_eq!(draft.warnings, ["raw_egg", "alcohol"]);
+        assert_eq!(draft.lines[0].allergens, ["milk"]);
     }
 
     #[test]

@@ -16,6 +16,7 @@ fn line(ingredient: &str, section_id: Option<i64>) -> LineInput {
         ingredient: Some(ingredient.to_owned()),
         note: None,
         section_id,
+        allergens: Vec::new(),
     }
 }
 
@@ -27,6 +28,7 @@ fn recipe(lines: Vec<LineInput>) -> RecipeInput {
         steps: Vec::new(),
         category_ids: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 
