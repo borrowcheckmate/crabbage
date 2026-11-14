@@ -21,7 +21,7 @@ use super::import::{candidates, preview};
 use super::photo::MAX_UPLOAD_BYTES;
 use crate::SessionUser;
 use crate::access::internal_error;
-use crate::i18n::t_with;
+use crate::i18n::{Language, Messages};
 use crate::images::Kind;
 use crate::state::AppState;
 
@@ -89,7 +89,7 @@ async fn upload(
     if images.is_empty() {
         return Ok(back("photo_error=invalid"));
     }
-    let count = images.len().to_string();
+    let source = photo_source(state.config.language, images.len());
     let ingredients = list(&state.pool).await.map_err(internal_error)?;
     let categories = crabbage_store::catalog::categories::list(&state.pool)
         .await
@@ -118,7 +118,6 @@ async fn upload(
             .flatten(),
         None => None,
     };
-    let source = t_with("import.photos_count", &[("count", &count)]);
     let now = Instant::now();
     let mut preview = preview(&imported, &source, true);
     preview.categories = categories
@@ -130,6 +129,15 @@ async fn upload(
         .insert(user.0, preview, photo, now)
         .map_err(internal_error)?;
     Ok(back(&format!("photos={token}")))
+}
+
+fn photo_source(language: Language, count: usize) -> String {
+    let key = if count == 1 {
+        "import.photos_count.one"
+    } else {
+        "import.photos_count.many"
+    };
+    Messages::for_language(language).format(key, &[("count", &count.to_string())])
 }
 
 /// The first four `photo` fields that are within the size limit and a JPEG, PNG or WebP.
