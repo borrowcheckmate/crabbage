@@ -39,6 +39,7 @@ fn a_valid_draft_is_read_in_full() {
         cook_minutes: Some(10),
         photo: None,
         categories: Vec::new(),
+        meal_types: Vec::new(),
     };
     assert_eq!(parse(VALID), Ok(expected));
 }

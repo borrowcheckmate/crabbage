@@ -22,6 +22,7 @@ fn pancakes(lines: Vec<LineInput>, steps: Vec<StepInput>) -> RecipeInput {
         lines,
         steps,
         category_ids: vec![],
+        meal_types: Vec::new(),
     }
 }
 
@@ -143,7 +144,7 @@ async fn the_list_is_ordered_by_title() {
         input.title = title.to_owned();
         create(&pool, owner, &input, 0).await.unwrap();
     }
-    let titles: Vec<String> = list(&pool, None, false, None, owner)
+    let titles: Vec<String> = list(&pool, None, None, false, None, owner)
         .await
         .unwrap()
         .into_iter()
@@ -170,7 +171,10 @@ async fn a_step_linking_a_missing_line_is_refused_and_nothing_is_saved() {
         Err(crabbage_store::StoreError::UnknownLine)
     ));
     assert_eq!(
-        list(&pool, None, false, None, owner).await.unwrap().len(),
+        list(&pool, None, None, false, None, owner)
+            .await
+            .unwrap()
+            .len(),
         0
     );
 }

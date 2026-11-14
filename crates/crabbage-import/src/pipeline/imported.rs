@@ -1,3 +1,4 @@
+use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
 
 use crate::ai::AiPhoto;
@@ -16,6 +17,8 @@ pub struct Imported {
     pub photo: Option<AiPhoto>,
     /// The selected household recipe categories.
     pub categories: Vec<i64>,
+    /// The meal types, in [`MealType::ALL`] order.
+    pub meal_types: Vec<MealType>,
     /// The ingredient lines in order.
     pub lines: Vec<ImportedLine>,
     /// The method steps in order.

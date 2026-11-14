@@ -38,6 +38,7 @@ async fn mealie_recipe_ids_and_pending_ingredient_aliases_are_persisted() {
             line_positions: vec![0],
         }],
         category_ids: Vec::new(),
+        meal_types: Vec::new(),
     };
     create_mealie(&pool, user, &input, 1, "m-1").await.unwrap();
     assert_eq!(imported_mealie_ids(&pool).await.unwrap().len(), 1);

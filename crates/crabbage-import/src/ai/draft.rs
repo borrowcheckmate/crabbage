@@ -28,6 +28,9 @@ pub struct AiDraft {
     /// The recipe categories selected from the household's categories.
     #[serde(default)]
     pub categories: Vec<i64>,
+    /// The meal type codes the model chose; unknown codes are dropped on merge.
+    #[serde(default)]
+    pub meal_types: Vec<String>,
 }
 
 /// A normalized crop box on one submitted page.

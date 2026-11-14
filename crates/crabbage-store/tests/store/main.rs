@@ -21,6 +21,7 @@ mod recipes_delete;
 mod recipes_editors;
 mod recipes_favourites;
 mod recipes_images;
+mod recipes_meal_types;
 mod recipes_mealie;
 mod recipes_ratings;
 mod recipes_round_trip;

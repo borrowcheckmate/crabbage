@@ -59,6 +59,7 @@ async fn recipe(pool: &SqlitePool, lines: Vec<LineInput>) -> i64 {
         lines,
         steps: vec![],
         category_ids: vec![],
+        meal_types: Vec::new(),
     };
     create_recipe(pool, owner, &input, 0).await.unwrap()
 }

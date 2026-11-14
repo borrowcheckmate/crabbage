@@ -71,6 +71,7 @@ impl DemoRecipe {
             lines,
             steps,
             category_ids: category_id.into_iter().collect(),
+            meal_types: Vec::new(),
         }
     }
 }

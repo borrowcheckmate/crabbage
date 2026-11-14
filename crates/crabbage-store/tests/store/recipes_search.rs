@@ -24,6 +24,7 @@ fn recipe(title: &str, ingredients: &[&str], category_ids: Vec<i64>) -> RecipeIn
             .collect(),
         steps: vec![],
         category_ids,
+        meal_types: Vec::new(),
     }
 }
 
@@ -38,7 +39,7 @@ async fn titles(
     favourites_only: bool,
     viewer: i64,
 ) -> Vec<String> {
-    list(pool, category, favourites_only, search, viewer)
+    list(pool, category, None, favourites_only, search, viewer)
         .await
         .expect("list reads")
         .into_iter()
@@ -162,7 +163,7 @@ async fn recipe_summaries_include_the_photo_name_without_a_second_read() {
         .await
         .unwrap();
 
-    let rows = list(&pool, None, false, None, owner).await.unwrap();
+    let rows = list(&pool, None, None, false, None, owner).await.unwrap();
     assert_eq!(rows.len(), 1);
     assert_eq!(
         rows[0].image.as_deref(),

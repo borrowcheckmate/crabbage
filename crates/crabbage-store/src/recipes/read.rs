@@ -5,6 +5,8 @@ use sqlx::sqlite::SqlitePool;
 
 use super::model::{Person, Recipe, RecipeStep, RecipeSummary};
 use crate::StoreError;
+use crabbage_domain::meal_types::MealType;
+
 use crate::catalog::categories::Category;
 
 #[derive(FromRow)]
@@ -65,13 +67,7 @@ pub async fn get(pool: &SqlitePool, id: i64, viewer: i64) -> Result<Option<Recip
     .fetch_all(pool)
     .await?;
     let steps = steps_of(pool, id).await?;
-    let categories: Vec<Category> = sqlx::query_as(
-        "SELECT c.id, c.name FROM recipe_categories rc JOIN categories c ON c.id = rc.category_id \
-         WHERE rc.recipe_id = ? ORDER BY c.name COLLATE NOCASE, c.id",
-    )
-    .bind(id)
-    .fetch_all(pool)
-    .await?;
+    let (categories, meal_types) = filing_of(pool, id).await?;
     Ok(Some(Recipe {
         id: header.id,
         title: header.title,
@@ -82,6 +78,7 @@ pub async fn get(pool: &SqlitePool, id: i64, viewer: i64) -> Result<Option<Recip
         lines,
         steps,
         categories,
+        meal_types,
         image: header.image,
         average: header.average,
         rating_count: header.rating_count,
@@ -119,9 +116,33 @@ async fn steps_of(pool: &SqlitePool, recipe_id: i64) -> Result<Vec<RecipeStep>, 
         .collect())
 }
 
+/// The categories of recipe `id` by name, and its meal types.
+async fn filing_of(
+    pool: &SqlitePool,
+    id: i64,
+) -> Result<(Vec<Category>, Vec<MealType>), StoreError> {
+    let categories: Vec<Category> = sqlx::query_as(
+        "SELECT c.id, c.name FROM recipe_categories rc JOIN categories c ON c.id = rc.category_id \
+         WHERE rc.recipe_id = ? ORDER BY c.name COLLATE NOCASE, c.id",
+    )
+    .bind(id)
+    .fetch_all(pool)
+    .await?;
+    let meal_codes: Vec<String> =
+        sqlx::query_scalar("SELECT meal_type FROM recipe_meal_types WHERE recipe_id = ?")
+            .bind(id)
+            .fetch_all(pool)
+            .await?;
+    Ok((
+        categories,
+        MealType::from_codes(meal_codes.iter().map(String::as_str)),
+    ))
+}
+
 /// Every recipe ordered by title, as user `viewer` sees it.
 ///
-/// `category` keeps only the recipes filed under it, `favourites_only` only the viewer's favourites,
+/// `category` keeps only the recipes filed under it, `meal_type` only those marked with it,
+/// `favourites_only` only the viewer's favourites,
 /// and `search` only the recipes whose title, or whose ingredient or alternative ingredient name,
 /// contains it ignoring case. A blank search is no search. All filters apply together.
 ///
@@ -131,6 +152,7 @@ async fn steps_of(pool: &SqlitePool, recipe_id: i64) -> Result<Vec<RecipeStep>, 
 pub async fn list(
     pool: &SqlitePool,
     category: Option<i64>,
+    meal_type: Option<MealType>,
     favourites_only: bool,
     search: Option<&str>,
     viewer: i64,
@@ -147,6 +169,8 @@ pub async fn list(
              WHERE rc.recipe_id = r.id AND rc.category_id = ?2)) \
          AND (?3 = 0 OR EXISTS (SELECT 1 FROM favourites f \
              WHERE f.recipe_id = r.id AND f.user_id = ?1)) \
+         AND (?5 IS NULL OR EXISTS (SELECT 1 FROM recipe_meal_types m \
+             WHERE m.recipe_id = r.id AND m.meal_type = ?5)) \
          AND (?4 IS NULL OR r.title LIKE ?4 ESCAPE '\\' OR EXISTS (SELECT 1 FROM recipe_lines l \
              JOIN ingredients i ON i.id = l.ingredient_id \
              WHERE l.recipe_id = r.id AND (i.name LIKE ?4 ESCAPE '\\' OR EXISTS (SELECT 1 \
@@ -157,6 +181,7 @@ pub async fn list(
     .bind(category)
     .bind(favourites_only)
     .bind(pattern)
+    .bind(meal_type.map(MealType::code))
     .fetch_all(pool)
     .await?;
     Ok(recipes)

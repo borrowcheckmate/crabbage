@@ -50,6 +50,7 @@ async fn stored(
             .collect(),
         steps: Vec::new(),
         category_ids,
+        meal_types: Vec::new(),
     };
     create_recipe(&harness.pool, owner_id, &input, 0)
         .await

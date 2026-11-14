@@ -1,4 +1,13 @@
 {
+  "meal.breakfast": "Ontbijt",
+  "meal.lunch": "Lunch",
+  "meal.dinner": "Diner",
+  "meal.dessert": "Dessert",
+  "meal.side": "Bijgerecht",
+  "meal.snack": "Snack",
+  "meal.drink": "Drank",
+  "recipes.meal_types.label": "Maaltijden",
+  "recipe.label.meal_types": "Soort maaltijd",
   "app.title": "crabbage",
   "app.sign_out": "Uitloggen",
   "admin.nav.ingredients": "Ingrediënten",

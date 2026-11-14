@@ -11,7 +11,8 @@ and put them in "note".
 g, kg, ml, l, tsp, tbsp, piece, slice, clove, can, pack, bunch, pinch, "to taste", or null), "name" (text), "note" (text or
 null) and "ingredient_id" (a provided candidate id or null)); "steps" (in order, each with "text"
 and "lines", the zero-based indexes of the ingredient lines the step uses); "categories" (a list of
-ids chosen only from the provided categories); "photo" (null when there is no
+ids chosen only from the provided categories); "meal_types" (a list chosen only from breakfast,
+lunch, dinner, dessert, side, snack and drink: when the dish is eaten); "photo" (null when there is no
 finished-dish photo, otherwise an object with "page" (zero-based image index), "left", "top",
 "width" and "height" (fractions from 0 to 1 describing the dish photo crop). Prefer a clear
 photo of the finished dish. Return null for text-only pages, ads, step photos, or when only the

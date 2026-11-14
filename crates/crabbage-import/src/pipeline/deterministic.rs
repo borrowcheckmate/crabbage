@@ -52,6 +52,7 @@ pub fn from_draft(draft: &Draft, candidates: &[Candidate<'_>]) -> Imported {
         image: draft.image.clone(),
         photo: None,
         categories: Vec::new(),
+        meal_types: Vec::new(),
         lines,
         steps,
         unmatched,

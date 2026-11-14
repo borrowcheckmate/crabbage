@@ -47,6 +47,9 @@ fn input(draft: &RecipeDraft) -> Result<RecipeInput, ServerFnError> {
         lines,
         steps,
         category_ids: draft.categories.clone(),
+        meal_types: crabbage_domain::meal_types::MealType::from_codes(
+            draft.meal_types.iter().map(String::as_str),
+        ),
     })
 }
 
@@ -139,6 +142,7 @@ fn minutes(text: &str) -> Result<Option<i64>, ServerFnError> {
 #[cfg(test)]
 mod tests {
     use super::parse;
+    use crabbage_domain::meal_types::MealType;
 
     #[test]
     fn a_link_follows_its_line_past_a_blank_row_and_a_missing_link_is_dropped() {
@@ -149,5 +153,14 @@ mod tests {
         let input = parse(json).expect("the draft is valid");
         assert_eq!(input.lines.len(), 1);
         assert_eq!(input.steps[0].line_positions, [0]);
+    }
+
+    #[test]
+    fn meal_type_codes_become_meal_types_and_a_draft_without_them_has_none() {
+        let json = r#"{"title":"Soup","servings":"2","meal_types":["dinner","bogus","lunch"]}"#;
+        let input = parse(json).expect("the draft is valid");
+        assert_eq!(input.meal_types, [MealType::Lunch, MealType::Dinner]);
+        let input = parse(r#"{"title":"Soup","servings":"2"}"#).expect("the draft is valid");
+        assert_eq!(input.meal_types, Vec::<MealType>::new());
     }
 }

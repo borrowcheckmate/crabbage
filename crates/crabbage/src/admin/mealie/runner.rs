@@ -269,6 +269,7 @@ fn recipe_input(mapped: crabbage_import::mealie::MappedRecipe, catalog: &Catalog
         lines,
         steps,
         category_ids: recipe_categories,
+        meal_types: Vec::new(),
     }
 }
 
