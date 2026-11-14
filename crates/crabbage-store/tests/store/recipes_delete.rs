@@ -13,12 +13,8 @@ async fn count(pool: &SqlitePool, sql: &'static str) -> i64 {
     sqlx::query_scalar(sql).fetch_one(pool).await.unwrap()
 }
 
-#[tokio::test]
-async fn delete_removes_everything_that_belongs_to_the_recipe() {
-    let (_dir, pool) = database("recipes-delete").await;
-    let owner = upsert_user(&pool, "owner", "Owner").await.unwrap();
-    let friend = upsert_user(&pool, "friend", "Friend").await.unwrap();
-    let input = RecipeInput {
+fn soup() -> RecipeInput {
+    RecipeInput {
         title: "Soup".to_owned(),
         servings: 2,
         category_ids: vec![],
@@ -35,8 +31,15 @@ async fn delete_removes_everything_that_belongs_to_the_recipe() {
             duration_seconds: Some(60),
             line_positions: vec![0],
         }],
-    };
-    let id = create(&pool, owner, &input, 0).await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn delete_removes_everything_that_belongs_to_the_recipe() {
+    let (_dir, pool) = database("recipes-delete").await;
+    let owner = upsert_user(&pool, "owner", "Owner").await.unwrap();
+    let friend = upsert_user(&pool, "friend", "Friend").await.unwrap();
+    let id = create(&pool, owner, &soup(), 0).await.unwrap();
     add_editor(&pool, id, friend).await.unwrap();
     sqlx::query("INSERT INTO ratings (recipe_id, user_id, stars) VALUES (?, ?, 5)")
         .bind(id)

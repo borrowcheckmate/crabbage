@@ -26,6 +26,7 @@ fn recipe(lines: Vec<LineInput>) -> RecipeInput {
         lines,
         steps: Vec::new(),
         category_ids: Vec::new(),
+        meal_types: Vec::new(),
     }
 }
 
