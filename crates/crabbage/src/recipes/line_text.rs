@@ -3,7 +3,7 @@
 use crabbage_domain::quantity::{Dimension, Unit};
 
 use super::types::LineRow;
-use super::units::unit_text;
+use super::units::{is_plural, unit_text};
 use crate::i18n::Messages;
 
 /// The text of `line` in `messages`: `2 Egg`, `250 g Flour, sifted` or `Salt, to taste`.
@@ -23,7 +23,10 @@ pub(crate) fn ingredient_parts(line: &LineRow, messages: &Messages) -> (String, 
     let note = line.note.as_deref().unwrap_or_default();
     if unit.is_some_and(|unit| unit.dimension() == Dimension::Unitless) {
         return (
-            join(&[ingredient, &unit_text(messages, symbol), note], ", "),
+            join(
+                &[ingredient, &unit_text(messages, symbol, false), note],
+                ", ",
+            ),
             String::new(),
         );
     }
@@ -32,10 +35,11 @@ pub(crate) fn ingredient_parts(line: &LineRow, messages: &Messages) -> (String, 
         .filter(|amount| amount.is_finite())
         .map(|amount| number_text(amount, messages.get("number.decimal")))
         .unwrap_or_default();
+    let plural = line.amount.is_some_and(is_plural);
     let word = if unit == Some(Unit::Piece) {
         String::new()
     } else {
-        unit_text(messages, symbol)
+        unit_text(messages, symbol, plural)
     };
     (
         join(&[ingredient, note], ", "),
@@ -192,6 +196,42 @@ mod tests {
                 Messages::for_language(Language::En)
             ),
             ("Salt, to taste".to_owned(), String::new())
+        );
+    }
+
+    #[test]
+    fn a_named_count_shows_its_word_in_the_plural_after_one() {
+        assert_eq!(
+            nl(&line(Some(8.0), Some("slice"), "Briochebrood", None)),
+            "8 plakken Briochebrood"
+        );
+        assert_eq!(
+            nl(&line(Some(1.0), Some("slice"), "Ham", None)),
+            "1 plak Ham"
+        );
+        assert_eq!(
+            nl(&line(Some(2.0), Some("clove"), "Knoflook", None)),
+            "2 teentjes Knoflook"
+        );
+        assert_eq!(
+            nl(&line(Some(1.0), Some("clove"), "Knoflook", None)),
+            "1 teentje Knoflook"
+        );
+        assert_eq!(
+            nl(&line(Some(1.0), Some("can"), "Tomaten", None)),
+            "1 blik Tomaten"
+        );
+        assert_eq!(
+            nl(&line(Some(2.0), Some("pack"), "Vingers", None)),
+            "2 pakken Vingers"
+        );
+        assert_eq!(
+            en(&line(Some(2.0), Some("bunch"), "Parsley", Some("small"))),
+            "2 bunches Parsley, small"
+        );
+        assert_eq!(
+            en(&line(Some(1.0), Some("bunch"), "Parsley", None)),
+            "1 bunch Parsley"
         );
     }
 

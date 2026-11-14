@@ -406,7 +406,8 @@ fn SourceCard(
 }
 
 pub(super) fn format_amount(amount: &str, unit: &str) -> String {
-    let unit = crate::recipes::unit_text(crate::i18n::messages(), unit.trim());
+    let unit =
+        crate::recipes::unit_text(crate::i18n::messages(), unit.trim(), amount.trim() != "1");
     match (amount.trim(), unit.trim()) {
         ("", "") => t("import.unspecified").to_owned(),
         ("", unit) => unit.to_owned(),

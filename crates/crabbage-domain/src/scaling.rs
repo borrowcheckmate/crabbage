@@ -34,7 +34,7 @@ impl Servings {
 ///   - grams and millilitres: 0.5 below 10, 1 below 100, 5 otherwise;
 ///   - kilograms and litres: 0.05;
 ///   - teaspoons and tablespoons: 0.25;
-///   - pieces: 0.5.
+///   - pieces, slices, cloves, cans, packs and bunches: 0.5.
 /// - A non-zero amount never rounds to zero: the step is used instead.
 /// - Rounding can reach a display boundary (998 g becomes 1000 g), so the rounded amount is
 ///   displayed again (1 kg).
@@ -68,7 +68,7 @@ const fn step(unit: Unit, amount: f64) -> Option<f64> {
         }),
         Unit::Kilogram | Unit::Litre => Some(0.05),
         Unit::Teaspoon | Unit::Tablespoon => Some(0.25),
-        Unit::Piece => Some(0.5),
+        Unit::Piece | Unit::Slice | Unit::Clove | Unit::Can | Unit::Pack | Unit::Bunch => Some(0.5),
         Unit::Pinch | Unit::ToTaste => None,
     }
 }

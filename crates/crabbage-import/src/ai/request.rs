@@ -8,7 +8,7 @@ preparation, temperature, size, cut, quantity words and "to taste" or "of choice
 and put them in "note".
 "title" (text); "servings", "prep_minutes" and "cook_minutes" (whole numbers or null);
 "lines" (the ingredient lines in order, each with "amount" (a number or null), "unit" (one of
-g, kg, ml, l, tsp, tbsp, piece, pinch, "to taste", or null), "name" (text), "note" (text or
+g, kg, ml, l, tsp, tbsp, piece, slice, clove, can, pack, bunch, pinch, "to taste", or null), "name" (text), "note" (text or
 null) and "ingredient_id" (a provided candidate id or null)); "steps" (in order, each with "text"
 and "lines", the zero-based indexes of the ingredient lines the step uses); "categories" (a list of
 ids chosen only from the provided categories); "photo" (null when there is no
