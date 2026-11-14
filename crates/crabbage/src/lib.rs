@@ -123,6 +123,8 @@ pub use healthcheck::healthcheck;
 #[cfg(feature = "ssr")]
 mod planner;
 #[cfg(feature = "ssr")]
+mod recipe_pick;
+#[cfg(feature = "ssr")]
 mod shopping;
 #[cfg(feature = "ssr")]
 mod state;

@@ -11,6 +11,8 @@ use serde::Deserialize;
 
 use crate::SessionUser;
 use crate::access::internal_error;
+use crate::i18n::Messages;
+use crate::recipe_pick::{Pick, pick};
 use crate::state::AppState;
 
 pub(crate) fn routes() -> Router<AppState> {
@@ -273,22 +275,15 @@ async fn recipe(
 ) -> Result<Redirect, StatusCode> {
     parse_iso_date(&day).ok_or(StatusCode::BAD_REQUEST)?;
     let household = household(&state, &user).await?;
-    let recipe_id = if form.recipe == "rest" {
-        None
-    } else {
-        Some(
-            form.recipe
-                .parse::<i64>()
-                .map_err(|_error| StatusCode::BAD_REQUEST)?,
-        )
+    let recipes = planner::recipe_titles(&state.pool)
+        .await
+        .map_err(internal_error)?;
+    let rest_label = Messages::for_language(state.config.language).get("plan.rest");
+    let recipe_id = match pick(&form.recipe, rest_label, &recipes) {
+        Some(Pick::Rest) => None,
+        Some(Pick::Recipe(id)) => Some(id),
+        None => return Err(StatusCode::BAD_REQUEST),
     };
-    if let Some(id) = recipe_id
-        && !planner::recipe_exists(&state.pool, id)
-            .await
-            .map_err(internal_error)?
-    {
-        return Err(StatusCode::BAD_REQUEST);
-    }
     let settings = planner::settings(&state.pool, household)
         .await
         .map_err(internal_error)?;

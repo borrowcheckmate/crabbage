@@ -254,6 +254,61 @@ async fn planner_forms_reject_invalid_values_and_week_view_links_with_servings()
 }
 
 #[tokio::test]
+async fn the_recipe_field_takes_a_typed_title_or_the_rest_label() {
+    let (harness, token, owner, recipes) = setup("planner-picker").await;
+    let home = household(&harness, owner).await;
+    assert_eq!(
+        post(
+            &harness,
+            &token,
+            "/plan/2024-02-26/recipe",
+            "recipe=recipe+B+planner"
+        )
+        .await,
+        StatusCode::SEE_OTHER
+    );
+    assert_eq!(
+        post(
+            &harness,
+            &token,
+            "/plan/2024-02-27/recipe",
+            "recipe=Rest+day"
+        )
+        .await,
+        StatusCode::SEE_OTHER
+    );
+    assert_eq!(
+        post(
+            &harness,
+            &token,
+            "/plan/2024-02-28/recipe",
+            "recipe=Lasagne"
+        )
+        .await,
+        StatusCode::BAD_REQUEST
+    );
+    let rows = entries(&harness.pool, home, WEEK, "2024-02-28")
+        .await
+        .expect("entries read");
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0].recipe_id, Some(recipes[1]));
+    assert_eq!(rows[1].recipe_id, None);
+    let page = body_text(
+        harness
+            .get("/plan?week=2024-02-26&day=2024-02-26", Some(&token))
+            .await,
+    )
+    .await;
+    assert!(page.contains("list=\"plan-recipes\""), "{page}");
+    assert!(page.contains("value=\"Planner recipe B\""), "{page}");
+    assert!(
+        page.contains("<datalist id=\"plan-recipes\"><option value=\"Rest day\">"),
+        "{page}"
+    );
+    assert!(!page.contains("<select name=\"recipe\""), "{page}");
+}
+
+#[tokio::test]
 async fn plan_page_adds_the_week_to_shopping_once() {
     let (harness, token, owner, recipes) = setup("planner-shopping").await;
     let home = household(&harness, owner).await;

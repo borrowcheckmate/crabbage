@@ -309,6 +309,7 @@
   "plan.agenda": "Days in this week",
   "plan.no_recipe": "No recipe selected",
   "plan.recipe": "Recipe",
+  "plan.recipe_placeholder": "Search recipes",
   "plan.view_recipe": "View recipe",
   "home.shopping_count.one": "{count} item to pick up",
   "home.shopping_count.many": "{count} items to pick up",
