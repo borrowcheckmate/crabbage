@@ -44,6 +44,7 @@ fn line(
         unit: unit.map(str::to_owned),
         ingredient: ingredient.map(str::to_owned),
         note: note.map(str::to_owned),
+        section_id: None,
     }
 }
 

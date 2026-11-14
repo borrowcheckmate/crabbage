@@ -39,6 +39,7 @@ pub(crate) fn complete_recipe() -> Imported {
             name: "flour".to_owned(),
             note: None,
             ingredient_id: Some(1),
+            section_id: None,
             original: "200 flour".to_owned(),
         }],
         steps: vec![ImportedStep {

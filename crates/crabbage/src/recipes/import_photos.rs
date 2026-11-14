@@ -98,12 +98,16 @@ async fn upload(
         .iter()
         .map(|category| (category.id, category.name.as_str()))
         .collect();
+    let section_rows = crabbage_store::catalog::sections::list(&state.pool)
+        .await
+        .map_err(internal_error)?;
     let client = AiClient::new(base_url, ai.api_key, ai.model);
     let language = state.config.language.code();
     let Ok(imported) = from_photos(
         images.clone(),
         &candidates(&ingredients),
         &category_refs,
+        &super::import::section_pairs(&section_rows),
         &client,
         language,
     )

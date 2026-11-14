@@ -302,6 +302,7 @@ fn recipe_lines(
                     line.text.clone().or_else(|| line.note.clone())
                 },
                 ingredient,
+                section_id: None,
             }
         })
         .collect()

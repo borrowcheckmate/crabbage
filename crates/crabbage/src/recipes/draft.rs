@@ -74,6 +74,7 @@ fn line(draft: &LineDraft) -> Result<LineInput, ServerFnError> {
         unit: unit(&draft.unit)?,
         ingredient: optional(&draft.ingredient),
         note: optional(&draft.note),
+        section_id: draft.section_id,
     })
 }
 

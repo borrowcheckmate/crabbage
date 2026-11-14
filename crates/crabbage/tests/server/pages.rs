@@ -241,17 +241,27 @@ async fn empty_admin_pages_say_so() {
 async fn sections_and_review_pages_list_their_rows() {
     let harness = Harness::start("pages-rows").await;
     let token = token_for(&harness, &["admin"]).await;
-    sections::create(&harness.pool, "Dairy").await.unwrap();
+    let dairy = sections::create(&harness.pool, "Dairy").await.unwrap();
     sqlx::query("INSERT INTO ingredients (name, pending_review) VALUES ('Okra', 1)")
         .execute(&harness.pool)
         .await
         .unwrap();
+    sqlx::query(
+        "INSERT INTO ingredients (name, pending_review, store_section_id) VALUES ('Kwark', 1, ?)",
+    )
+    .bind(dairy)
+    .execute(&harness.pool)
+    .await
+    .unwrap();
 
     let body = body_text(harness.get("/admin/sections", Some(&token)).await).await;
     assert!(body.contains("Dairy") && body.contains("Delete"), "{body}");
 
     let body = body_text(harness.get("/admin/review", Some(&token)).await).await;
     assert!(body.contains("Okra") && body.contains("Approve"), "{body}");
+    assert!(body.contains("Dairy</p>"), "{body}");
+    assert!(body.contains("No store section</p>"), "{body}");
+    assert!(body.contains("href=\"/admin/ingredients/"), "{body}");
 }
 
 #[tokio::test]

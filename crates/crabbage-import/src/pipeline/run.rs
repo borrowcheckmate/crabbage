@@ -10,6 +10,7 @@ pub async fn complete(
     draft: &Draft,
     candidates: &[Candidate<'_>],
     categories: &[(i64, &str)],
+    sections: &[(i64, &str)],
     ai: Option<&AiClient>,
     instance_language: &str,
 ) -> Imported {
@@ -18,14 +19,21 @@ pub async fn complete(
         return base;
     };
     match client
-        .complete(&prompt(draft, instance_language, candidates, categories))
+        .complete(&prompt(
+            draft,
+            instance_language,
+            candidates,
+            categories,
+            sections,
+        ))
         .await
     {
         Ok(ai_draft) => merge(
             &ai_draft,
             &base,
             candidates,
-            &categories.iter().map(|(id, _)| *id).collect::<Vec<_>>(),
+            &ids(categories),
+            &ids(sections),
         ),
         Err(error) => Imported {
             ai_error: Some(error.to_string()),
@@ -39,10 +47,11 @@ fn prompt(
     instance_language: &str,
     candidates: &[Candidate<'_>],
     categories: &[(i64, &str)],
+    sections: &[(i64, &str)],
 ) -> Prompt {
     Prompt {
         instructions: instructions(instance_language),
-        text: text(draft, candidates, categories),
+        text: text(draft, candidates, categories, sections),
         images: Vec::new(),
     }
 }
@@ -57,41 +66,58 @@ pub(super) fn instructions(instance_language: &str) -> String {
          briochebrood' has amount 8, unit piece, name 'briochebrood', note 'dikke sneetjes'; \
          'rood fruit naar keuze' has name 'rood fruit', note 'naar keuze'. Set ingredient_id \
          when a provided candidate clearly matches. Choose categories only from the provided \
-         category ids. Use only these \
+         category ids. For an ingredient line whose ingredient is not a known ingredient, set \
+         section_id to the store section it is shopped in, only from the provided store section \
+         ids; otherwise leave section_id out. Use only these \
          unit symbols: g, kg, ml, l, tsp, tbsp, piece, pinch, or none. Give every step the \
          zero-based indexes of the ingredient lines it uses. Keep the amounts for the stated \
          servings."
     )
 }
 
-pub(super) fn known_ingredients_and_categories(
+pub(super) fn ids(pairs: &[(i64, &str)]) -> Vec<i64> {
+    pairs.iter().map(|(id, _)| *id).collect()
+}
+
+pub(super) fn known_ingredients_categories_and_sections(
     candidates: &[Candidate<'_>],
     categories: &[(i64, &str)],
+    sections: &[(i64, &str)],
 ) -> String {
     format!(
-        "Known ingredients (id: name):\n{}\n\nRecipe categories (id: name):\n{}",
+        "Known ingredients (id: name):\n{}\n\nRecipe categories (id: name):\n{}\n\nStore sections (id: name):\n{}",
         candidates
             .iter()
             .take(400)
             .map(|candidate| format!("{}: {}", candidate.id, candidate.name))
             .collect::<Vec<_>>()
             .join("\n"),
-        categories
-            .iter()
-            .map(|(id, name)| format!("{id}: {name}"))
-            .collect::<Vec<_>>()
-            .join("\n"),
+        pairs_text(categories),
+        pairs_text(sections),
     )
 }
 
-fn text(draft: &Draft, candidates: &[Candidate<'_>], categories: &[(i64, &str)]) -> String {
+fn pairs_text(pairs: &[(i64, &str)]) -> String {
+    pairs
+        .iter()
+        .map(|(id, name)| format!("{id}: {name}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn text(
+    draft: &Draft,
+    candidates: &[Candidate<'_>],
+    categories: &[(i64, &str)],
+    sections: &[(i64, &str)],
+) -> String {
     let servings = draft
         .servings
         .map_or_else(|| "unknown".to_owned(), |servings| servings.to_string());
     format!(
         "Title: {}\nServings: {servings}\n\n{}\n\nIngredient lines:\n{}\n\nSteps:\n{}\n",
         draft.title,
-        known_ingredients_and_categories(candidates, categories),
+        known_ingredients_categories_and_sections(candidates, categories, sections),
         numbered(&draft.lines),
         numbered(&draft.steps),
     )
