@@ -54,6 +54,10 @@ async fn the_ai_is_called_for_a_complete_draft_and_prompt_has_candidates_and_cat
         instructions.contains("put all such text in") && instructions.contains("\"note\""),
         "{instructions}"
     );
+    assert!(
+        instructions.contains("Leave out equipment") && instructions.contains("only food"),
+        "{instructions}"
+    );
 }
 
 #[tokio::test]
