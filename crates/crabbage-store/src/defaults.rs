@@ -28,6 +28,8 @@ struct Section {
 struct Ingredient {
     en: Names,
     nl: Names,
+    #[serde(default)]
+    allergens: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -36,7 +38,8 @@ struct Names {
     aliases: Vec<String>,
 }
 
-/// Seeds the translated catalog once, leaving any existing catalog untouched.
+/// Seeds the translated catalog once, leaving any existing catalog untouched, and once gives the
+/// ingredients named like seeded ones, in either language, the seeded allergens.
 ///
 /// # Errors
 ///
@@ -55,21 +58,64 @@ pub async fn seed_defaults(pool: &SqlitePool, language: &str) -> Result<(), Stor
         sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM catalog_seed WHERE id = 1)")
             .fetch_one(&mut *tx)
             .await?;
-    if seeded {
-        return Ok(());
+    if !seeded {
+        seed_catalog(&mut tx, &catalog, language).await?;
     }
+    seed_allergens(&mut tx, &catalog).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn seed_catalog(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    catalog: &Catalog,
+    language: &str,
+) -> Result<(), sqlx::Error> {
     let has_catalog: bool = sqlx::query_scalar(
         "SELECT EXISTS (SELECT 1 FROM ingredients) OR EXISTS (SELECT 1 FROM store_sections) OR EXISTS (SELECT 1 FROM categories)",
     )
-    .fetch_one(&mut *tx)
+    .fetch_one(&mut **tx)
     .await?;
     sqlx::query("INSERT INTO catalog_seed (id) VALUES (1)")
-        .execute(&mut *tx)
+        .execute(&mut **tx)
         .await?;
     if !has_catalog {
-        insert_catalog(&mut tx, &catalog, language).await?;
+        insert_catalog(tx, catalog, language).await?;
     }
-    tx.commit().await?;
+    Ok(())
+}
+
+async fn seed_allergens(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    catalog: &Catalog,
+) -> Result<(), sqlx::Error> {
+    let seeded: bool =
+        sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM allergen_seed WHERE id = 1)")
+            .fetch_one(&mut **tx)
+            .await?;
+    if seeded {
+        return Ok(());
+    }
+    sqlx::query("INSERT INTO allergen_seed (id) VALUES (1)")
+        .execute(&mut **tx)
+        .await?;
+    for ingredient in catalog
+        .sections
+        .iter()
+        .flat_map(|section| &section.ingredients)
+    {
+        for allergen in &ingredient.allergens {
+            sqlx::query(
+                "INSERT OR IGNORE INTO ingredient_allergens (ingredient_id, allergen) \
+                 SELECT id, ? FROM ingredients WHERE name = ? COLLATE NOCASE OR name = ? COLLATE NOCASE",
+            )
+            .bind(allergen)
+            .bind(&ingredient.en.name)
+            .bind(&ingredient.nl.name)
+            .execute(&mut **tx)
+            .await?;
+        }
+    }
     Ok(())
 }
 
@@ -160,6 +206,34 @@ mod tests {
             }
             for alias in aliases {
                 assert!(!names.contains(&alias), "{alias}");
+            }
+        }
+    }
+
+    #[test]
+    fn seeded_allergens_are_known_and_go_to_one_ingredient_in_either_language() {
+        let catalog: Catalog = serde_json::from_str(DATA).unwrap();
+        let ingredients: Vec<&Ingredient> = catalog
+            .sections
+            .iter()
+            .flat_map(|section| &section.ingredients)
+            .collect();
+        for (index, ingredient) in ingredients.iter().enumerate() {
+            if ingredient.allergens.is_empty() {
+                continue;
+            }
+            for allergen in &ingredient.allergens {
+                assert!(
+                    crabbage_domain::allergens::Allergen::from_code(allergen).is_some(),
+                    "{allergen}"
+                );
+            }
+            for (other_index, other) in ingredients.iter().enumerate() {
+                let same_name = [&other.en.name, &other.nl.name].into_iter().any(|name| {
+                    name.eq_ignore_ascii_case(&ingredient.en.name)
+                        || name.eq_ignore_ascii_case(&ingredient.nl.name)
+                });
+                assert!(index == other_index || !same_name, "{}", ingredient.en.name);
             }
         }
     }

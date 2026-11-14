@@ -13,6 +13,11 @@ impl From<Ingredient> for IngredientRow {
             section_id: ingredient.store_section_id,
             pending_review: ingredient.pending_review,
             aliases: ingredient.aliases,
+            allergens: ingredient
+                .allergens
+                .iter()
+                .map(|allergen| allergen.code().to_owned())
+                .collect(),
         }
     }
 }
