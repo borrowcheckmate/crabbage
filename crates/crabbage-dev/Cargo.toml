@@ -17,8 +17,8 @@ openidconnect.workspace = true
 rsa.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
-crabbage-domain = { version = "0.1.0", path = "../crabbage-domain" }
-crabbage-store = { version = "0.1.0", path = "../crabbage-store" }
+crabbage-domain = { version = "0.2.0", path = "../crabbage-domain" }
+crabbage-store = { version = "0.2.0", path = "../crabbage-store" }
 image.workspace = true
 sqlx.workspace = true
 url.workspace = true
