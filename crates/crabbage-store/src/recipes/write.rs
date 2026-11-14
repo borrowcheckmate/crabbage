@@ -147,7 +147,7 @@ async fn write_line(
     line: &LineInput,
 ) -> Result<i64, StoreError> {
     let ingredient_id = match line.ingredient.as_deref().map(str::trim) {
-        Some(name) if !name.is_empty() => Some(ingredient_id(conn, name).await?),
+        Some(name) if !name.is_empty() => Some(ingredient_id(conn, name, line.section_id).await?),
         Some(_) | None => None,
     };
     let id = sqlx::query_scalar(
@@ -167,7 +167,11 @@ async fn write_line(
 
 /// The id of the ingredient whose name or alias is `name`, ignoring case. An unknown name creates
 /// an ingredient waiting for review.
-async fn ingredient_id(conn: &mut SqliteConnection, name: &str) -> Result<i64, StoreError> {
+async fn ingredient_id(
+    conn: &mut SqliteConnection,
+    name: &str,
+    section_id: Option<i64>,
+) -> Result<i64, StoreError> {
     let known: Option<i64> = sqlx::query_scalar(
         "SELECT id FROM ingredients WHERE name = ?1 \
          UNION ALL SELECT ingredient_id FROM ingredient_aliases WHERE alias = ?1 LIMIT 1",
@@ -179,9 +183,11 @@ async fn ingredient_id(conn: &mut SqliteConnection, name: &str) -> Result<i64, S
         return Ok(id);
     }
     let id = sqlx::query_scalar(
-        "INSERT INTO ingredients (name, pending_review) VALUES (?, 1) RETURNING id",
+        "INSERT INTO ingredients (name, pending_review, store_section_id) \
+         VALUES (?, 1, (SELECT id FROM store_sections WHERE id = ?)) RETURNING id",
     )
     .bind(capitalized(name))
+    .bind(section_id)
     .fetch_one(conn)
     .await?;
     Ok(id)

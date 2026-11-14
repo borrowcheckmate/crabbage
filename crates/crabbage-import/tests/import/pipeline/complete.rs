@@ -33,6 +33,7 @@ async fn the_ai_is_called_for_a_complete_draft_and_prompt_has_candidates_and_cat
         &page,
         &[flour],
         &[(7, "Breakfast")],
+        &[(5, "Dairy")],
         Some(&client(&base)),
         "en",
     )
@@ -65,7 +66,7 @@ async fn the_ai_is_called_for_an_unmatched_line_and_its_draft_is_merged() {
     let (base, mut requests) = serve("200 OK", &completion(VALID)).await;
     let flour = candidate(1, "flour");
     let page = draft(&["200 g flour", "2 eggs"], &["Whisk the flour and eggs."]);
-    let result = complete(&page, &[flour], &[], Some(&client(&base)), "en").await;
+    let result = complete(&page, &[flour], &[], &[], Some(&client(&base)), "en").await;
     assert_eq!(result.title, "Fluffy pancakes");
     assert_eq!(result.lines[0].ingredient_id, Some(1));
     assert_eq!(result.unmatched, vec!["eggs".to_owned()]);
@@ -91,7 +92,7 @@ async fn the_ai_is_called_when_the_page_is_in_another_language() {
     let flour = candidate(1, "flour");
     let mut page = draft(&["200 g flour"], &["Mix the flour."]);
     page.language = Some("nl-NL".to_owned());
-    let result = complete(&page, &[flour], &[], Some(&client(&base)), "en").await;
+    let result = complete(&page, &[flour], &[], &[], Some(&client(&base)), "en").await;
     assert_eq!(result.title, "Fluffy pancakes");
     assert!(requests.try_recv().is_ok());
 }
@@ -101,7 +102,7 @@ async fn an_ai_failure_keeps_the_reading_and_sets_the_error() {
     let (base, _requests) = serve("500 Internal Server Error", "{}").await;
     let flour = candidate(1, "flour");
     let page = draft(&["200 g flour", "2 eggs"], &["Whisk the flour and eggs."]);
-    let result = complete(&page, &[flour], &[], Some(&client(&base)), "en").await;
+    let result = complete(&page, &[flour], &[], &[], Some(&client(&base)), "en").await;
     let reading = from_draft(&page, &[flour]);
     assert_eq!(
         result.ai_error.as_deref(),
@@ -120,6 +121,43 @@ async fn an_ai_failure_keeps_the_reading_and_sets_the_error() {
 async fn without_an_ai_config_the_reading_is_returned_unchanged() {
     let flour = candidate(1, "flour");
     let page = draft(&["200 g flour", "2 eggs"], &["Whisk the flour and eggs."]);
-    let result = complete(&page, &[flour], &[], None, "en").await;
+    let result = complete(&page, &[flour], &[], &[], None, "en").await;
     assert_eq!(result, from_draft(&page, &[flour]));
+}
+
+#[tokio::test]
+async fn the_store_sections_are_listed_and_a_valid_section_is_kept_for_a_new_ingredient() {
+    let answer = r#"{"title":"Fluffy pancakes","servings":2,"lines":[{"amount":200,"unit":"g","name":"flour","note":null,"ingredient_id":null},{"amount":2,"unit":"piece","name":"eggs","note":null,"ingredient_id":null,"section_id":5}],"steps":[{"text":"Whisk.","lines":[0,1]}]}"#;
+    let (base, mut requests) = serve("200 OK", &completion(answer)).await;
+    let flour = candidate(1, "flour");
+    let page = draft(&["200 g flour", "2 eggs"], &["Whisk the flour and eggs."]);
+    let result = complete(
+        &page,
+        &[flour],
+        &[],
+        &[(5, "Dairy"), (6, "Bakery")],
+        Some(&client(&base)),
+        "en",
+    )
+    .await;
+    let request = requests.try_recv().expect("one request");
+    let body = body_of(&request);
+    let text = body["messages"][1]["content"][0]["text"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(
+        text.contains("Store sections (id: name):\n5: Dairy\n6: Bakery"),
+        "{text}"
+    );
+    assert_eq!(result.lines[0].section_id, None);
+    assert_eq!(result.lines[1].section_id, Some(5));
+}
+
+#[tokio::test]
+async fn an_invalid_store_section_from_the_ai_is_dropped() {
+    let answer = r#"{"title":"Fluffy pancakes","servings":2,"lines":[{"amount":2,"unit":"piece","name":"eggs","note":null,"ingredient_id":null,"section_id":99}],"steps":[{"text":"Whisk.","lines":[0]}]}"#;
+    let (base, _requests) = serve("200 OK", &completion(answer)).await;
+    let page = draft(&["2 eggs"], &["Whisk the eggs."]);
+    let result = complete(&page, &[], &[], &[(5, "Dairy")], Some(&client(&base)), "en").await;
+    assert_eq!(result.lines[0].section_id, None);
 }

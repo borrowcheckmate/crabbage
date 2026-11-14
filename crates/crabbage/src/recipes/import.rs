@@ -10,6 +10,7 @@ use crabbage_import::web::Draft;
 use crabbage_import::web::{ImportError, Limits, extract, fetch};
 use crabbage_store::catalog::categories;
 use crabbage_store::catalog::ingredients::{Ingredient, list};
+use crabbage_store::catalog::sections::{self, Section};
 use crabbage_store::settings;
 use leptos::prelude::ServerFnError;
 use sqlx::sqlite::SqlitePool;
@@ -25,6 +26,14 @@ const DEFAULT_SERVINGS: &str = "2";
 /// unit symbols, ingredient names and notes. A step's line position that is not a line of the
 /// recipe is dropped.
 #[must_use]
+/// The ids and names of `sections`, as the import pipeline takes them.
+pub(crate) fn section_pairs(sections: &[Section]) -> Vec<(i64, &str)> {
+    sections
+        .iter()
+        .map(|section| (section.id, section.name.as_str()))
+        .collect()
+}
+
 pub(crate) fn recipe_draft(imported: &Imported) -> RecipeDraft {
     let lines: Vec<LineDraft> = imported
         .lines
@@ -40,6 +49,7 @@ pub(crate) fn recipe_draft(imported: &Imported) -> RecipeDraft {
                 .unwrap_or_default(),
             ingredient: line.name.clone(),
             note: line.note.clone().unwrap_or_default(),
+            section_id: line.section_id,
         })
         .collect();
     let line_count = lines.len();
@@ -128,6 +138,9 @@ pub(crate) async fn read_page(
         .iter()
         .map(|category| (category.id, category.name.as_str()))
         .collect();
+    let section_rows = sections::list(pool)
+        .await
+        .map_err(|error| store_failure(&error))?;
     let settings = settings::get(pool)
         .await
         .map_err(|_error| ServerFnError::new(t("catalog.error.database")))?;
@@ -136,6 +149,7 @@ pub(crate) async fn read_page(
         &draft,
         &candidates,
         &category_refs,
+        &section_pairs(&section_rows),
         ai.as_ref(),
         config.language.code(),
     )
@@ -178,6 +192,9 @@ pub(crate) async fn read_text(
         .iter()
         .map(|category| (category.id, category.name.as_str()))
         .collect();
+    let section_rows = sections::list(pool)
+        .await
+        .map_err(|error| store_failure(&error))?;
     let settings = settings::get(pool)
         .await
         .map_err(|_error| ServerFnError::new(t("catalog.error.database")))?;
@@ -186,6 +203,7 @@ pub(crate) async fn read_text(
         &draft,
         &candidates,
         &category_refs,
+        &section_pairs(&section_rows),
         ai.as_ref(),
         config.language.code(),
     )
@@ -262,6 +280,7 @@ mod tests {
             name: name.to_owned(),
             note: Some("chopped".to_owned()),
             ingredient_id: id,
+            section_id: None,
             original: name.to_owned(),
         }
     }
@@ -306,6 +325,7 @@ mod tests {
                 unit: "g".to_owned(),
                 ingredient: "Okra".to_owned(),
                 note: "chopped".to_owned(),
+                section_id: None,
             }
         );
         assert_eq!(draft.lines[1].amount, "0.5");

@@ -12,6 +12,7 @@ fn line(amount: f64, unit: &str, ingredient: &str, note: Option<&str>) -> LineIn
         unit: Some(unit.to_owned()),
         ingredient: Some(ingredient.to_owned()),
         note: note.map(str::to_owned),
+        section_id: None,
     }
 }
 
@@ -38,6 +39,7 @@ async fn a_recipe_round_trips_with_lines_steps_and_links() {
                 unit: Some("to taste".to_owned()),
                 ingredient: None,
                 note: None,
+                section_id: None,
             },
         ],
         vec![

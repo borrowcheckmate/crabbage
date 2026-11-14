@@ -32,6 +32,7 @@ pub fn from_draft(draft: &Draft, candidates: &[Candidate<'_>]) -> Imported {
                 None
             },
             original: line.original.clone(),
+            section_id: None,
         })
         .collect();
     let mut unmatched = matches.unmatched;

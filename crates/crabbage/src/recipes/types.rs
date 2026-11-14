@@ -128,6 +128,9 @@ pub(crate) struct LineDraft {
     pub(crate) ingredient: String,
     /// The note, as typed.
     pub(crate) note: String,
+    /// The store section for the ingredient when it is new to the catalogue, if the import chose one.
+    #[serde(default)]
+    pub(crate) section_id: Option<i64>,
 }
 
 /// A step of a recipe form.
