@@ -294,6 +294,8 @@
   "home.no_household": "Dit account heeft geen huishouden. Vraag een beheerder om er een toe te voegen.",
   "home.today_meal": "Plan voor vanavond",
   "home.rest": "Rustdag",
+  "home.rest_context": "Vandaag hoeft er niets gekookt te worden.",
+  "home.empty_context": "Voeg een maaltijd toe aan de weekplanning om hem hier te zien.",
   "home.open_plan": "Weekplanning openen",
   "home.view_recipe": "Recept bekijken",
   "home.empty": "Er is niets gepland voor vandaag.",

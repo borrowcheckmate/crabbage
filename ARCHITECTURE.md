@@ -241,7 +241,7 @@ To add a language: add `locales/<code>.json` with the same keys, add a `Language
 
 ### Styling
 
-Pages get their look from `style/main.css` and never from inline styles. The stylesheet defines the light and dark product tokens, bounded 1024px workspace, 68ch readable text measure, 560px paired-pane and 900px side-navigation breakpoints, compact top bar and side navigation that stay in view on desktops at least 501px tall (`--topbar-height` offsets the other sticky panels and anchor scrolling), safe-area-aware bottom navigation, control states, focus and reduced-motion rules. Use the plain elements (`button`, `input`, `select`, `label`, `form`) and these shared classes:
+Pages get their look from `style/main.css` and never from inline styles. The stylesheet defines the light and dark product tokens, a 1024px workspace centred in the area right of the side navigation (pages fill it, centred state and administration cards stay centred in it), recipe cards in an auto-fill grid of at least 16rem, 68ch readable text measure, 560px paired-pane and 900px side-navigation breakpoints, compact top bar and side navigation that stay in view on desktops at least 501px tall (`--topbar-height` offsets the other sticky panels and anchor scrolling), safe-area-aware bottom navigation, control states, focus and reduced-motion rules. Use the plain elements (`button`, `input`, `select`, `label`, `form`) and these shared classes:
 
 | Class | Use |
 | --- | --- |
@@ -260,6 +260,7 @@ Pages get their look from `style/main.css` and never from inline styles. The sty
 | `.secondary` | A button that is not the main action, such as sign-out and remove |
 | `.admin-page`, `.admin-list`, `.admin-row`, `.admin-status` | Bounded administration pages, divider lists and status rows |
 | `.state-card`, `.state-notice`, `.button-link` | Localized not-found and loading states with recovery actions |
+| `.today-day` | Today's day state when no meal is planned or it is a rest day: a heading-sized day, one line of context and a plan button |
 
 Forms stack their fields on phones and sit side by side from 40rem. Message texts come from `t` as everywhere else.
 

@@ -200,7 +200,7 @@ fn today_view(data: TodayData) -> impl IntoView {
             <div class="today-layout">
                 <section class="today-meal">
                     {match meal.clone() {
-                        Some(meal) if meal.rest => view! { <div class="today-rest"><p>{t("home.rest")}</p><a class="today-action secondary" href="/plan">{t("home.open_plan")}</a></div> }.into_any(),
+                        Some(meal) if meal.rest => view! { <div class="today-day"><h2>{t("home.rest")}</h2><p>{t("home.rest_context")}</p><a class="button" href="/plan">{t("home.open_plan")}</a></div> }.into_any(),
                         Some(meal) if meal.title.is_some() => {
                             let id = meal.recipe_id.unwrap_or_default();
                             let title = meal.title.unwrap_or_default();
@@ -216,7 +216,7 @@ fn today_view(data: TodayData) -> impl IntoView {
                                 <a class="today-action" href=format!("/recipes/{id}/cook?servings={}", meal.servings)><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Zm3 0a6 6 0 0 1 12 0M8 4l1 2m7-2-1 2M12 14v3"/></svg>{t("recipe.button.start_cooking")}<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
                             </article> }.into_any()
                         }
-                        _ => view! { <div class="today-empty"><p>{t("home.empty")}</p><a class="today-action secondary" href="/plan">{t("home.open_plan")}</a></div> }.into_any(),
+                        _ => view! { <div class="today-day"><h2>{t("home.empty")}</h2><p>{t("home.empty_context")}</p><a class="button" href="/plan">{t("home.open_plan")}</a></div> }.into_any(),
                     }}
                 </section>
                 <div class="today-side">
