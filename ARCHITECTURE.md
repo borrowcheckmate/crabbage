@@ -53,7 +53,7 @@ Their responsibilities:
 
 ## crates/crabbage-import
 
-Parses free-text ingredient lines, matches their names to catalogue ingredients, reads recipes from web pages and completes them with AI when needed. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version and TLS stack as `openidconnect`). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser. The AI client posts a recipe's text and photos to an OpenAI-compatible chat completions endpoint (`reqwest`, the key as a bearer token) and reads the JSON draft from the first answer, checking it before use.
+Parses free-text ingredient lines, matches their names to catalogue ingredients, reads recipes from web pages and completes them with AI when needed. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version as the app's OpenID Connect client). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser. The AI client posts a recipe's text and photos to an OpenAI-compatible chat completions endpoint (`reqwest`, the key as a bearer token) and reads the JSON draft from the first answer, checking it before use.
 
 | Module | Responsibility |
 | --- | --- |
@@ -267,7 +267,7 @@ Forms stack their fields on phones and sit side by side from 40rem. Message text
 
 | Module | Responsibility |
 | --- | --- |
-| `oidc.rs` | `Oidc`: discovery of `OIDC_ISSUER_URL`, the authorization request (code, PKCE S256, nonce, state, scopes `openid profile groups`), the code exchange and the ID token check. Name comes from `name`, then `preferred_username`, then the subject. `groups`, `crabbage_role` and `crabbage_household` claims are returned in `Identity`; missing or unsupported household values count as none. The HTTP client does not follow redirects |
+| `oidc.rs` | `Oidc`: discovery of `OIDC_ISSUER_URL`, the authorization request (code, PKCE S256, nonce, state, scopes `openid profile groups`), the code exchange and the ID token check. Name comes from `name`, then `preferred_username`, then the subject. `groups`, `crabbage_role` and `crabbage_household` claims are returned in `Identity`; missing or unsupported household values count as none. `HttpClient` is a newtype over the `reqwest` client that implements `openidconnect`'s `AsyncHttpClient`; the client does not follow redirects |
 | `login.rs` | `GET /auth/login`: stores a login attempt, sets the `crabbage_login` cookie (the state, `Path=/auth/`, 10 minutes) and redirects (303) to the provider |
 | `callback.rs` | `GET /auth/callback`: requires the `crabbage_login` cookie to equal `state` (otherwise 400, attempt kept), takes the attempt by `state` (unknown or expired: 400), exchanges the code, verifies the ID token and nonce (failure: 400), upserts the user, derives membership from groups and custom claims and syncs it (`households::sync_membership`), creates a session, sets the session cookie, clears the login cookie and redirects to `/` |
 | `logout.rs` | `POST /auth/logout`: deletes the session row, clears the cookie, redirects to `/` |
