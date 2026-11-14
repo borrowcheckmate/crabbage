@@ -3,7 +3,10 @@ use axum::extract::{Extension, Form, Path, State};
 use axum::http::StatusCode;
 use axum::response::Redirect;
 use axum::routing::post;
+use std::collections::HashMap;
+
 use crabbage_domain::dates::{format_iso_date, parse_iso_date};
+use crabbage_domain::meal_types::MealType;
 use crabbage_domain::planner::{Candidate, DayPlan, HistoryEntry, PlanningDay};
 use crabbage_store::planner::{self, PlanEntry, PlannerSettings};
 use crabbage_store::shopping;
@@ -51,6 +54,8 @@ struct SettingsForm {
     friday: String,
     saturday: String,
     sunday: String,
+    #[serde(flatten)]
+    meal_types: HashMap<String, String>,
 }
 
 async fn household(state: &AppState, user: &SessionUser) -> Result<i64, StatusCode> {
@@ -163,6 +168,7 @@ async fn candidates(
             .flatten()
             .copied()
             .collect::<Vec<_>>(),
+        &settings.meal_types,
     )
     .await
     .map_err(internal_error)?
@@ -217,7 +223,7 @@ async fn reroll(
         .await
         .map_err(internal_error)?;
     let current = existing.first().and_then(|entry| entry.recipe_id);
-    let mut choices: Vec<_> = reroll_candidates(&state, category)
+    let mut choices: Vec<_> = reroll_candidates(&state, category, &settings.meal_types)
         .await?
         .into_iter()
         .filter(|id| Some(*id) != current)
@@ -257,12 +263,13 @@ async fn reroll(
 async fn reroll_candidates(
     state: &AppState,
     category: Option<i64>,
+    meal_types: &[MealType],
 ) -> Result<Vec<i64>, StatusCode> {
     let ids = match category {
-        Some(category) => planner::recipes_in_categories(&state.pool, &[category])
+        Some(category) => planner::recipes_in_categories(&state.pool, &[category], meal_types)
             .await
             .map(|pairs| pairs.into_iter().map(|(_, id)| id).collect()),
-        None => planner::recipe_ids(&state.pool).await,
+        None => planner::recipe_ids(&state.pool, meal_types).await,
     };
     ids.map_err(internal_error)
 }
@@ -275,7 +282,7 @@ async fn recipe(
 ) -> Result<Redirect, StatusCode> {
     parse_iso_date(&day).ok_or(StatusCode::BAD_REQUEST)?;
     let household = household(&state, &user).await?;
-    let recipes = planner::recipe_titles(&state.pool)
+    let recipes = planner::recipe_titles(&state.pool, &[])
         .await
         .map_err(internal_error)?;
     let rest_label = Messages::for_language(state.config.language).get("plan.rest");
@@ -388,11 +395,19 @@ async fn settings(
             lookback_weeks,
             servings,
             weekdays,
+            meal_types: checked_meal_types(&form.meal_types),
         },
     )
     .await
     .map_err(internal_error)?;
     Ok(Redirect::to("/plan"))
+}
+
+fn checked_meal_types(fields: &HashMap<String, String>) -> Vec<MealType> {
+    MealType::ALL
+        .into_iter()
+        .filter(|meal| fields.contains_key(&format!("meal_{}", meal.code())))
+        .collect()
 }
 
 fn date(day: i64) -> Result<String, StatusCode> {

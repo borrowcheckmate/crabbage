@@ -1,6 +1,7 @@
 //! Household planner settings and dated entries stay isolated and validate their inputs.
 
 use crate::common::database;
+use crabbage_domain::meal_types::MealType;
 use crabbage_store::StoreError;
 use crabbage_store::planner::{
     PlanEntry, PlannerSettings, categories_exist, entries, history, recipe_exists, recipe_titles,
@@ -58,12 +59,14 @@ async fn settings_default_then_round_trip_per_household() {
             lookback_weeks: 1,
             servings: 4,
             weekdays: [None; 7],
+            meal_types: vec![MealType::Dinner],
         }
     );
     let saved = PlannerSettings {
         lookback_weeks: 3,
         servings: 6,
         weekdays: [Some(1), None, Some(2), None, Some(1), None, None],
+        meal_types: vec![MealType::Breakfast, MealType::Lunch],
     };
     sqlx::query("INSERT INTO categories (id, name) VALUES (1, 'Breakfast'), (2, 'Dinner')")
         .execute(&pool)
@@ -152,11 +155,13 @@ async fn invalid_settings_servings_and_dates_are_rejected() {
             lookback_weeks: -1,
             servings: 4,
             weekdays: [None; 7],
+            meal_types: Vec::new(),
         },
         PlannerSettings {
             lookback_weeks: 1,
             servings: 0,
             weekdays: [None; 7],
+            meal_types: Vec::new(),
         },
     ] {
         assert!(matches!(
@@ -212,10 +217,10 @@ async fn planner_recipe_lookups_cover_candidates_and_existence() {
         .await
         .unwrap();
     assert_eq!(
-        recipes_in_categories(&pool, &[2, 1]).await.unwrap(),
+        recipes_in_categories(&pool, &[2, 1], &[]).await.unwrap(),
         [(1, first), (2, second)]
     );
-    assert_eq!(recipes_in_categories(&pool, &[]).await.unwrap(), []);
+    assert_eq!(recipes_in_categories(&pool, &[], &[]).await.unwrap(), []);
     assert!(recipe_exists(&pool, first).await.unwrap());
     assert!(!recipe_exists(&pool, i64::MAX).await.unwrap());
     sqlx::query("UPDATE recipes SET title = 'apple pie' WHERE id = ?")
@@ -224,7 +229,7 @@ async fn planner_recipe_lookups_cover_candidates_and_existence() {
         .await
         .unwrap();
     assert_eq!(
-        recipe_titles(&pool).await.unwrap(),
+        recipe_titles(&pool, &[]).await.unwrap(),
         [(second, "apple pie".to_owned()), (first, "Soup".to_owned())]
     );
     assert!(

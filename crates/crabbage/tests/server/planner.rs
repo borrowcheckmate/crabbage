@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use crabbage_domain::meal_types::MealType;
 use crabbage_store::planner::{PlanEntry, PlannerSettings, entries, save_settings, settings};
 
 use crate::common::{Harness, body_text, sign_in_as};
@@ -46,6 +47,7 @@ async fn setup(name: &str) -> (Harness, String, i64, Vec<i64>) {
                 Some(CATEGORY),
                 Some(CATEGORY),
             ],
+            meal_types: Vec::new(),
         },
     )
     .await
@@ -118,6 +120,7 @@ async fn reroll_on_a_weekday_without_category_picks_from_all_recipes() {
             lookback_weeks: 0,
             servings: 3,
             weekdays: [None; 7],
+            meal_types: Vec::new(),
         },
     )
     .await
@@ -345,4 +348,64 @@ async fn plan_page_adds_the_week_to_shopping_once() {
     .await
     .expect("shopping count");
     assert_eq!(count, 3);
+}
+
+fn meal_box<'a>(page: &'a str, code: &str) -> &'a str {
+    let name = format!("name=\"meal_{code}\"");
+    page.split("<input")
+        .find(|input| input.contains(&name))
+        .and_then(|input| input.split('>').next())
+        .unwrap_or_default()
+}
+
+#[tokio::test]
+async fn the_planner_fills_the_week_and_lists_recipes_of_its_meal_types_or_of_none() {
+    let (harness, token, owner, recipes) = setup("planner-meal-types").await;
+    let home = household(&harness, owner).await;
+    sqlx::query("INSERT INTO recipe_meal_types (recipe_id, meal_type) VALUES (?, 'lunch')")
+        .bind(recipes[0])
+        .execute(&harness.pool)
+        .await
+        .expect("meal type set");
+    let settings_form = "lookback_weeks=0&servings=2&monday=71&tuesday=71&wednesday=71&thursday=71&friday=71&saturday=71&sunday=71&meal_dinner=on&meal_snack=on";
+    assert_eq!(
+        post(&harness, &token, "/plan/settings", settings_form).await,
+        StatusCode::SEE_OTHER
+    );
+    let saved = settings(&harness.pool, home).await.expect("settings read");
+    assert_eq!(saved.meal_types, [MealType::Dinner, MealType::Snack]);
+
+    assert_eq!(
+        post(&harness, &token, "/plan/generate", "week=2024-03-04").await,
+        StatusCode::SEE_OTHER
+    );
+    let planned = entries(&harness.pool, home, "2024-03-04", "2024-03-10")
+        .await
+        .expect("week read");
+    assert_eq!(planned.len(), 7);
+    assert!(
+        planned
+            .iter()
+            .all(|entry| entry.recipe_id == Some(recipes[1]))
+    );
+    assert_eq!(
+        post(&harness, &token, "/plan/2024-03-04/reroll", "").await,
+        StatusCode::SEE_OTHER
+    );
+    let rerolled = entries(&harness.pool, home, "2024-03-04", "2024-03-04")
+        .await
+        .expect("day read");
+    assert_eq!(rerolled[0].recipe_id, Some(recipes[1]));
+
+    let page = body_text(harness.get("/plan?week=2024-03-04", Some(&token)).await).await;
+    assert!(
+        page.contains("<option value=\"Planner recipe B\">"),
+        "{page}"
+    );
+    assert!(
+        !page.contains("<option value=\"Planner recipe A\">"),
+        "{page}"
+    );
+    assert!(meal_box(&page, "dinner").contains("checked"), "{page}");
+    assert!(!meal_box(&page, "lunch").contains("checked"), "{page}");
 }

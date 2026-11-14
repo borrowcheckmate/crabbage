@@ -1,11 +1,13 @@
 //! Reading household planner settings, entries and recipe history.
 
+use crabbage_domain::meal_types::MealType;
 use sqlx::sqlite::SqlitePool;
 
 use super::model::{PlanEntry, PlannerSettings};
 use crate::StoreError;
 
-/// Returns saved settings, or the planner defaults when none have been saved.
+/// Returns saved settings, or the planner defaults when none have been saved: one lookback week,
+/// four servings, rest every day and dinner.
 ///
 /// # Errors
 ///
@@ -23,10 +25,20 @@ pub async fn settings(pool: &SqlitePool, household: i64) -> Result<PlannerSettin
     .bind(household)
     .fetch_all(pool)
     .await?;
+    let meal_types: Vec<String> =
+        sqlx::query_scalar("SELECT meal_type FROM planner_meal_types WHERE household_id = ?")
+            .bind(household)
+            .fetch_all(pool)
+            .await?;
     let mut result = PlannerSettings {
         lookback_weeks: saved.map_or(1, |setting| setting.0),
         servings: saved.map_or(4, |setting| setting.1),
         weekdays: [None; 7],
+        meal_types: if saved.is_some() {
+            MealType::from_codes(meal_types.iter().map(String::as_str))
+        } else {
+            vec![MealType::Dinner]
+        },
     };
     for (weekday, category) in weekdays {
         if let Ok(index) = usize::try_from(weekday)
