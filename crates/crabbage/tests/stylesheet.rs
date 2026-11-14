@@ -318,6 +318,16 @@ fn import_review_amounts_have_a_fixed_column_and_a_hidden_missing_text() {
 }
 
 #[test]
+fn planner_meal_type_boxes_sit_in_a_wrapping_row_beside_their_names() {
+    let css = stylesheet();
+    let group = declarations_of(&css, ".plan-meal-types").unwrap_or_default();
+    let label = declarations_of(&css, ".plan-meal-types label").unwrap_or_default();
+    assert!(group.contains("flex-wrap: wrap"));
+    assert!(label.contains("display: flex"));
+    assert!(label.contains("align-items: center"));
+}
+
+#[test]
 fn no_fixed_width_is_wider_than_a_phone_screen() {
     let css = stylesheet();
     for declaration in css.split([';', '{', '}']).map(str::trim) {

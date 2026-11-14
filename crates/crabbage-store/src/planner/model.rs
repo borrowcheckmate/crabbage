@@ -1,5 +1,6 @@
 //! Planner records returned by the store and accepted for writes.
 
+use crabbage_domain::meal_types::MealType;
 use sqlx::FromRow;
 
 /// Household planner preferences. Weekdays use Monday as index zero; `None` means rest.
@@ -11,6 +12,8 @@ pub struct PlannerSettings {
     pub servings: i64,
     /// Category for each weekday, with Monday at index zero and `None` for a rest day.
     pub weekdays: [Option<i64>; 7],
+    /// Meal types the planner picks from, where none means any. Untyped recipes always qualify.
+    pub meal_types: Vec<MealType>,
 }
 
 /// A household's recipe or rest entry for one ISO calendar date.

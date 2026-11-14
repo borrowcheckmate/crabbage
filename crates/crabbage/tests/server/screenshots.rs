@@ -113,6 +113,7 @@ async fn write_pages() {
                 None,
                 Some(breakfast),
             ],
+            meal_types: Vec::new(),
         },
     )
     .await

@@ -5,7 +5,8 @@ use sqlx::sqlite::SqlitePool;
 use super::model::{PlanEntry, PlannerSettings};
 use crate::{StoreError, begin_write};
 
-/// Saves planner settings and the category or rest-day choice for every weekday.
+/// Saves planner settings, the category or rest-day choice for every weekday and the planned
+/// meal types.
 ///
 /// # Errors
 ///
@@ -40,6 +41,19 @@ pub async fn save_settings(
         .bind(household)
         .bind(i64::try_from(weekday).map_err(|_error| StoreError::InvalidPlannerSettings)?)
         .bind(category)
+        .execute(&mut *tx)
+        .await?;
+    }
+    sqlx::query("DELETE FROM planner_meal_types WHERE household_id = ?")
+        .bind(household)
+        .execute(&mut *tx)
+        .await?;
+    for meal_type in &settings.meal_types {
+        sqlx::query(
+            "INSERT OR IGNORE INTO planner_meal_types (household_id, meal_type) VALUES (?, ?)",
+        )
+        .bind(household)
+        .bind(meal_type.code())
         .execute(&mut *tx)
         .await?;
     }

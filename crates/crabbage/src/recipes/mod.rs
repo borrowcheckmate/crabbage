@@ -19,7 +19,7 @@ mod import_photos;
 mod ingredients;
 mod line_text;
 mod list;
-mod meal_types;
+pub(crate) mod meal_types;
 mod pages;
 #[cfg(feature = "ssr")]
 mod photo;
