@@ -3,7 +3,9 @@
 
 use leptos::prelude::*;
 
-use super::timers::{Timer, cancel, clock, finished, remaining_ms, soonest_first, start};
+use super::timers::{
+    Timer, any_finished, cancel, clock, finished, remaining_ms, soonest_first, start, summary,
+};
 use crate::i18n::{t, t_with};
 use crate::recipes::duration::duration_text;
 
@@ -18,15 +20,18 @@ const fn now_ms() -> f64 {
 #[cfg(not(feature = "hydrate"))]
 const fn save(_timers: &[Timer]) {}
 
-/// The tray of running timers, one row each. Rendered empty on the server and filled in the browser.
+/// The tray of running timers, one row each, and the summary that shows the soonest one while the
+/// tray is closed. Rendered empty on the server and filled in the browser. The announcements go to
+/// a polite live region outside the tray: starts and ends only, never the ticking clock.
 #[component]
 pub(crate) fn TimerTray(timers: RwSignal<Vec<Timer>>, now: RwSignal<f64>) -> impl IntoView {
+    let announce = expect_context::<RwSignal<String>>();
     #[cfg(feature = "hydrate")]
-    super::tray_client::attach(timers, now);
+    super::tray_client::attach(timers, now, announce);
     view! {
         <details class="timer-tray">
-            <summary class="timer-summary">
-                {move || t_with("timer.tray.count", &[("count", &timers.with(|list| list.len().to_string()))])}
+            <summary class="timer-summary" class:finished=move || now.with(|at| timers.with(|list| any_finished(list, *at)))>
+                {move || now.with(|at| timers.with(|list| summary(list, *at, t("timer.done")))).unwrap_or_default()}
             </summary>
             <section class="timer-panel" aria-label=t("timer.tray")>
                 <ul class="timer-list">
@@ -39,6 +44,7 @@ pub(crate) fn TimerTray(timers: RwSignal<Vec<Timer>>, now: RwSignal<f64>) -> imp
                 </ul>
             </section>
         </details>
+        <p class="timer-announce" aria-live="polite">{move || announce.get()}</p>
     }
 }
 
@@ -47,6 +53,7 @@ pub(crate) fn start_button(timers: RwSignal<Vec<Timer>>, step: usize, seconds: u
     let number = step.to_string();
     let label = t_with("timer.label", &[("step", &number)]);
     let started = label.clone();
+    let announce = expect_context::<RwSignal<String>>();
     let time = if seconds.is_multiple_of(60) {
         t_with(
             "timer.duration.minutes",
@@ -63,7 +70,7 @@ pub(crate) fn start_button(timers: RwSignal<Vec<Timer>>, step: usize, seconds: u
             data-seconds=seconds.to_string()
             data-label=label
             aria-label=aria
-            on:click=move |_| start_timer(timers, started.clone(), seconds)
+            on:click=move |_| start_timer(timers, announce, started.clone(), seconds)
         >
             <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2h6m-3 0v3"/></svg>
             {t_with("timer.start", &[("time", &time)])}
@@ -72,9 +79,21 @@ pub(crate) fn start_button(timers: RwSignal<Vec<Timer>>, step: usize, seconds: u
     .into_any()
 }
 
-fn start_timer(timers: RwSignal<Vec<Timer>>, label: String, seconds: u32) {
+fn start_timer(
+    timers: RwSignal<Vec<Timer>>,
+    announce: RwSignal<String>,
+    label: String,
+    seconds: u32,
+) {
     #[cfg(feature = "hydrate")]
     super::alert::unlock();
+    announce.set(t_with(
+        "timer.announce.started",
+        &[
+            ("step", &label),
+            ("time", &clock(f64::from(seconds) * 1000.0)),
+        ],
+    ));
     edit(timers, |list| start(list, label, seconds, now_ms()));
 }
 

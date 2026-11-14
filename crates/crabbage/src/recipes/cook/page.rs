@@ -33,6 +33,7 @@ pub(crate) fn CookPage() -> impl IntoView {
     let query = use_query_map();
     let timers = RwSignal::new(Vec::<Timer>::new());
     let now = RwSignal::new(0.0_f64);
+    provide_context(RwSignal::new(String::new()));
     let data = Resource::new(id, |id| async move {
         let recipe = match id {
             Some(id) => Some(get_recipe(id).await),
