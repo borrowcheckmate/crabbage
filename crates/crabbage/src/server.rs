@@ -54,7 +54,7 @@ pub fn router(
     let state = AppState {
         options: options.clone(),
         pool,
-        http,
+        http: http.into(),
         config: Arc::new(config.clone()),
         oidc: Arc::new(OnceCell::new()),
         admin_group: config.admin_group.clone(),

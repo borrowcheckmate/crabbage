@@ -53,7 +53,7 @@ Their responsibilities:
 
 ## crates/crabbage-import
 
-Parses free-text ingredient lines, matches their names to catalogue ingredients, reads recipes from web pages and completes them with AI when needed. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version and TLS stack as `openidconnect`). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser. The AI client posts a recipe's text and photos to an OpenAI-compatible chat completions endpoint (`reqwest`, the key as a bearer token) and reads the JSON draft from the first answer, checking it before use.
+Parses free-text ingredient lines, matches their names to catalogue ingredients, reads recipes from web pages and completes them with AI when needed. Depends on `crabbage-domain` for `Unit`, `Quantity` and `ImperialUnit`. The web part fetches with `reqwest` (rustls, no default features, the same version as the app's OpenID Connect client). JSON-LD is read from the page's `application/ld+json` script tags without an HTML parser. The AI client posts a recipe's text and photos to an OpenAI-compatible chat completions endpoint (`reqwest`, the key as a bearer token) and reads the JSON draft from the first answer, checking it before use.
 
 | Module | Responsibility |
 | --- | --- |
@@ -267,7 +267,7 @@ Forms stack their fields on phones and sit side by side from 40rem. Message text
 
 | Module | Responsibility |
 | --- | --- |
-| `oidc.rs` | `Oidc`: discovery of `OIDC_ISSUER_URL`, the authorization request (code, PKCE S256, nonce, state, scopes `openid profile groups`), the code exchange and the ID token check. Name comes from `name`, then `preferred_username`, then the subject. `groups`, `crabbage_role` and `crabbage_household` claims are returned in `Identity`; missing or unsupported household values count as none. The HTTP client does not follow redirects |
+| `oidc.rs` | `Oidc`: discovery of `OIDC_ISSUER_URL`, the authorization request (code, PKCE S256, nonce, state, scopes `openid profile groups`), the code exchange and the ID token check. Name comes from `name`, then `preferred_username`, then the subject. `groups`, `crabbage_role` and `crabbage_household` claims are returned in `Identity`; missing or unsupported household values count as none. `HttpClient` is a newtype over the `reqwest` client that implements `openidconnect`'s `AsyncHttpClient`; the client does not follow redirects |
 | `login.rs` | `GET /auth/login`: stores a login attempt, sets the `crabbage_login` cookie (the state, `Path=/auth/`, 10 minutes) and redirects (303) to the provider |
 | `callback.rs` | `GET /auth/callback`: requires the `crabbage_login` cookie to equal `state` (otherwise 400, attempt kept), takes the attempt by `state` (unknown or expired: 400), exchanges the code, verifies the ID token and nonce (failure: 400), upserts the user, derives membership from groups and custom claims and syncs it (`households::sync_membership`), creates a session, sets the session cookie, clears the login cookie and redirects to `/` |
 | `logout.rs` | `POST /auth/logout`: deletes the session row, clears the cookie, redirects to `/` |
@@ -420,7 +420,7 @@ To add a task, add a variant to `cli.rs` and map it in `task/plan.rs`. Prefer co
 | `site` | `cargo leptos build --release --frontend-only`: the WASM bundle, JS and CSS with hashed names in `target/site`, copied to `/out/site`, and `target/release/hash.txt`, copied next to the binary; the image sets `LEPTOS_HASH_FILES=true` |
 | `server` | `cargo build` of `crabbage` with `ssr` for the native musl target `$(uname -m)-unknown-linux-musl`. Bundled SQLite is C code compiled with `musl-gcc`; rustls needs no system libraries, so the binary is static |
 | `data` | `/data` owned by 65532:65532 |
-| final | `FROM scratch`. Copies `/data`, `/site` and `/crabbage`. Sets `CRABBAGE_DATA_DIR`, `LEPTOS_SITE_ROOT`, `LEPTOS_OUTPUT_NAME` and `LEPTOS_SITE_ADDR`. Runs as `65532:65532`, exposes 3000, declares `/data` as a volume, and uses `/crabbage --healthcheck` as its exec-form healthcheck |
+| final | `FROM scratch`. Copies `/data`, `/site`, `/crabbage` and the build image's CA bundle (`/etc/ssl/certs/ca-certificates.crt`, read by reqwest's platform verifier). Sets `CRABBAGE_DATA_DIR`, `LEPTOS_SITE_ROOT`, `LEPTOS_OUTPUT_NAME` and `LEPTOS_SITE_ADDR`. Runs as `65532:65532`, exposes 3000, declares `/data` as a volume, and uses `/crabbage --healthcheck` as its exec-form healthcheck |
 
 The cargo-leptos version and its checksum are pinned in `ARG` and in the `tools` stage. CI's `image` job is a matrix with one leg per platform. Each leg builds its platform with its own GitHub Actions cache scope and pushes the image by digest on pushes to `main`. The `manifest` job then combines the digests into `ghcr.io/borrowcheckmate/crabbage:main` and `:sha-<short>`.
 

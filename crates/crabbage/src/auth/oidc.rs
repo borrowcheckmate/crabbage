@@ -1,6 +1,8 @@
 //! The `OpenID` Connect client: discovery, the authorization request and the ID token check.
 
 use std::error::Error;
+use std::future::Future;
+use std::pin::Pin;
 use std::time::Duration;
 
 use crabbage_store::login_attempts::LoginAttempt;
@@ -11,16 +13,50 @@ use openidconnect::core::{
     CoreTokenIntrospectionResponse, CoreTokenType,
 };
 use openidconnect::{
-    AdditionalClaims, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken,
-    EmptyExtraTokenFields, EndpointMaybeSet, EndpointNotSet, EndpointSet, IdTokenFields, IssuerUrl,
-    Nonce, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, StandardErrorResponse,
-    StandardTokenResponse, TokenResponse, reqwest, url::Url,
+    AdditionalClaims, AsyncHttpClient, AuthorizationCode, Client, ClientId, ClientSecret,
+    CsrfToken, EmptyExtraTokenFields, EndpointMaybeSet, EndpointNotSet, EndpointSet,
+    HttpClientError, HttpRequest, HttpResponse, IdTokenFields, IssuerUrl, Nonce, PkceCodeChallenge,
+    PkceCodeVerifier, RedirectUrl, Scope, StandardErrorResponse, StandardTokenResponse,
+    TokenResponse, http, url::Url,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 
-pub(crate) type HttpClient = reqwest::Client;
+/// The reqwest client as the `OpenID` Connect library calls it.
+#[derive(Clone, Debug)]
+pub(crate) struct HttpClient(reqwest::Client);
+
+impl From<reqwest::Client> for HttpClient {
+    fn from(client: reqwest::Client) -> Self {
+        Self(client)
+    }
+}
+
+impl<'c> AsyncHttpClient<'c> for HttpClient {
+    type Error = HttpClientError<reqwest::Error>;
+    type Future =
+        Pin<Box<dyn Future<Output = Result<HttpResponse, Self::Error>> + Send + Sync + 'c>>;
+
+    fn call(&'c self, request: HttpRequest) -> Self::Future {
+        Box::pin(async move {
+            let response = self
+                .0
+                .execute(request.try_into().map_err(Box::new)?)
+                .await
+                .map_err(Box::new)?;
+            let mut builder = http::Response::builder()
+                .status(response.status())
+                .version(response.version());
+            for (name, value) in response.headers() {
+                builder = builder.header(name, value);
+            }
+            builder
+                .body(response.bytes().await.map_err(Box::new)?.to_vec())
+                .map_err(HttpClientError::Http)
+        })
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Profile {
@@ -186,7 +222,7 @@ impl Oidc {
 
 /// Builds the HTTP client for the provider. Redirects are not followed, so requests stay on the
 /// provider's own URLs.
-pub(crate) fn http_client() -> Result<HttpClient, reqwest::Error> {
+pub(crate) fn http_client() -> Result<reqwest::Client, reqwest::Error> {
     reqwest::ClientBuilder::new()
         .redirect(reqwest::redirect::Policy::none())
         .timeout(Duration::from_secs(10))
