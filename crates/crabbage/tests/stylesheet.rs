@@ -323,6 +323,15 @@ fn recipe_page_pairs_its_columns_on_desktop_and_keeps_rating_in_one_row() {
 }
 
 #[test]
+fn import_review_amounts_have_a_fixed_column_and_a_hidden_missing_text() {
+    let css = stylesheet();
+    let amount = declarations_of(&css, ".import-amount").unwrap_or_default();
+    let missing = declarations_of(&css, ".import-amount-missing").unwrap_or_default();
+    assert!(amount.contains("flex:0 0 4.5rem"));
+    assert!(missing.contains("clip:rect(0,0,0,0)"));
+}
+
+#[test]
 fn no_fixed_width_is_wider_than_a_phone_screen() {
     let css = stylesheet();
     for declaration in css.split([';', '{', '}']).map(str::trim) {

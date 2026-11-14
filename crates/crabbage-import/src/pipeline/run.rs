@@ -55,7 +55,9 @@ pub(super) fn instructions(instance_language: &str) -> String {
          temperature, size, cut, quantity words, or 'to taste'/'of choice'; put all such text in \
          note. Example: 'slagroom (koud)' has name 'slagroom', note 'koud'; '8 dikke sneetjes \
          briochebrood' has amount 8, unit slice, name 'briochebrood', note 'dikke'; \
-         'rood fruit naar keuze' has name 'rood fruit', note 'naar keuze'. Set ingredient_id \
+         'rood fruit naar keuze' has name 'rood fruit', note 'naar keuze'. Leave out equipment \
+         and tools such as bowls, pans, foil or cling film, and whisks: only food goes in the \
+         ingredient lines. Set ingredient_id \
          when a provided candidate clearly matches. Choose categories only from the provided \
          category ids. Use only these \
          unit symbols: g, kg, ml, l, tsp, tbsp, piece, slice, clove, can, pack, bunch, pinch, or \
