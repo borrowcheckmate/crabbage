@@ -283,6 +283,8 @@
   "home.no_household": "This account has no household. Ask an administrator to add one.",
   "home.today_meal": "Tonight’s plan",
   "home.rest": "Rest day",
+  "home.rest_context": "Nothing to cook today.",
+  "home.empty_context": "Add a meal to the week plan to see it here.",
   "home.open_plan": "Open weekly plan",
   "home.view_recipe": "View recipe",
   "home.empty": "Nothing is planned for today.",

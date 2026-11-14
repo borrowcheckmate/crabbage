@@ -132,7 +132,14 @@ async fn today_has_empty_and_no_household_states() {
     let harness = Harness::start("today-empty").await;
     let token = sign_in_as(&harness, "today-empty-member", &[HOME]).await;
     let body = body_text(harness.get("/", Some(&token)).await).await;
-    assert!(body.contains("Nothing is planned for today."), "{body}");
+    assert!(
+        body.contains("<h2>Nothing is planned for today.</h2>"),
+        "{body}"
+    );
+    assert!(
+        body.contains("Add a meal to the week plan to see it here."),
+        "{body}"
+    );
     assert!(
         body.contains("No meals are planned for the next few days."),
         "{body}"
@@ -156,7 +163,12 @@ async fn today_has_empty_and_no_household_states() {
     .await
     .expect("rest day saved");
     let body = body_text(harness.get("/", Some(&token)).await).await;
-    assert!(body.contains("Rest day"), "{body}");
+    assert!(body.contains("<h2>Rest day</h2>"), "{body}");
+    assert!(body.contains("Nothing to cook today."), "{body}");
+    assert!(
+        body.contains("<a href=\"/plan\" class=\"button\">Open weekly plan</a>"),
+        "{body}"
+    );
     assert!(!body.contains("Start cooking"), "{body}");
 
     let no_home = sign_in_as(&harness, "today-no-household", &[]).await;
