@@ -96,6 +96,7 @@ fn desktop_top_bar_and_side_navigation_stay_in_view() {
     assert!(topbar.contains("height:var(--topbar-height)"));
     assert!(navigation.contains("position:sticky"));
     assert!(navigation.contains("top:var(--topbar-height)"));
+    assert!(navigation.contains("height:calc(100dvh - var(--topbar-height))"));
     assert!(navigation.contains("overflow-y:auto"));
     for panel in [".shopping-review", ".plan-editor", ".import-source-desktop"] {
         let declarations = css
@@ -167,18 +168,43 @@ fn recipe_pages_fill_the_workspace_like_today() {
             "{selector} must share the workspace edges with the other pages"
         );
     }
-    let (_, wide) = css
-        .split_once("@container main-workspace (min-width:880px) {")
-        .unwrap();
-    let grid = declarations_of(wide, ".recipe-grid").unwrap_or_default();
-    assert!(grid.contains("repeat(3,minmax(0,1fr))"));
+    let grid = declarations_of(&css, ".recipe-grid").unwrap_or_default();
+    assert!(
+        grid.contains("repeat(auto-fill,minmax(min(16rem,100%),1fr))"),
+        "the recipe cards fill the column with as many 16rem cards as fit: {grid}"
+    );
 }
 
 #[test]
-fn today_side_heading_aligns_with_the_left_column() {
+fn pages_share_one_centred_column_in_the_content_area() {
     let css = stylesheet();
+    let workspace = declarations_of(&css, "main").unwrap_or_default();
+    assert!(workspace.contains("max-width:1024px"), "{workspace}");
+    assert!(workspace.contains("margin:0 auto"), "{workspace}");
+    assert!(
+        css.contains(".admin-page { width:100%; max-width:52rem; margin:0 auto;"),
+        "administration pages must be centred in the column"
+    );
+    assert!(
+        css.contains("max-width:42rem; margin-inline:auto;"),
+        "the state card must be centred in the column too"
+    );
+}
+
+#[test]
+fn today_day_card_states_the_day_and_aligns_with_the_side_column() {
+    let css = stylesheet();
+    let day = declarations_of(&css, ".today-day h2").unwrap_or_default();
+    assert!(
+        day.contains("1.55rem"),
+        "the day state is heading-sized: {day}"
+    );
     let heading = declarations_of(&css, ".today-side .today-section-heading").unwrap_or_default();
     assert!(heading.contains("margin-top: 0"));
+    assert!(
+        heading.contains("align-items: flex-start"),
+        "the Coming up heading starts at the top of the day card: {heading}"
+    );
 }
 
 #[test]
