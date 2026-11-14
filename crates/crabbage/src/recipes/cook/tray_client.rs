@@ -7,7 +7,8 @@ use leptos::prelude::*;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use super::alert;
-use super::timers::{Timer, decode, encode, finished};
+use super::timers::{Alarms, Timer, decode, encode};
+use crate::i18n::t_with;
 
 const KEY: &str = "crabbage.timers";
 
@@ -21,9 +22,14 @@ pub(super) fn now_ms() -> f64 {
 }
 
 /// Loads the stored timers and starts the one-second clock. Runs once the page is hydrated, so the
-/// first render matches the server's empty tray.
-pub(super) fn attach(timers: RwSignal<Vec<Timer>>, clock: RwSignal<f64>) {
-    let alerted = StoredValue::new(Vec::<u64>::new());
+/// first render matches the server's empty tray. Each tick sounds the due alarms and announces the
+/// first alarm of a timer that has ended.
+pub(super) fn attach(
+    timers: RwSignal<Vec<Timer>>,
+    clock: RwSignal<f64>,
+    announce: RwSignal<String>,
+) {
+    let alarms = StoredValue::new(Alarms::default());
     Effect::new(move |_| {
         clock.set(now_ms());
         timers.set(load());
@@ -31,16 +37,14 @@ pub(super) fn attach(timers: RwSignal<Vec<Timer>>, clock: RwSignal<f64>) {
     let tick = move || {
         let at = now_ms();
         clock.set(at);
-        let fresh: Vec<u64> = timers.with_untracked(|list| {
-            list.iter()
-                .filter(|timer| finished(timer, at))
-                .filter(|timer| !alerted.with_value(|ids| ids.contains(&timer.id)))
-                .map(|timer| timer.id)
-                .collect()
-        });
-        if !fresh.is_empty() {
+        let rang = alarms
+            .try_update_value(|log| timers.with_untracked(|list| log.ring(list, at)))
+            .unwrap_or_default();
+        if let Some((timer, _)) = rang.iter().find(|(_, first)| *first) {
+            announce.set(t_with("timer.announce.finished", &[("step", &timer.label)]));
+        }
+        if !rang.is_empty() {
             alert::alert();
-            alerted.update_value(|ids| ids.extend(fresh));
         }
     };
     if let Ok(handle) = set_interval_with_handle(tick, Duration::from_secs(1)) {

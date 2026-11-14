@@ -31,7 +31,7 @@ fn beep(context: &AudioContext) -> Option<()> {
         let gain = context.create_gain().ok()?;
         oscillator.connect_with_audio_node(&gain).ok()?;
         gain.connect_with_audio_node(&context.destination()).ok()?;
-        gain.gain().set_value(0.2);
+        gain.gain().set_value(0.9);
         oscillator.start_with_when(start).ok()?;
         oscillator.stop_with_when(start + 0.5).ok()?;
     }

@@ -5,12 +5,11 @@ use tokio::sync::Mutex;
 
 use axum::extract::FromRef;
 use leptos::config::LeptosOptions;
-use openidconnect::reqwest;
 use sqlx::sqlite::SqlitePool;
 use tokio::sync::OnceCell;
 
 use crate::admin::mealie::RunState;
-use crate::auth::{AuthError, Oidc};
+use crate::auth::{AuthError, HttpClient, Oidc};
 use crate::config::Config;
 use crate::i18n::Language;
 use crate::recipes::PhotoDrafts;
@@ -20,7 +19,7 @@ use crate::shopping::ShoppingHub;
 pub(crate) struct AppState {
     pub(crate) options: LeptosOptions,
     pub(crate) pool: SqlitePool,
-    pub(crate) http: reqwest::Client,
+    pub(crate) http: HttpClient,
     pub(crate) config: Arc<Config>,
     pub(crate) oidc: Arc<OnceCell<Oidc>>,
     pub(crate) admin_group: String,

@@ -81,6 +81,16 @@ fn unit_labels_are_localized_and_piece_labels_are_empty() {
         ("unit.to_taste", "to taste", "naar smaak"),
         ("unit.piece_label", "", ""),
         ("unit.piece_option", "pieces", "stuks"),
+        ("unit.slice", "slice", "plak"),
+        ("unit.slices", "slices", "plakken"),
+        ("unit.clove", "clove", "teentje"),
+        ("unit.cloves", "cloves", "teentjes"),
+        ("unit.can", "can", "blik"),
+        ("unit.cans", "cans", "blikken"),
+        ("unit.pack", "pack", "pak"),
+        ("unit.packs", "packs", "pakken"),
+        ("unit.bunch", "bunch", "bos"),
+        ("unit.bunches", "bunches", "bossen"),
     ] {
         assert_eq!(english.get(key), en, "{key}");
         assert_eq!(dutch.get(key), nl, "{key}");

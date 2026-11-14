@@ -47,6 +47,7 @@ RUN install -d -o 65532 -g 65532 -m 0700 /data
 
 FROM scratch
 COPY --from=data --chown=65532:65532 /data /data
+COPY --from=tools /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=site /out/site /site
 COPY --from=site /out/hash.txt /hash.txt
 COPY --from=server /out/crabbage /crabbage

@@ -4,6 +4,7 @@ use crabbage_domain::quantity::Unit;
 
 use super::numbers::{self, Amount};
 use super::units::{self, Measure};
+use super::words;
 
 /// An ingredient line, read as far as its text allows.
 #[derive(Clone, Debug, PartialEq)]
@@ -30,7 +31,8 @@ pub struct ParsedLine {
 /// An empty line, one with only punctuation, and one with an amount and unit but no name are not.
 /// Those keep the collapsed text as `name`, with no amount, unit or note. A line without an
 /// amount is parsed with its whole text as the name, except that a trailing `to taste` or
-/// `naar smaak`, also as the note, becomes the unit [`Unit::ToTaste`].
+/// `naar smaak`, also as the note, becomes the unit [`Unit::ToTaste`]. A size word directly before
+/// the unit, such as `dikke` in `8 dikke sneetjes`, starts the note.
 #[must_use]
 pub fn parse_line(text: &str) -> ParsedLine {
     let collapsed = text.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -78,6 +80,17 @@ impl Parts {
         }
     }
 
+    fn with_size(mut self, size: Option<&str>) -> Self {
+        if let Some(size) = size {
+            self.note = Some(
+                self.note
+                    .take()
+                    .map_or_else(|| size.to_owned(), |note| format!("{size}, {note}")),
+            );
+        }
+        self
+    }
+
     fn with_to_taste(mut self) -> Self {
         if self.amount.is_some() {
             return self;
@@ -114,6 +127,11 @@ impl Parts {
 fn join_note(existing: Option<String>, note: &str) -> String {
     existing.map_or_else(|| note.to_owned(), |existing| format!("{existing}, {note}"))
 }
+
+const SIZE_WORDS: [&str; 12] = [
+    "dikke", "dik", "dunne", "dun", "grote", "groot", "kleine", "klein", "thick", "thin", "large",
+    "small",
+];
 
 const TO_TASTE: [&str; 2] = ["to taste", "naar smaak"];
 const OPTIONAL: [&str; 5] = [
@@ -157,12 +175,26 @@ fn parse(text: &str) -> Option<Parts> {
         return Some(Parts::new(None, None, None, text).with_to_taste());
     };
     let after = after.trim_start();
+    let (size, after) = size_before_unit(after);
     let (measure, rest) = match units::leading(after) {
         Some((measure, rest)) => (Some(measure), rest),
         None => (None, after),
     };
     let (amount, amount_max, unit) = measured(found, measure)?;
-    Some(Parts::new(Some(amount), amount_max, unit, rest))
+    Some(Parts::new(Some(amount), amount_max, unit, rest).with_size(size))
+}
+
+/// The size word at the start of `text` when a unit follows it, and the text from that unit on.
+/// The size word is returned as written. Without a unit after it, nothing is taken.
+fn size_before_unit(text: &str) -> (Option<&str>, &str) {
+    SIZE_WORDS
+        .iter()
+        .find_map(|size| {
+            let rest = words::strip(text, size)?.trim_start();
+            units::leading(rest)?;
+            Some((text.get(..size.len())?, rest))
+        })
+        .map_or((None, text), |(size, rest)| (Some(size), rest))
 }
 
 fn measured(found: Amount, measure: Option<Measure>) -> Option<(f64, Option<f64>, Option<Unit>)> {

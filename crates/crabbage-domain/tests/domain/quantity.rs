@@ -41,6 +41,11 @@ fn units_belong_to_their_dimension() {
     assert_eq!(Unit::Teaspoon.dimension(), Dimension::Volume);
     assert_eq!(Unit::Tablespoon.dimension(), Dimension::Volume);
     assert_eq!(Unit::Piece.dimension(), Dimension::Count);
+    assert_eq!(Unit::Slice.dimension(), Dimension::Named);
+    assert_eq!(Unit::Clove.dimension(), Dimension::Named);
+    assert_eq!(Unit::Can.dimension(), Dimension::Named);
+    assert_eq!(Unit::Pack.dimension(), Dimension::Named);
+    assert_eq!(Unit::Bunch.dimension(), Dimension::Named);
     assert_eq!(Unit::Pinch.dimension(), Dimension::Unitless);
     assert_eq!(Unit::ToTaste.dimension(), Dimension::Unitless);
 }
@@ -54,6 +59,8 @@ fn factors_to_the_base_unit() {
     assert_eq!(Unit::Teaspoon.factor(), Some(5.0));
     assert_eq!(Unit::Tablespoon.factor(), Some(15.0));
     assert_eq!(Unit::Piece.factor(), Some(1.0));
+    assert_eq!(Unit::Slice.factor(), None);
+    assert_eq!(Unit::Clove.factor(), None);
     assert_eq!(Unit::Pinch.factor(), None);
     assert_eq!(Unit::ToTaste.factor(), None);
 }
@@ -68,6 +75,11 @@ fn symbols() {
         Unit::Teaspoon,
         Unit::Tablespoon,
         Unit::Piece,
+        Unit::Slice,
+        Unit::Clove,
+        Unit::Can,
+        Unit::Pack,
+        Unit::Bunch,
         Unit::Pinch,
         Unit::ToTaste,
     ]
@@ -75,7 +87,8 @@ fn symbols() {
     assert_eq!(
         symbols,
         [
-            "g", "kg", "ml", "l", "tsp", "tbsp", "piece", "pinch", "to taste"
+            "g", "kg", "ml", "l", "tsp", "tbsp", "piece", "slice", "clove", "can", "pack", "bunch",
+            "pinch", "to taste"
         ]
     );
 }
@@ -370,4 +383,50 @@ fn unitless_amounts_are_kept_as_they_are() {
         1.0,
         Unit::ToTaste,
     );
+}
+
+#[test]
+fn named_counts_never_convert_to_pieces_or_each_other() {
+    for named in [Unit::Slice, Unit::Clove, Unit::Can, Unit::Pack, Unit::Bunch] {
+        assert!(quantity(2.0, named).convert_to(Unit::Piece).is_none());
+        assert!(quantity(2.0, Unit::Piece).convert_to(named).is_none());
+        assert!(quantity(2.0, named).convert_to(Unit::Gram).is_none());
+    }
+    assert!(quantity(2.0, Unit::Clove).convert_to(Unit::Slice).is_none());
+    assert!(quantity(2.0, Unit::Can).convert_to(Unit::Bunch).is_none());
+}
+
+#[test]
+fn named_counts_add_only_to_the_same_unit() {
+    assert_is(
+        sum(quantity(2.0, Unit::Clove), quantity(3.0, Unit::Clove)),
+        5.0,
+        Unit::Clove,
+    );
+    assert!(
+        quantity(2.0, Unit::Clove)
+            .checked_add(quantity(3.0, Unit::Piece))
+            .is_none()
+    );
+    assert!(
+        quantity(3.0, Unit::Piece)
+            .checked_add(quantity(2.0, Unit::Slice))
+            .is_none()
+    );
+    assert!(
+        quantity(1.0, Unit::Can)
+            .checked_add(quantity(1.0, Unit::Pack))
+            .is_none()
+    );
+    assert!(
+        quantity(1.0, Unit::Bunch)
+            .checked_add(quantity(1.0, Unit::Slice))
+            .is_none()
+    );
+}
+
+#[test]
+fn named_counts_display_unchanged() {
+    assert_is(quantity(8.0, Unit::Slice).display(), 8.0, Unit::Slice);
+    assert_is(quantity(2.0, Unit::Bunch).display(), 2.0, Unit::Bunch);
 }

@@ -62,6 +62,10 @@ async fn every_photo_is_sent_and_the_answer_becomes_the_recipe() {
         "{instructions}"
     );
     assert!(instructions.contains("from the photos"), "{instructions}");
+    assert!(
+        instructions.contains("Leave out equipment"),
+        "{instructions}"
+    );
 }
 
 #[tokio::test]

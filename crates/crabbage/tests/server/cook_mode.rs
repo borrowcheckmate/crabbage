@@ -441,6 +441,8 @@ async fn the_timer_tray_is_on_every_step() {
         assert!(body.contains("class=\"timer-tray\""), "{query}: {body}");
         assert!(body.contains("class=\"timer-summary\""), "{query}: {body}");
         assert!(!body.contains("timer-tray\" aria-live"), "{query}: {body}");
+        assert!(body.contains("class=\"timer-announce\""), "{query}: {body}");
+        assert!(body.contains("aria-live=\"polite\""), "{query}: {body}");
         assert!(body.contains("class=\"timer-panel\""), "{query}: {body}");
         assert!(
             body.contains("aria-label=\"Running timers\""),

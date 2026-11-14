@@ -37,16 +37,17 @@ async fn serve_ai(status: StatusCode, draft: &'static str) -> (String, Unbounded
 }
 
 pub(crate) async fn with_ai(name: &str, status: StatusCode) -> (Harness, UnboundedReceiver<Value>) {
-    with_ai_draft(name, status, DRAFT).await
+    with_ai_draft(name, status, DRAFT, None).await
 }
 
 async fn with_ai_draft(
     name: &str,
     status: StatusCode,
     draft: &'static str,
+    language: Option<&str>,
 ) -> (Harness, UnboundedReceiver<Value>) {
     let (base, requests) = serve_ai(status, draft).await;
-    let harness = Harness::start(name).await;
+    let harness = Harness::start_with_language(name, language).await;
     crabbage_store::settings::save(
         &harness.pool,
         &crabbage_store::settings::AiSettings {
@@ -184,10 +185,41 @@ async fn two_photos_become_one_ai_request_and_a_draft_to_review() {
     assert!(body.contains("value=\"leeks\""), "{body}");
     assert!(body.contains("value=\"sliced\""), "{body}");
     assert!(body.contains("Simmer the leeks."), "{body}");
-    assert!(body.contains("Source · 2 photo(s)"), "{body}");
+    assert!(body.contains("Source · 2 photos"), "{body}");
     assert!(body.contains("data:image/jpeg;base64,"), "{body}");
     assert!(body.contains("name=\"keep_photo\""), "{body}");
     assert!(body.contains("checked"), "{body}");
+}
+
+#[tokio::test]
+async fn one_photo_names_its_source_in_the_singular() {
+    let (harness, _requests) = with_ai("photo-import-one", StatusCode::OK).await;
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let bytes = png();
+    let target = location(&upload(&harness, Some(&token), &[("photo", &bytes)]).await);
+    let body = page(&harness, &token, &target).await;
+    assert!(body.contains("Source · 1 photo</p>"), "{body}");
+}
+
+#[tokio::test]
+async fn the_photo_count_is_pluralised_in_dutch() {
+    let (harness, _requests) =
+        with_ai_draft("photo-import-dutch", StatusCode::OK, DRAFT, Some("nl")).await;
+    let token = sign_in_as(&harness, MEMBER, &[]).await;
+    let bytes = png();
+    let one = location(&upload(&harness, Some(&token), &[("photo", &bytes)]).await);
+    let body = page(&harness, &token, &one).await;
+    assert!(body.contains("Bron · 1 foto</p>"), "{body}");
+    let two = location(
+        &upload(
+            &harness,
+            Some(&token),
+            &[("photo", &bytes), ("photo", &bytes)],
+        )
+        .await,
+    );
+    let body = page(&harness, &token, &two).await;
+    assert!(body.contains("Bron · 2 foto"), "{body}");
 }
 
 #[tokio::test]
@@ -223,7 +255,8 @@ async fn saving_a_photo_import_attaches_the_crop_only_when_kept() {
 
 #[tokio::test]
 async fn a_null_ai_photo_import_saves_without_an_image() {
-    let (harness, _) = with_ai_draft("photo-import-null", StatusCode::OK, NULL_PHOTO_DRAFT).await;
+    let (harness, _) =
+        with_ai_draft("photo-import-null", StatusCode::OK, NULL_PHOTO_DRAFT, None).await;
     let token = sign_in_as(&harness, MEMBER, &[]).await;
     let bytes = png();
     let target = location(&upload(&harness, Some(&token), &[("photo", &bytes)]).await);
