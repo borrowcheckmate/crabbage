@@ -44,6 +44,14 @@ fn amounts_scale_by_the_servings_ratio() {
 }
 
 #[test]
+fn named_counts_round_like_pieces() {
+    assert_is(scaled(8.0, Unit::Slice, 2, 3), 12.0, Unit::Slice);
+    assert_is(scaled(1.0, Unit::Clove, 2, 3), 1.5, Unit::Clove);
+    assert_is(scaled(1.0, Unit::Bunch, 3, 2), 0.5, Unit::Bunch);
+    assert_is(scaled(1.0, Unit::Can, 4, 1), 0.5, Unit::Can);
+}
+
+#[test]
 fn grams_round_to_five_below_one_thousand() {
     assert_is(scaled(100.0, Unit::Gram, 3, 10), 335.0, Unit::Gram);
 }

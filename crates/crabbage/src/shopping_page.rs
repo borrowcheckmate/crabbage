@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::background_form::submit_in_background;
 use crate::i18n::{Messages, messages, t, t_with};
-use crate::recipes::unit_text;
+use crate::recipes::{is_plural, unit_text};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct ShoppingRow {
@@ -328,7 +328,7 @@ fn quantities_text(amounts: &[(f64, String)], messages: &Messages) -> String {
                 .trim_end_matches('0')
                 .trim_end_matches('.')
                 .to_owned();
-            let label = unit_text(messages, unit);
+            let label = unit_text(messages, unit, is_plural(*amount));
             if label.is_empty() {
                 value
             } else {
@@ -455,4 +455,24 @@ fn close_event_source() {
             drop(error);
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::quantities_text;
+    use crate::i18n::{Language, Messages};
+
+    #[test]
+    fn named_counts_read_in_the_plural_unless_they_are_one() {
+        let dutch = Messages::for_language(Language::Nl);
+        let amounts = [
+            (8.0, "slice".to_owned()),
+            (1.0, "clove".to_owned()),
+            (2.0, String::new()),
+        ];
+        assert_eq!(
+            quantities_text(&amounts, dutch),
+            "8 plakken + 1 teentje + 2"
+        );
+    }
 }

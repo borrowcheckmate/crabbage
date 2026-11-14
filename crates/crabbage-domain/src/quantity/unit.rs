@@ -9,6 +9,9 @@ pub enum Dimension {
     Volume,
     /// Whole items: pieces.
     Count,
+    /// Named counts: slices, cloves, cans, packs and bunches. They have no base unit, so they
+    /// never convert to pieces or to each other.
+    Named,
     /// Amounts without a measure, such as a pinch or to taste.
     Unitless,
 }
@@ -30,6 +33,16 @@ pub enum Unit {
     Tablespoon,
     /// A single item. The base unit of count.
     Piece,
+    /// A slice of bread, ham or similar. Named count.
+    Slice,
+    /// A clove of garlic. Named count.
+    Clove,
+    /// A can. Named count.
+    Can,
+    /// A pack. Named count.
+    Pack,
+    /// A bunch of herbs. Named count.
+    Bunch,
     /// A pinch. Unitless.
     Pinch,
     /// Amount left to the cook. Unitless.
@@ -38,7 +51,7 @@ pub enum Unit {
 
 impl Unit {
     /// Every unit, in the order a form lists them.
-    pub const ALL: [Self; 9] = [
+    pub const ALL: [Self; 14] = [
         Self::Gram,
         Self::Kilogram,
         Self::Millilitre,
@@ -46,6 +59,11 @@ impl Unit {
         Self::Teaspoon,
         Self::Tablespoon,
         Self::Piece,
+        Self::Slice,
+        Self::Clove,
+        Self::Can,
+        Self::Pack,
+        Self::Bunch,
         Self::Pinch,
         Self::ToTaste,
     ];
@@ -63,12 +81,13 @@ impl Unit {
             Self::Gram | Self::Kilogram => Dimension::Mass,
             Self::Millilitre | Self::Litre | Self::Teaspoon | Self::Tablespoon => Dimension::Volume,
             Self::Piece => Dimension::Count,
+            Self::Slice | Self::Clove | Self::Can | Self::Pack | Self::Bunch => Dimension::Named,
             Self::Pinch | Self::ToTaste => Dimension::Unitless,
         }
     }
 
     /// How many base units make one of this unit: grams for mass, millilitres for volume and
-    /// pieces for count. `None` for unitless units, which have no base unit.
+    /// pieces for count. `None` for named and unitless units, which have no base unit.
     #[must_use]
     pub const fn factor(self) -> Option<f64> {
         match self {
@@ -76,7 +95,13 @@ impl Unit {
             Self::Kilogram | Self::Litre => Some(1000.0),
             Self::Teaspoon => Some(5.0),
             Self::Tablespoon => Some(15.0),
-            Self::Pinch | Self::ToTaste => None,
+            Self::Slice
+            | Self::Clove
+            | Self::Can
+            | Self::Pack
+            | Self::Bunch
+            | Self::Pinch
+            | Self::ToTaste => None,
         }
     }
 
@@ -91,6 +116,11 @@ impl Unit {
             Self::Teaspoon => "tsp",
             Self::Tablespoon => "tbsp",
             Self::Piece => "piece",
+            Self::Slice => "slice",
+            Self::Clove => "clove",
+            Self::Can => "can",
+            Self::Pack => "pack",
+            Self::Bunch => "bunch",
             Self::Pinch => "pinch",
             Self::ToTaste => "to taste",
         }

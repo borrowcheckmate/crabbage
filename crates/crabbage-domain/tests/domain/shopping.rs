@@ -110,6 +110,18 @@ fn an_item_without_amount_merges_without_adding_one() {
 }
 
 #[test]
+fn named_counts_stay_apart_from_pieces_and_each_other() {
+    let lines = merge([
+        (ingredient(10), Some(quantity(8.0, Unit::Slice))),
+        (ingredient(10), Some(quantity(2.0, Unit::Piece))),
+        (ingredient(10), Some(quantity(3.0, Unit::Slice))),
+    ]);
+    assert_eq!(lines[0].amounts.len(), 2);
+    assert_amount(lines[0].amounts[0], 11.0, Unit::Slice);
+    assert_amount(lines[0].amounts[1], 2.0, Unit::Piece);
+}
+
+#[test]
 fn unitless_amounts_stay_apart_unless_equal() {
     let lines = merge([
         (ingredient(8), Some(quantity(1.0, Unit::Pinch))),

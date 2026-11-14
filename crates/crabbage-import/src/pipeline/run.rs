@@ -54,11 +54,12 @@ pub(super) fn instructions(instance_language: &str) -> String {
          must be only the ingredient as bought, singular or plural as written, without preparation, \
          temperature, size, cut, quantity words, or 'to taste'/'of choice'; put all such text in \
          note. Example: 'slagroom (koud)' has name 'slagroom', note 'koud'; '8 dikke sneetjes \
-         briochebrood' has amount 8, unit piece, name 'briochebrood', note 'dikke sneetjes'; \
+         briochebrood' has amount 8, unit slice, name 'briochebrood', note 'dikke'; \
          'rood fruit naar keuze' has name 'rood fruit', note 'naar keuze'. Set ingredient_id \
          when a provided candidate clearly matches. Choose categories only from the provided \
          category ids. Use only these \
-         unit symbols: g, kg, ml, l, tsp, tbsp, piece, pinch, or none. Give every step the \
+         unit symbols: g, kg, ml, l, tsp, tbsp, piece, slice, clove, can, pack, bunch, pinch, or \
+         none. Give every step the \
          zero-based indexes of the ingredient lines it uses. Keep the amounts for the stated \
          servings."
     )

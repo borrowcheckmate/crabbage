@@ -13,6 +13,8 @@ fn retry_urls_encode_query_delimiters_and_unicode_bytes() {
 fn ingredient_amounts_keep_units_and_unspecified_values() {
     assert_eq!(format_amount("2", "piece"), "2");
     assert_eq!(format_amount("2", "tbsp"), "2 tbsp");
+    assert_eq!(format_amount("8", "slice"), "8 slices");
+    assert_eq!(format_amount("1", "slice"), "1 slice");
     assert_eq!(format_amount("", "to taste"), "to taste");
     assert_eq!(format_amount("", ""), "Unspecified");
 }
