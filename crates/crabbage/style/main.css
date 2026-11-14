@@ -781,7 +781,7 @@ button.danger, button.destructive { color:var(--on-danger); }
 .shopping-add input { flex:1; min-width:0; min-height:44px; padding:0; border:0; background:transparent; box-shadow:none; }
 .shopping-add button { display:grid; flex:none; place-items:center; width:44px; min-height:44px; padding:0; border:0; background:transparent; color:var(--text); }
 .shopping-add svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
-.shopping-visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.shopping-visually-hidden, .import-amount-missing { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .shopping-add input::placeholder { color:var(--muted); }
 .shopping-layout { display:grid; gap:1.5rem; }
 .shopping-group { margin:0 0 1.25rem; }
@@ -1075,7 +1075,7 @@ a.today-next:hover .today-next-arrow { stroke: var(--accent); }
 .import-line { border-bottom:1px solid var(--border); }
 .import-line summary { min-height:68px; display:flex; align-items:center; gap:.75rem; cursor:pointer; list-style:none; }
 .import-line summary::-webkit-details-marker,.import-method summary::-webkit-details-marker { display:none; }
-.import-amount { min-width:42px; color:var(--muted); font-size:13px; }
+.import-amount { flex:0 0 4.5rem; overflow-wrap:anywhere; color:var(--muted); font-size:13px; }
 .import-line-name { display:flex; flex:1; min-width:0; flex-direction:column; gap:.2rem; color:var(--text); }
 .import-new { width:max-content; border-radius:5px; background:var(--soft); color:var(--accent); padding:2px 6px; font-size:11px; }
 .import-pencil { color:var(--accent); }

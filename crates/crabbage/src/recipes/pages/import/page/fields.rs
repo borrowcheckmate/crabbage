@@ -48,7 +48,10 @@ fn import_line(draft: Draft, line: LineSignals, unresolved: Vec<String>) -> AnyV
     view! {
         <details class="import-line" class:unresolved=move || unresolved_class.contains(&line.ingredient.get())>
             <summary>
-                <span class="import-amount">{move || format_amount(&line.amount.get(), &line.unit.get())}</span>
+                <span class="import-amount">{move || format_amount(&line.amount.get(), &line.unit.get()).map_or_else(
+                    || view! { <span aria-hidden="true">"–"</span><span class="import-amount-missing">{t("import.unspecified")}</span> }.into_any(),
+                    IntoAny::into_any,
+                )}</span>
                 <span class="import-line-name"><strong>{move || line.ingredient.get()}</strong>
                     {move || unresolved.contains(&line.ingredient.get()).then(|| view! { <span class="import-new">{t("import.new_ingredient")}</span> })}
                 </span>
