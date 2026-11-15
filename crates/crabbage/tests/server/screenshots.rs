@@ -444,6 +444,7 @@ fn sample_recipe(category: i64) -> RecipeInput {
             },
         ],
         category_ids: vec![category],
+        meal_types: Vec::new(),
     }
 }
 

@@ -76,6 +76,11 @@ pub(crate) fn recipe_draft(imported: &Imported) -> RecipeDraft {
         lines,
         steps,
         categories: imported.categories.clone(),
+        meal_types: imported
+            .meal_types
+            .iter()
+            .map(|meal| meal.code().to_owned())
+            .collect(),
     }
 }
 
@@ -292,6 +297,7 @@ mod tests {
             image: Some("https://example.com/okra.png".to_owned()),
             photo: None,
             categories: Vec::new(),
+            meal_types: Vec::new(),
             lines,
             steps,
             unmatched: Vec::new(),

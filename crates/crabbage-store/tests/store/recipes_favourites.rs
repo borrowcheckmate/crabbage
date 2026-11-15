@@ -13,6 +13,7 @@ fn recipe(title: &str, category_ids: Vec<i64>) -> RecipeInput {
         lines: vec![],
         steps: vec![],
         category_ids,
+        meal_types: Vec::new(),
     }
 }
 
@@ -26,7 +27,7 @@ async fn titles(
     favourites_only: bool,
     viewer: i64,
 ) -> Vec<String> {
-    list(pool, category, favourites_only, None, viewer)
+    list(pool, category, None, favourites_only, None, viewer)
         .await
         .expect("list reads")
         .into_iter()

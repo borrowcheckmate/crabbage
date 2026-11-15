@@ -33,6 +33,7 @@ pub(crate) fn complete_recipe() -> Imported {
         image: None,
         photo: None,
         categories: Vec::new(),
+        meal_types: Vec::new(),
         lines: vec![ImportedLine {
             amount: Some(200.0),
             unit: None,

@@ -2,6 +2,8 @@
 
 use sqlx::FromRow;
 
+use crabbage_domain::meal_types::MealType;
+
 use crate::catalog::categories::Category;
 
 /// A recipe to create or replace: its title, servings, ingredient lines and steps.
@@ -17,6 +19,8 @@ pub struct RecipeInput {
     pub steps: Vec<StepInput>,
     /// The categories the recipe is filed under. Unknown ids are ignored.
     pub category_ids: Vec<i64>,
+    /// The meal types of the recipe. Each is stored once.
+    pub meal_types: Vec<MealType>,
 }
 
 /// An ingredient line to write.
@@ -68,6 +72,8 @@ pub struct Recipe {
     pub steps: Vec<RecipeStep>,
     /// The categories the recipe is filed under, ordered by name.
     pub categories: Vec<Category>,
+    /// The meal types, in [`MealType::ALL`] order.
+    pub meal_types: Vec<MealType>,
     /// The file name of the recipe's photo in the images directory, if it has one.
     pub image: Option<String>,
     /// The average of the ratings to one decimal place, if anyone rated the recipe.

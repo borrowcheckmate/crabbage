@@ -3,6 +3,7 @@
 /// Gregorian calendar date arithmetic.
 pub mod dates;
 pub mod durations;
+pub mod meal_types;
 pub mod membership;
 pub mod permissions;
 /// Meal planning rules.

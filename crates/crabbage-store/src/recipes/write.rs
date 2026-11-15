@@ -44,7 +44,7 @@ pub(super) async fn create_inner(
     Ok(id)
 }
 
-/// Replaces the title, servings, categories, lines and steps of recipe `id`. Returns `false`, and changes
+/// Replaces the title, servings, categories, meal types, lines and steps of recipe `id`. Returns `false`, and changes
 /// nothing, when there is no such recipe.
 ///
 /// # Errors
@@ -63,6 +63,10 @@ pub async fn update(pool: &SqlitePool, id: i64, input: &RecipeInput) -> Result<b
         return Ok(false);
     }
     sqlx::query("DELETE FROM recipe_categories WHERE recipe_id = ?")
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query("DELETE FROM recipe_meal_types WHERE recipe_id = ?")
         .bind(id)
         .execute(&mut *tx)
         .await?;
@@ -93,7 +97,7 @@ pub async fn delete(pool: &SqlitePool, id: i64) -> Result<bool, StoreError> {
     Ok(result.rows_affected() > 0)
 }
 
-/// Files recipe `recipe_id` under its categories, then writes the lines and the steps. The
+/// Files recipe `recipe_id` under its categories and meal types, then writes the lines and the steps. The
 /// categories and the lines must not exist yet.
 async fn write_contents(
     conn: &mut SqliteConnection,
@@ -109,6 +113,13 @@ async fn write_contents(
         .bind(category_id)
         .execute(&mut *conn)
         .await?;
+    }
+    for meal in &input.meal_types {
+        sqlx::query("INSERT OR IGNORE INTO recipe_meal_types (recipe_id, meal_type) VALUES (?, ?)")
+            .bind(recipe_id)
+            .bind(meal.code())
+            .execute(&mut *conn)
+            .await?;
     }
     let mut line_ids = Vec::with_capacity(input.lines.len());
     for (position, line) in (0_i64..).zip(&input.lines) {

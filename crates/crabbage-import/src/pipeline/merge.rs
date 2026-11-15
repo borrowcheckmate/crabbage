@@ -1,3 +1,4 @@
+use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
 
 use crate::ai::{AiDraft, AiLine};
@@ -44,6 +45,7 @@ pub fn merge(
         image: base.image.clone(),
         photo: ai.photo,
         categories: valid_categories(&ai.categories, categories),
+        meal_types: MealType::from_codes(ai.meal_types.iter().map(String::as_str)),
         unmatched: match_all(&names, candidates).unmatched,
         lines,
         steps,

@@ -35,6 +35,7 @@ pub async fn from_photos(
         image: None,
         photo: None,
         categories: Vec::new(),
+        meal_types: Vec::new(),
         lines: Vec::new(),
         steps: Vec::new(),
         unmatched: Vec::new(),
