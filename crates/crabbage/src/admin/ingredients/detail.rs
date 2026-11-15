@@ -1,4 +1,4 @@
-//! One ingredient's page: rename, alternative names, store section, merge and delete. Merge and
+//! One ingredient's page: rename, alternative names, store section, allergens, merge and delete. Merge and
 //! delete show a question first, which the `confirm` value in the address asks for.
 
 use leptos::form::ActionForm;
@@ -7,6 +7,8 @@ use leptos::prelude::*;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_query_map};
 
+use super::allergen_form;
+use crate::catalog::allergens::SetIngredientAllergens;
 use crate::catalog::ingredients::{
     AddAlias, DeleteIngredient, MergeIngredients, RemoveAlias, RenameIngredient,
     SetIngredientSection, list_ingredients,
@@ -35,6 +37,7 @@ struct IngredientActions {
     add_alias: ServerAction<AddAlias>,
     remove_alias: ServerAction<RemoveAlias>,
     set_section: ServerAction<SetIngredientSection>,
+    set_allergens: ServerAction<SetIngredientAllergens>,
     delete: ServerAction<DeleteIngredient>,
     merge: ServerAction<MergeIngredients>,
 }
@@ -49,6 +52,7 @@ pub(crate) fn IngredientPage() -> impl IntoView {
         add_alias: ServerAction::new(),
         remove_alias: ServerAction::new(),
         set_section: ServerAction::new(),
+        set_allergens: ServerAction::new(),
         delete: ServerAction::new(),
         merge: ServerAction::new(),
     };
@@ -61,6 +65,7 @@ pub(crate) fn IngredientPage() -> impl IntoView {
                 actions.add_alias.version().get(),
                 actions.remove_alias.version().get(),
                 actions.set_section.version().get(),
+                actions.set_allergens.version().get(),
             )
         },
         |(id, confirm, ..)| load_ingredient_page(id, confirm),
@@ -170,6 +175,7 @@ fn ingredient_view(
         </section>
         {alias_section(id, row.aliases, actions)}
         {section_form(id, row.section_id, sections, actions.set_section)}
+        <section class="admin-row admin-detail-section">{allergen_form(id, &row.allergens, actions.set_allergens)}</section>
         {confirmation}
         </section>
     }
@@ -247,6 +253,7 @@ fn ingredient_failures(actions: IngredientActions) -> AnyView {
         {move || actions.add_alias.value().with(|value| failure(value.as_ref()))}
         {move || actions.remove_alias.value().with(|value| failure(value.as_ref()))}
         {move || actions.set_section.value().with(|value| failure(value.as_ref()))}
+        {move || actions.set_allergens.value().with(|value| failure(value.as_ref()))}
         {move || actions.delete.value().with(|value| failure(value.as_ref()))}
         {move || actions.merge.value().with(|value| failure(value.as_ref()))}
     }

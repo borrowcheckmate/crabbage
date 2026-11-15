@@ -3,7 +3,9 @@
 use leptos::form::ActionForm;
 use leptos::prelude::*;
 
+use crate::admin::ingredients::allergen_form;
 use crate::catalog::SectionRow;
+use crate::catalog::allergens::SetIngredientAllergens;
 use crate::catalog::ingredients::{ApproveIngredient, list_pending_ingredients};
 use crate::catalog::sections::list_sections;
 use crate::i18n::t;
@@ -15,16 +17,34 @@ type ReviewPageData = (
     Option<Result<(Vec<crate::catalog::IngredientRow>, Vec<SectionRow>), ServerFnError>>,
 );
 
+/// What an admin can do with a pending ingredient.
+#[derive(Clone, Copy)]
+struct ReviewActions {
+    approve: ServerAction<ApproveIngredient>,
+    set_allergens: ServerAction<SetIngredientAllergens>,
+}
+
 /// The review page. Admins see the pending ingredients, everyone else a message. The data is loaded
 /// inside one suspense.
 #[component]
 pub(crate) fn ReviewPage() -> impl IntoView {
-    let approve = ServerAction::<ApproveIngredient>::new();
-    let data = Resource::new(move || approve.version().get(), |_| load_review());
+    let actions = ReviewActions {
+        approve: ServerAction::new(),
+        set_allergens: ServerAction::new(),
+    };
+    let data = Resource::new(
+        move || {
+            (
+                actions.approve.version().get(),
+                actions.set_allergens.version().get(),
+            )
+        },
+        |_| load_review(),
+    );
     view! {
         <Suspense fallback=|| view! { <p class="state-notice" role="status">{t("admin.loading")}</p> }>
             {move || {
-                Suspend::new(async move { review_page(data.await, approve) })
+                Suspend::new(async move { review_page(data.await, actions) })
             }}
         </Suspense>
     }
@@ -53,16 +73,14 @@ fn section_name(sections: &[SectionRow], id: Option<i64>) -> String {
         )
 }
 
-fn review_page(
-    (user, pending): ReviewPageData,
-    approve: ServerAction<ApproveIngredient>,
-) -> AnyView {
+fn review_page((user, pending): ReviewPageData, actions: ReviewActions) -> AnyView {
     match user {
         Ok(user) if user.is_admin => {
             let pending = pending.unwrap_or_else(|| Ok((Vec::new(), Vec::new())));
             view! {
                 <section class="admin-page"><h1>{t("admin.review.heading")}</h1>
-                {move || approve.value().with(|value| failure(value.as_ref()))}
+                {move || actions.approve.value().with(|value| failure(value.as_ref()))}
+                {move || actions.set_allergens.value().with(|value| failure(value.as_ref()))}
                 {match pending {
                     Ok((rows, _)) if rows.is_empty() => {
                         view! { <p>{t("admin.review.empty")}</p> }.into_any()
@@ -76,11 +94,12 @@ fn review_page(
                             let section = section_name(&sections, row.section_id);
                             view! {
                                 <div class="admin-row">
-                                    <ActionForm action=approve>
+                                    <ActionForm action=actions.approve>
                                         <p><a href=format!("/admin/ingredients/{id}")>{row.name}</a>" · "{section}</p>
                                         <input type="hidden" name="id" value=id/>
                                         <button>{t("admin.button.approve")}</button>
                                     </ActionForm>
+                                    {allergen_form(id, &row.allergens, actions.set_allergens)}
                                 </div>
                             }
                         })

@@ -1,6 +1,7 @@
 //! Store integration tests, in one binary: each module covers one part of the store.
 
 mod catalog_aliases;
+mod catalog_allergens;
 mod catalog_categories;
 mod catalog_ingredients;
 mod catalog_merge;

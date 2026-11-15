@@ -1,6 +1,7 @@
-//! Catalog server functions: ingredients, aliases, store sections, recipe categories and the review
+//! Catalog server functions: ingredients, aliases, allergens, store sections, recipe categories and the review
 //! queue. Every one of them is admin-only, see ARCHITECTURE.md.
 
+pub(crate) mod allergens;
 pub(crate) mod categories;
 #[cfg(feature = "ssr")]
 mod convert;

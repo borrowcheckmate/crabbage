@@ -2,6 +2,7 @@
 //! and every other signed-in user is refused.
 
 use axum::http::StatusCode;
+use crabbage_domain::allergens::Allergen;
 use crabbage_store::catalog::categories;
 use crabbage_store::catalog::ingredients::{self, list};
 use crabbage_store::catalog::sections;
@@ -95,6 +96,10 @@ fn write_forms(tomato: i64, onion: i64, produce: i64) -> Vec<(&'static str, Stri
             format!("id={tomato}&section_id={produce}"),
         ),
         ("merge_ingredients", format!("from={tomato}&into={onion}")),
+        (
+            "set_ingredient_allergens",
+            format!("id={tomato}&allergens%5Bmilk%5D=on"),
+        ),
         ("approve_ingredient", format!("id={tomato}")),
         ("create_section", "name=Dairy".to_owned()),
         ("rename_section", format!("id={produce}&name=Dairy")),
@@ -453,4 +458,36 @@ async fn members_are_refused_for_every_category_endpoint() {
         assert!(body.contains("not allowed"), "{endpoint}: {body}");
     }
     assert_eq!(category_names(&harness.pool).await, ["Dinner"]);
+}
+
+#[tokio::test]
+async fn allergens_are_set_from_checked_boxes_and_cleared_without_any() {
+    let harness = Harness::start("catalog-allergens").await;
+    let token = token_for(&harness, &[ADMIN]).await;
+    let pesto = ingredients::create(&harness.pool, "Pesto").await.unwrap();
+    let checked = format!(
+        "id={pesto}&allergens%5Btree_nuts%5D=on&allergens[milk]=on&allergens%5Bbogus%5D=on"
+    );
+    ok(&harness, &token, "set_ingredient_allergens", &checked).await;
+    let stored = list(&harness.pool).await.unwrap();
+    assert_eq!(stored[0].allergens, [Allergen::Milk, Allergen::TreeNuts]);
+    let body = ok(&harness, &token, "list_ingredients", "").await;
+    assert!(
+        body.contains("\"allergens\":[\"milk\",\"tree_nuts\"]"),
+        "{body}"
+    );
+
+    ok(
+        &harness,
+        &token,
+        "set_ingredient_allergens",
+        &format!("id={pesto}"),
+    )
+    .await;
+    assert_eq!(
+        list(&harness.pool).await.unwrap()[0].allergens,
+        Vec::<Allergen>::new()
+    );
+    let (_, body) = call(&harness, &token, "set_ingredient_allergens", "id=999999").await;
+    assert!(body.contains("does not exist"), "{body}");
 }

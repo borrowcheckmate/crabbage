@@ -3,6 +3,8 @@
 
 use axum::http::StatusCode;
 
+use crabbage_domain::allergens::Allergen;
+use crabbage_store::catalog::allergens::set_allergens;
 use crabbage_store::catalog::{ingredients, sections};
 
 use crate::common::{Harness, body_text, session_token};
@@ -237,4 +239,57 @@ async fn member_sees_the_not_allowed_message_on_the_ingredient_page() {
         "{body}"
     );
     assert!(!body.contains("Rename"), "{body}");
+}
+
+fn allergen_box<'a>(page: &'a str, ingredient: i64, code: &str) -> Option<&'a str> {
+    let form = page.split("<form").find(|form| {
+        form.contains("admin-allergens") && form.contains(&format!("value=\"{ingredient}\""))
+    })?;
+    let name = format!("name=\"allergens[{code}]\"");
+    form.split("<input")
+        .find(|input| input.contains(&name))
+        .and_then(|input| input.split('>').next())
+}
+
+#[tokio::test]
+async fn allergens_are_checked_on_the_ingredient_page_and_in_the_review_queue() {
+    let harness = Harness::start("ingredient-allergens").await;
+    let token = admin_token(&harness).await;
+    let (tomato, _) = seed(&harness).await;
+    let okra: i64 = sqlx::query_scalar("SELECT id FROM ingredients WHERE name = 'Okra'")
+        .fetch_one(&harness.pool)
+        .await
+        .expect("okra exists");
+    set_allergens(&harness.pool, tomato, &[Allergen::Celery])
+        .await
+        .expect("allergens set");
+    set_allergens(&harness.pool, okra, &[Allergen::Sesame])
+        .await
+        .expect("allergens set");
+
+    let page = body_text(
+        harness
+            .get(&format!("/admin/ingredients/{tomato}"), Some(&token))
+            .await,
+    )
+    .await;
+    assert!(page.contains("<legend>Allergens</legend>"), "{page}");
+    assert!(
+        allergen_box(&page, tomato, "celery").is_some_and(|input| input.contains("checked")),
+        "{page}"
+    );
+    assert!(
+        allergen_box(&page, tomato, "milk").is_some_and(|input| !input.contains("checked")),
+        "{page}"
+    );
+
+    let review = body_text(harness.get("/admin/review", Some(&token)).await).await;
+    assert!(
+        allergen_box(&review, okra, "sesame").is_some_and(|input| input.contains("checked")),
+        "{review}"
+    );
+    assert!(
+        allergen_box(&review, okra, "meat").is_some_and(|input| !input.contains("checked")),
+        "{review}"
+    );
 }

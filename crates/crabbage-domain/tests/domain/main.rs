@@ -1,5 +1,6 @@
 //! Domain rule tests, in one binary: each module covers one part of the domain.
 
+mod allergens;
 mod durations;
 mod meal_types;
 mod membership;
