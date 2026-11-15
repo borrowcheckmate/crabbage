@@ -31,6 +31,7 @@ mod recipes_ratings;
 mod recipes_round_trip;
 mod recipes_search;
 mod recipes_update;
+mod recipes_warnings;
 mod sessions;
 mod settings;
 mod shopping;

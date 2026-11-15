@@ -1,4 +1,12 @@
 {
+  "recipe.warnings": "Not advised in pregnancy:",
+  "recipe.label.warnings": "Pregnancy",
+  "warning.raw_egg": "Raw egg",
+  "warning.raw_fish": "Raw fish",
+  "warning.rare_meat": "Rare meat",
+  "warning.unpasteurised_cheese": "Unpasteurised cheese",
+  "warning.liver": "Liver",
+  "warning.alcohol": "Alcohol",
   "recipe.allergens": "Contains:",
   "allergen.gluten": "Gluten",
   "allergen.crustaceans": "Crustaceans",

@@ -34,6 +34,7 @@ pub(crate) fn complete_recipe() -> Imported {
         photo: None,
         categories: Vec::new(),
         meal_types: Vec::new(),
+        warnings: Vec::new(),
         lines: vec![ImportedLine {
             amount: Some(200.0),
             unit: None,
@@ -41,6 +42,7 @@ pub(crate) fn complete_recipe() -> Imported {
             note: None,
             ingredient_id: Some(1),
             section_id: None,
+            allergens: Vec::new(),
             original: "200 flour".to_owned(),
         }],
         steps: vec![ImportedStep {

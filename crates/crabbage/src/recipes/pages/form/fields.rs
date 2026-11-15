@@ -3,6 +3,7 @@
 
 use crabbage_domain::meal_types::MealType;
 use crabbage_domain::quantity::Unit;
+use crabbage_domain::warnings::Warning;
 use leptos::prelude::*;
 use leptos::prelude::{event_target_checked, event_target_value};
 
@@ -12,6 +13,7 @@ use crate::i18n::{messages, t};
 use crate::recipes::meal_types::meal_key;
 use crate::recipes::types::{LineDraft, StepDraft};
 use crate::recipes::units::unit_option_text;
+use crate::recipes::warnings::warning_key;
 
 /// The fields of the recipe form. The names fill the suggestions of the ingredient fields. A row
 /// whose ingredient is in `unresolved` carries the class `unresolved` while it keeps that name.
@@ -100,6 +102,10 @@ pub(crate) fn CategoryBoxes(draft: Draft, categories: Vec<CategoryRow>) -> impl 
                 <legend>{t("recipe.label.meal_types")}</legend>
                 {MealType::ALL.into_iter().map(|meal| meal_box(draft, meal)).collect_view()}
             </fieldset>
+            <fieldset>
+                <legend>{t("recipe.label.warnings")}</legend>
+                {Warning::ALL.into_iter().map(|warning| warning_box(draft, warning)).collect_view()}
+            </fieldset>
         </details>
     }
 }
@@ -110,6 +116,16 @@ fn meal_box(draft: Draft, meal: MealType) -> impl IntoView {
         <label>
             <input type="checkbox" value=code checked=move || draft.meal_types.get().iter().any(|other| other == code) on:change=move |ev| draft.set_meal_type(code, event_target_checked(&ev))/>
             {t(meal_key(meal))}
+        </label>
+    }
+}
+
+fn warning_box(draft: Draft, warning: Warning) -> impl IntoView {
+    let code = warning.code();
+    view! {
+        <label>
+            <input type="checkbox" value=code checked=move || draft.warnings.get().iter().any(|other| other == code) on:change=move |ev| draft.set_warning(code, event_target_checked(&ev))/>
+            {t(warning_key(warning))}
         </label>
     }
 }

@@ -35,6 +35,7 @@ mod rights;
 mod servings;
 mod types;
 mod units;
+mod warnings;
 mod write;
 
 pub(crate) use cook::CookPage;

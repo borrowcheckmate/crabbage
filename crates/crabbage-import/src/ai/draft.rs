@@ -31,6 +31,9 @@ pub struct AiDraft {
     /// The meal type codes the model chose; unknown codes are dropped on merge.
     #[serde(default)]
     pub meal_types: Vec<String>,
+    /// The dietary warning codes the model chose; unknown codes are dropped on merge.
+    #[serde(default)]
+    pub warnings: Vec<String>,
 }
 
 /// A normalized crop box on one submitted page.
@@ -68,6 +71,10 @@ pub struct AiLine {
     /// The store section the model chose for an ingredient new to the catalogue, if any.
     #[serde(default)]
     pub section_id: Option<i64>,
+    /// The allergen codes the model chose for an ingredient new to the catalogue; unknown codes are
+    /// dropped on merge.
+    #[serde(default)]
+    pub allergens: Vec<String>,
 }
 
 /// One method step of a draft.

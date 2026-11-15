@@ -7,6 +7,7 @@ use super::model::{Person, Recipe, RecipeStep, RecipeSummary};
 use crate::StoreError;
 use crabbage_domain::allergens::Allergen;
 use crabbage_domain::meal_types::MealType;
+use crabbage_domain::warnings::Warning;
 
 use crate::catalog::categories::Category;
 
@@ -70,6 +71,7 @@ pub async fn get(pool: &SqlitePool, id: i64, viewer: i64) -> Result<Option<Recip
     let steps = steps_of(pool, id).await?;
     let (categories, meal_types) = filing_of(pool, id).await?;
     let allergens = allergens_of(pool, id).await?;
+    let warnings = warnings_of(pool, id).await?;
     Ok(Some(Recipe {
         id: header.id,
         title: header.title,
@@ -82,6 +84,7 @@ pub async fn get(pool: &SqlitePool, id: i64, viewer: i64) -> Result<Option<Recip
         categories,
         meal_types,
         allergens,
+        warnings,
         image: header.image,
         average: header.average,
         rating_count: header.rating_count,
@@ -120,6 +123,15 @@ async fn steps_of(pool: &SqlitePool, recipe_id: i64) -> Result<Vec<RecipeStep>, 
 }
 
 /// The allergens of the ingredients of recipe `id`, each once.
+async fn warnings_of(pool: &SqlitePool, id: i64) -> Result<Vec<Warning>, StoreError> {
+    let codes: Vec<String> =
+        sqlx::query_scalar("SELECT warning FROM recipe_warnings WHERE recipe_id = ?")
+            .bind(id)
+            .fetch_all(pool)
+            .await?;
+    Ok(Warning::from_codes(codes.iter().map(String::as_str)))
+}
+
 async fn allergens_of(pool: &SqlitePool, id: i64) -> Result<Vec<Allergen>, StoreError> {
     let codes: Vec<String> = sqlx::query_scalar(
         "SELECT DISTINCT a.allergen FROM recipe_lines l \

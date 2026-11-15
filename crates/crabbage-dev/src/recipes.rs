@@ -42,6 +42,7 @@ impl DemoRecipe {
                 ingredient: Some((*ingredient).to_owned()),
                 note: None,
                 section_id: None,
+                allergens: Vec::new(),
             })
             .collect();
         let steps = vec![
@@ -73,6 +74,7 @@ impl DemoRecipe {
             steps,
             category_ids: category_id.into_iter().collect(),
             meal_types: Vec::new(),
+            warnings: Vec::new(),
         }
     }
 }

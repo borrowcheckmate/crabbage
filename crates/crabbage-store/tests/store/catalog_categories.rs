@@ -63,6 +63,7 @@ async fn deleting_a_category_takes_it_off_every_recipe() {
             steps: vec![],
             category_ids: vec![dinner],
             meal_types: Vec::new(),
+            warnings: Vec::new(),
         },
         0,
     )

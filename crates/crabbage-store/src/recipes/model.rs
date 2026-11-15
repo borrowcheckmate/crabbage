@@ -4,6 +4,7 @@ use sqlx::FromRow;
 
 use crabbage_domain::allergens::Allergen;
 use crabbage_domain::meal_types::MealType;
+use crabbage_domain::warnings::Warning;
 
 use crate::catalog::categories::Category;
 
@@ -22,6 +23,8 @@ pub struct RecipeInput {
     pub category_ids: Vec<i64>,
     /// The meal types of the recipe. Each is stored once.
     pub meal_types: Vec<MealType>,
+    /// The dietary warnings of the recipe. Each is stored once.
+    pub warnings: Vec<Warning>,
 }
 
 /// An ingredient line to write.
@@ -39,6 +42,9 @@ pub struct LineInput {
     /// The store section of the ingredient when this line creates it for review. Ignored when the
     /// name matches an existing ingredient or the section does not exist.
     pub section_id: Option<i64>,
+    /// The allergens of the ingredient when this line creates it for review. Ignored when the name
+    /// matches an existing ingredient.
+    pub allergens: Vec<Allergen>,
 }
 
 /// A step to write.
@@ -77,6 +83,8 @@ pub struct Recipe {
     pub meal_types: Vec<MealType>,
     /// The allergens of its ingredients, in [`Allergen::ALL`] order.
     pub allergens: Vec<Allergen>,
+    /// The dietary warnings, in [`Warning::ALL`] order.
+    pub warnings: Vec<Warning>,
     /// The file name of the recipe's photo in the images directory, if it has one.
     pub image: Option<String>,
     /// The average of the ratings to one decimal place, if anyone rated the recipe.

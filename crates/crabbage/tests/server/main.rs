@@ -74,6 +74,7 @@ mod recipe_photo_import;
 mod recipe_ratings;
 mod recipe_redirects;
 mod recipe_step_lines;
+mod recipe_warnings;
 #[expect(
     clippy::expect_used,
     reason = "test helpers stop the test on setup failure"

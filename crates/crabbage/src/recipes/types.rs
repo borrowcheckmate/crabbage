@@ -53,6 +53,8 @@ pub(crate) struct RecipeDetail {
     pub(crate) meal_types: Vec<String>,
     /// The codes of the allergens of its ingredients, in the fixed allergen order.
     pub(crate) allergens: Vec<String>,
+    /// The codes of the recipe's dietary warnings, in form order.
+    pub(crate) warnings: Vec<String>,
     /// The file name of the recipe's photo, if it has one.
     pub(crate) image: Option<String>,
     /// Whether the signed-in user may change the recipe.
@@ -121,6 +123,8 @@ pub(crate) struct RecipeDraft {
     pub(crate) categories: Vec<i64>,
     /// The codes of the recipe's meal types. Unknown codes are left out when it is saved.
     pub(crate) meal_types: Vec<String>,
+    /// The codes of the recipe's dietary warnings. Unknown codes are left out when it is saved.
+    pub(crate) warnings: Vec<String>,
 }
 
 /// An ingredient line of a recipe form.
@@ -137,6 +141,10 @@ pub(crate) struct LineDraft {
     /// The store section for the ingredient when it is new to the catalogue, if the import chose one.
     #[serde(default)]
     pub(crate) section_id: Option<i64>,
+    /// The allergen codes for the ingredient when it is new to the catalogue, if the import chose
+    /// any.
+    #[serde(default)]
+    pub(crate) allergens: Vec<String>,
 }
 
 /// A step of a recipe form.

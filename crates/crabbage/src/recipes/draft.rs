@@ -1,7 +1,9 @@
 //! Checks a recipe form and turns it into the store's input. A row that is entirely blank is
 //! skipped; every other field is checked here, so the store only sees valid recipes.
 
+use crabbage_domain::allergens::Allergen;
 use crabbage_domain::quantity::Unit;
+use crabbage_domain::warnings::Warning;
 use crabbage_store::recipes::{LineInput, RecipeInput, StepInput};
 use leptos::prelude::ServerFnError;
 
@@ -50,6 +52,7 @@ fn input(draft: &RecipeDraft) -> Result<RecipeInput, ServerFnError> {
         meal_types: crabbage_domain::meal_types::MealType::from_codes(
             draft.meal_types.iter().map(String::as_str),
         ),
+        warnings: Warning::from_codes(draft.warnings.iter().map(String::as_str)),
     })
 }
 
@@ -78,6 +81,7 @@ fn line(draft: &LineDraft) -> Result<LineInput, ServerFnError> {
         ingredient: optional(&draft.ingredient),
         note: optional(&draft.note),
         section_id: draft.section_id,
+        allergens: Allergen::from_codes(draft.allergens.iter().map(String::as_str)),
     })
 }
 
@@ -143,7 +147,9 @@ fn minutes(text: &str) -> Result<Option<i64>, ServerFnError> {
 #[cfg(test)]
 mod tests {
     use super::parse;
+    use crabbage_domain::allergens::Allergen;
     use crabbage_domain::meal_types::MealType;
+    use crabbage_domain::warnings::Warning;
 
     #[test]
     fn a_link_follows_its_line_past_a_blank_row_and_a_missing_link_is_dropped() {
@@ -163,5 +169,14 @@ mod tests {
         assert_eq!(input.meal_types, [MealType::Lunch, MealType::Dinner]);
         let input = parse(r#"{"title":"Soup","servings":"2"}"#).expect("the draft is valid");
         assert_eq!(input.meal_types, Vec::<MealType>::new());
+    }
+
+    #[test]
+    fn warning_and_allergen_codes_become_known_ones() {
+        let json = r#"{"title":"Tiramisu","servings":"4","warnings":["alcohol","bogus","raw_egg"],
+            "lines":[{"amount":"","unit":"","ingredient":"Mascarpone","note":"","allergens":["milk","nuts"]}]}"#;
+        let input = parse(json).expect("the draft is valid");
+        assert_eq!(input.warnings, [Warning::RawEgg, Warning::Alcohol]);
+        assert_eq!(input.lines[0].allergens, [Allergen::Milk]);
     }
 }

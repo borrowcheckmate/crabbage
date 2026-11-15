@@ -47,11 +47,13 @@ async fn stored(
                 ingredient: Some(name.to_owned()),
                 note: None,
                 section_id: None,
+                allergens: Vec::new(),
             })
             .collect(),
         steps: Vec::new(),
         category_ids,
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     };
     create_recipe(&harness.pool, owner_id, &input, 0)
         .await

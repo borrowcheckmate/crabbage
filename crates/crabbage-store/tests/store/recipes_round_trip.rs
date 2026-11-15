@@ -13,6 +13,7 @@ fn line(amount: f64, unit: &str, ingredient: &str, note: Option<&str>) -> LineIn
         ingredient: Some(ingredient.to_owned()),
         note: note.map(str::to_owned),
         section_id: None,
+        allergens: Vec::new(),
     }
 }
 
@@ -24,6 +25,7 @@ fn pancakes(lines: Vec<LineInput>, steps: Vec<StepInput>) -> RecipeInput {
         steps,
         category_ids: vec![],
         meal_types: Vec::new(),
+        warnings: Vec::new(),
     }
 }
 
@@ -41,6 +43,7 @@ async fn a_recipe_round_trips_with_lines_steps_and_links() {
                 ingredient: None,
                 note: None,
                 section_id: None,
+                allergens: Vec::new(),
             },
         ],
         vec![

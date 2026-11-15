@@ -12,3 +12,4 @@ pub mod planner;
 pub mod quantity;
 pub mod scaling;
 pub mod shopping;
+pub mod warnings;
