@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 clap.workspace = true
-crabbage-dev = { version = "0.1.0", path = "../crates/crabbage-dev" }
+crabbage-dev = { version = "0.2.0", path = "../crates/crabbage-dev" }
 tokio.workspace = true
 
 [lints]

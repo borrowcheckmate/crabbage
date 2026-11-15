@@ -11,7 +11,7 @@ keywords = ["recipe", "recipes", "cooking", "recipe-book"]
 categories = ["database"]
 
 [dependencies]
-crabbage-domain = { version = "0.1.0", path = "../crabbage-domain" }
+crabbage-domain = { version = "0.2.0", path = "../crabbage-domain" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
