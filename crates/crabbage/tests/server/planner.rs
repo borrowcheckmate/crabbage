@@ -350,8 +350,8 @@ async fn plan_page_adds_the_week_to_shopping_once() {
     assert_eq!(count, 3);
 }
 
-fn meal_box<'a>(page: &'a str, code: &str) -> &'a str {
-    let name = format!("name=\"meal_{code}\"");
+fn checkbox<'a>(page: &'a str, field: &str) -> &'a str {
+    let name = format!("name=\"{field}\"");
     page.split("<input")
         .find(|input| input.contains(&name))
         .and_then(|input| input.split('>').next())
@@ -406,6 +406,77 @@ async fn the_planner_fills_the_week_and_lists_recipes_of_its_meal_types_or_of_no
         !page.contains("<option value=\"Planner recipe A\">"),
         "{page}"
     );
-    assert!(meal_box(&page, "dinner").contains("checked"), "{page}");
-    assert!(!meal_box(&page, "lunch").contains("checked"), "{page}");
+    assert!(checkbox(&page, "meal_dinner").contains("checked"), "{page}");
+    assert!(!checkbox(&page, "meal_lunch").contains("checked"), "{page}");
+}
+
+async fn save_avoid_form(harness: &Harness, token: &str, home: i64) {
+    let settings_form = "lookback_weeks=0&servings=2&monday=71&tuesday=71&wednesday=71&thursday=71&friday=71&saturday=71&sunday=71&avoid_alcohol=on&avoid_tree_nuts=on";
+    assert_eq!(
+        post(harness, token, "/plan/settings", settings_form).await,
+        StatusCode::SEE_OTHER
+    );
+    let avoid = crabbage_store::planner::avoid(&harness.pool, home)
+        .await
+        .expect("avoid read");
+    assert_eq!(avoid.codes().collect::<Vec<_>>(), ["tree_nuts", "alcohol"]);
+}
+
+#[tokio::test]
+async fn the_planner_leaves_out_what_the_household_avoids_and_flags_a_planned_one() {
+    let (harness, token, owner, recipes) = setup("planner-avoid").await;
+    let home = household(&harness, owner).await;
+    sqlx::query("INSERT INTO recipe_warnings (recipe_id, warning) VALUES (?, 'alcohol')")
+        .bind(recipes[0])
+        .execute(&harness.pool)
+        .await
+        .expect("warning set");
+    save_avoid_form(&harness, &token, home).await;
+
+    assert_eq!(
+        post(&harness, &token, "/plan/generate", "week=2024-03-04").await,
+        StatusCode::SEE_OTHER
+    );
+    let planned = entries(&harness.pool, home, "2024-03-04", "2024-03-10")
+        .await
+        .expect("week read");
+    assert!(
+        planned
+            .iter()
+            .all(|entry| entry.recipe_id == Some(recipes[1]))
+    );
+
+    let typed = "recipe=Planner+recipe+A";
+    assert_eq!(
+        post(&harness, &token, "/plan/2024-03-05/recipe", typed).await,
+        StatusCode::SEE_OTHER
+    );
+    let page = body_text(
+        harness
+            .get("/plan?week=2024-03-04&day=2024-03-05", Some(&token))
+            .await,
+    )
+    .await;
+    assert!(
+        page.contains("This recipe has something your household avoids."),
+        "{page}"
+    );
+    assert_eq!(
+        page.matches("class=\"plan-day-avoided\"").count(),
+        1,
+        "{page}"
+    );
+    assert!(
+        checkbox(&page, "avoid_alcohol").contains("checked"),
+        "{page}"
+    );
+    assert!(!checkbox(&page, "avoid_milk").contains("checked"), "{page}");
+    assert_eq!(
+        post(&harness, &token, "/plan/2024-03-05/reroll", "").await,
+        StatusCode::SEE_OTHER
+    );
+    let rerolled = entries(&harness.pool, home, "2024-03-05", "2024-03-05")
+        .await
+        .expect("day read");
+    assert_eq!(rerolled[0].recipe_id, Some(recipes[1]));
 }

@@ -18,6 +18,7 @@ impl From<RecipeSummary> for RecipeSummaryRow {
             average: summary.average,
             rating_count: summary.rating_count,
             favourite: summary.favourite,
+            avoided: false,
         }
     }
 }
@@ -90,6 +91,7 @@ pub(crate) fn detail(recipe: Recipe, rights: Rights) -> RecipeDetail {
             .iter()
             .map(|warning| warning.code().to_owned())
             .collect(),
+        avoided: Vec::new(),
         image: recipe.image,
         can_edit: rights.edit,
         can_delete: rights.delete,

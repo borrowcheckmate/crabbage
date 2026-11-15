@@ -1,11 +1,13 @@
 //! Household planner settings and dated plan entries.
 
+mod avoid;
 mod model;
 mod read;
 mod recipes;
 mod write;
 
-pub use model::{PlanEntry, PlannerSettings};
+pub use avoid::{avoid, conflicting_recipes, save_avoid};
+pub use model::{Avoid, PlanEntry, PlannerSettings};
 pub use read::{entries, history, settings};
 pub use recipes::{
     categories_exist, recipe_exists, recipe_ids, recipe_titles, recipes_in_categories,

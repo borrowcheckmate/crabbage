@@ -24,6 +24,7 @@ struct PlanData {
     servings: i64,
     lookback: i64,
     meal_types: Vec<String>,
+    avoid: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -35,6 +36,7 @@ struct PlanDay {
     photo: Option<String>,
     is_rest: bool,
     servings: i64,
+    avoided: bool,
 }
 
 #[server(prefix = "/api", endpoint = "plan_week")]
@@ -75,7 +77,11 @@ async fn load_plan_week(week: &str) -> Result<PlanData, ServerFnError> {
     let names = planner::recipe_titles(&pool, &settings.meal_types)
         .await
         .map_err(|error| crate::access::store_failure(&error))?;
-    let days = plan_days(start, &entries, settings.servings, &recipe_rows);
+    let (avoid, conflicting) = avoid_of(&pool, household).await?;
+    let mut days = plan_days(start, &entries, settings.servings, &recipe_rows);
+    for day in &mut days {
+        day.avoided = day.recipe_id.is_some_and(|id| conflicting.contains(&id));
+    }
     let categories = categories::list(&pool)
         .await
         .map_err(|error| crate::access::store_failure(&error))?
@@ -95,7 +101,23 @@ async fn load_plan_week(week: &str) -> Result<PlanData, ServerFnError> {
             .iter()
             .map(|meal| meal.code().to_owned())
             .collect(),
+        avoid,
     })
+}
+
+#[cfg(feature = "ssr")]
+async fn avoid_of(
+    pool: &sqlx::SqlitePool,
+    household: i64,
+) -> Result<(Vec<String>, Vec<i64>), ServerFnError> {
+    use crabbage_store::planner;
+    let avoid = planner::avoid(pool, household)
+        .await
+        .map_err(|error| crate::access::store_failure(&error))?;
+    let conflicting = planner::conflicting_recipes(pool, &avoid)
+        .await
+        .map_err(|error| crate::access::store_failure(&error))?;
+    Ok((avoid.codes().map(str::to_owned).collect(), conflicting))
 }
 
 #[cfg(feature = "ssr")]
@@ -129,6 +151,7 @@ fn plan_days(
                         .map(|(_, name, _)| name.clone())
                 }),
                 servings: entry.map_or(default_servings, |entry| entry.servings),
+                avoided: false,
             }
         })
         .collect()
@@ -196,7 +219,7 @@ fn PlanAgenda(data: PlanData, selected_date: String) -> impl IntoView {
             <For each=move || days.get_value() key=|day| day.date.clone() let(day)>
                 <a class="plan-day" aria-current=(selected_date == day.date).then_some("date") href=format!("/plan?week={}&day={}", week.clone(), day.date)>
                     <span class="plan-day-date"><b>{t(weekday_short_key(day.weekday))}</b><time datetime=day.date.clone()>{day_number(&day.date)}</time></span>
-                    <span class="plan-day-summary"><strong>{day_title(&day)}</strong>{(!day.is_rest).then(|| view! { <small>{day_subtitle(&day)}</small> })}</span>
+                    <span class="plan-day-summary"><strong>{day_title(&day)}</strong>{(!day.is_rest).then(|| view! { <small>{day_subtitle(&day)}</small> })}{day.avoided.then(|| view! { <small class="plan-day-avoided">{t("plan.avoided")}</small> })}</span>
                     <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
                 </a>
             </For>
@@ -221,6 +244,7 @@ fn PlanEditor(day: PlanDay, recipes: Vec<(i64, String)>, week: String) -> impl I
     });
     view! {
         <section class="plan-editor"><p class="plan-date-label">{format!("{} {} {}", t(weekday_short_key(day.weekday)), t("plan.separator"), t("plan.dinner"))}</p><h2>{day_title(&day)}</h2>
+            {day.avoided.then(|| view! { <p class="notice error">{t("plan.avoided_notice")}</p> })}
             {selected_photo.map_or_else(|| view! { <div class="plan-editor-photo plan-photo-fallback" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10h18l-2 10H5L3 10Zm3 0a6 6 0 0 1 12 0"/></svg></div> }.into_any(), |photo| view! { <img class="plan-editor-photo" src=format!("/images/{photo}") alt=""/> }.into_any())}
             <div class="plan-servings"><span>{t("recipe.servings")}</span><form method="post" action=servings_action.clone()><input type="hidden" name="servings" value=(day.servings - 1).max(1)/><button aria-label=t("plan.decrease_servings") disabled={day.servings <= 1}>-</button></form><strong>{day.servings}</strong><form method="post" action=servings_action><input type="hidden" name="servings" value=(day.servings + 1).min(99)/><button aria-label=t("plan.increase_servings") disabled={day.servings >= 99}>+</button></form></div>
             <form method="post" action=recipe_action class="plan-recipe-picker"><label>{t("plan.recipe")}<input type="search" name="recipe" list="plan-recipes" autocomplete="off" required value=current_choice placeholder=t("plan.recipe_placeholder")/></label><datalist id="plan-recipes"><option value=t("plan.rest")></option>{recipes.iter().map(|recipe| view! { <option value=recipe.1.clone()></option> }).collect_view()}</datalist><button>{t("plan.change_recipe")}</button></form>
@@ -244,12 +268,30 @@ fn plan_settings(data: PlanData) -> impl IntoView {
                     <label>{t(weekday_key(item))}<select name=weekday_field(item)><option value="rest">{t("plan.rest")}</option>{settings.get_value().categories.iter().map(|category| view! { <option value=category.0.to_string() selected=settings.get_value().weekdays.get(item).copied().flatten() == Some(category.0)>{category.1.clone()}</option> }).collect_view()}</select></label>
                 </For>
                 <fieldset class="plan-meal-types"><legend>{t("plan.meal_types")}</legend>{crabbage_domain::meal_types::MealType::ALL.into_iter().map(|meal| view! { <label><input type="checkbox" name=format!("meal_{}", meal.code()) checked=settings.get_value().meal_types.iter().any(|code| code == meal.code())/>{t(crate::recipes::meal_types::meal_key(meal))}</label> }).collect_view()}</fieldset>
+                {avoid_fieldset(&settings.get_value().avoid)}
                 <label>{t("plan.lookback")}<input name="lookback_weeks" type="number" min="0" max="52" value=settings.get_value().lookback/></label>
                 <label>{t("recipe.servings")}<input name="servings" type="number" min="1" max="99" value=settings.get_value().servings/></label>
                 <button>{t("plan.save")}</button>
             </form>
         </details>
     }
+}
+
+fn avoid_fieldset(avoid: &[String]) -> AnyView {
+    use crabbage_domain::allergens::Allergen;
+    use crabbage_domain::warnings::Warning;
+    let boxes = Allergen::ALL
+        .into_iter()
+        .map(|allergen| (allergen.code(), crate::catalog::allergens::allergen_key(allergen)))
+        .chain(
+            Warning::ALL
+                .into_iter()
+                .map(|warning| (warning.code(), crate::recipes::warnings::warning_key(warning))),
+        )
+        .map(|(code, key)| view! { <label><input type="checkbox" name=format!("avoid_{code}") checked=avoid.iter().any(|other| other == code)/>{t(key)}</label> })
+        .collect_view();
+    view! { <fieldset class="plan-avoid"><legend>{t("plan.avoid")}</legend>{boxes}</fieldset> }
+        .into_any()
 }
 
 fn weekday_key(index: usize) -> &'static str {

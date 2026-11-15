@@ -52,6 +52,7 @@ struct Filters {
     category: Option<i64>,
     meal: Option<String>,
     favourites: bool,
+    safe: bool,
     search: String,
 }
 
@@ -65,6 +66,7 @@ impl Filters {
                 .and_then(|code| MealType::from_code(&code))
                 .map(|meal| meal.code().to_owned()),
             favourites: map.get("favourites").as_deref() == Some("1"),
+            safe: map.get("safe").as_deref() == Some("1"),
             search: map.get("q").unwrap_or_default().trim().to_owned(),
         }
     }
@@ -80,6 +82,9 @@ impl Filters {
         }
         if self.favourites {
             parts.push("favourites=1".to_owned());
+        }
+        if self.safe {
+            parts.push("safe=1".to_owned());
         }
         if !self.search.is_empty() {
             parts.push(format!("q={}", encode(&self.search)));
@@ -124,6 +129,7 @@ async fn load_rows(filters: &Filters) -> RecipeListResult {
             filters.category,
             filters.meal.clone(),
             filters.favourites,
+            filters.safe,
             Some(filters.search.clone()),
         )
         .await?,
@@ -136,7 +142,7 @@ fn empty_text(filters: &Filters) -> String {
         t_with("recipes.empty_search", &[("q", &filters.search)])
     } else if filters.favourites {
         t("recipes.empty_favourites").to_owned()
-    } else if filters.category.is_some() || filters.meal.is_some() {
+    } else if filters.category.is_some() || filters.meal.is_some() || filters.safe {
         t("recipes.empty_category").to_owned()
     } else {
         t("recipes.empty").to_owned()
@@ -157,11 +163,15 @@ fn search_form(filters: &Filters) -> impl IntoView + use<> {
     let favourites = filters
         .favourites
         .then(|| view! { <input type="hidden" name="favourites" value="1"/> });
+    let safe = filters
+        .safe
+        .then(|| view! { <input type="hidden" name="safe" value="1"/> });
     view! {
         <Form attr:class="recipe-search-form" method="get" action="/recipes" attr:role="search">
             {category}
             {meal}
             {favourites}
+            {safe}
             <label class="recipe-search-label"><span class="recipe-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input type="search" name="q" aria-label=t("recipes.search.label") placeholder=t("recipes.search.placeholder") value=search/></label>
         </Form>
     }
@@ -171,11 +181,20 @@ fn search_form(filters: &Filters) -> impl IntoView + use<> {
 /// for assistive tech. Every link keeps the search text; All clears the other two filters and the
 /// others keep the filter they do not change.
 fn filter_links(categories: Vec<CategoryRow>, filters: &Filters) -> impl IntoView {
-    let unfiltered = filters.category.is_none() && filters.meal.is_none() && !filters.favourites;
+    let unfiltered = filters.category.is_none()
+        && filters.meal.is_none()
+        && !filters.favourites
+        && !filters.safe;
     let all = Filters {
         category: None,
         meal: None,
         favourites: false,
+        safe: false,
+        ..filters.clone()
+    }
+    .href();
+    let safe_toggle = Filters {
+        safe: !filters.safe,
         ..filters.clone()
     }
     .href();
@@ -188,6 +207,7 @@ fn filter_links(categories: Vec<CategoryRow>, filters: &Filters) -> impl IntoVie
         <nav class="row filters" aria-label=t("recipes.categories.label")>
             <a href=all aria-current=unfiltered.then_some("page")>{t("recipes.category.all")}</a>
             <a href=toggle aria-current=filters.favourites.then_some("page")>{t("recipes.filter.favourites")}</a>
+            <a href=safe_toggle aria-current=filters.safe.then_some("page")>{t("recipes.filter.safe")}</a>
             {categories
                 .into_iter()
                 .map(|category| {
@@ -252,7 +272,11 @@ fn encode_hex(text: &str) -> String {
 
 fn recipe_card(row: RecipeSummaryRow, filters: &Filters, first: bool) -> impl IntoView {
     let href = format!("/recipes/{}", row.id);
-    let href = if filters.category.is_some() || filters.favourites || !filters.search.is_empty() {
+    let href = if filters.category.is_some()
+        || filters.favourites
+        || filters.safe
+        || !filters.search.is_empty()
+    {
         format!("{href}?return={}", encode_hex(&filters.href()))
     } else {
         href
@@ -271,6 +295,9 @@ fn recipe_card(row: RecipeSummaryRow, filters: &Filters, first: bool) -> impl In
     let favourite = row.favourite.then(
         || view! { <span class="recipe-card-favourite">{t("recipe.favourite.badge")}</span> },
     );
+    let avoided = row
+        .avoided
+        .then(|| view! { <span class="recipe-card-avoided">{t("recipes.avoided")}</span> });
     let rating = (row.rating_count > 0).then(|| rating_text(row.average, row.rating_count));
     view! {
         <section class="recipe-card">
@@ -279,7 +306,7 @@ fn recipe_card(row: RecipeSummaryRow, filters: &Filters, first: bool) -> impl In
                 {(!has_image).then(|| view! { <span class="recipe-photo-fallback" aria-hidden="true"></span> })}
             </a>
             <div class="recipe-card-copy">
-                <div class="recipe-card-meta">{favourite}</div>
+                <div class="recipe-card-meta">{favourite}{avoided}</div>
                 <h2><a href=href>{row.title}</a></h2>
                 <p>{servings}</p>
                 {rating.map(|text| view! { <p class="recipe-card-rating">{text}</p> })}

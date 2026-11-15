@@ -22,5 +22,18 @@ pub(crate) async fn get_recipe(id: i64) -> Result<RecipeDetail, ServerFnError> {
     let role = crate::access::role(&pool, user).await?;
     let recipe = load(&pool, user, id).await?;
     let rights = Rights::of(role, user, &recipe);
-    Ok(detail(recipe, rights))
+    let avoid = crate::recipes::avoid::household_avoid(&pool, user).await?;
+    let mut detail = detail(recipe, rights);
+    detail.avoided = avoid
+        .codes()
+        .filter(|code| {
+            detail
+                .allergens
+                .iter()
+                .chain(&detail.warnings)
+                .any(|own| own == code)
+        })
+        .map(str::to_owned)
+        .collect();
+    Ok(detail)
 }

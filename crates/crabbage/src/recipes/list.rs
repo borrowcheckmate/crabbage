@@ -14,13 +14,15 @@ use leptos::server;
 use super::types::RecipeSummaryRow;
 
 /// Every recipe ordered by title, as the signed-in user sees it. `category` keeps only the recipes in
-/// that category, `meal_type` (a meal type code) only those of that meal type, `favourites_only` only the user's favourites and `search` only the recipes that
-/// match it by title or ingredient.
+/// that category, `meal_type` (a meal type code) only those of that meal type, `favourites_only` only the user's favourites,
+/// `safe_only` only those without anything the household avoids, and `search` only the recipes that
+/// match it by title or ingredient. Each row says whether the household avoids something in it.
 #[server(prefix = "/api", endpoint = "list_recipes")]
 pub(crate) async fn list_recipes(
     category: Option<i64>,
     meal_type: Option<String>,
     favourites_only: bool,
+    safe_only: bool,
     search: Option<String>,
 ) -> Result<Vec<RecipeSummaryRow>, ServerFnError> {
     use crabbage_domain::meal_types::MealType;
@@ -37,5 +39,14 @@ pub(crate) async fn list_recipes(
     )
     .await
     .map_err(|error| crate::access::store_failure(&error))?;
-    Ok(rows.into_iter().map(RecipeSummaryRow::from).collect())
+    let avoided = crate::recipes::avoid::avoided_recipes(&pool, user).await?;
+    Ok(rows
+        .into_iter()
+        .map(RecipeSummaryRow::from)
+        .map(|row| RecipeSummaryRow {
+            avoided: avoided.contains(&row.id),
+            ..row
+        })
+        .filter(|row| !(safe_only && row.avoided))
+        .collect())
 }
