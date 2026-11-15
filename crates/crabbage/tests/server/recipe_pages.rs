@@ -156,6 +156,19 @@ async fn edit_and_delete_show_only_to_those_who_may_use_them() {
     assert!(body.contains(&edit_link), "{body}");
     assert!(body.contains(&delete_link), "{body}");
     assert!(!body.contains("class=\"danger\""), "{body}");
+    let header = body
+        .split("class=\"recipe-detail-header\"")
+        .nth(1)
+        .and_then(|rest| rest.split("</header>").next())
+        .unwrap_or_default();
+    assert!(
+        header.contains("class=\"recipe-edit-actions\"") && header.contains(&delete_link),
+        "{header}"
+    );
+    assert!(
+        body.contains("class=\"button quiet recipe-delete\""),
+        "{body}"
+    );
 
     let other = sign_in_as(&harness, OTHER, &[]).await;
     let body = page(&harness, &other, &format!("/recipes/{id}")).await;
@@ -436,7 +449,7 @@ async fn the_edit_page_offers_each_line_to_each_step_with_the_linked_ones_checke
         3,
         "{body}"
     );
-    assert_eq!(body.matches("type=\"checkbox\"").count(), 16, "{body}");
+    assert_eq!(body.matches("type=\"checkbox\"").count(), 22, "{body}");
     assert_eq!(body.matches("checked>2 Egg</label>").count(), 1, "{body}");
     assert_eq!(
         body.matches("checked>250 g Flour, sifted</label>").count(),
