@@ -2,6 +2,7 @@
 
 use sqlx::FromRow;
 
+use crabbage_domain::allergens::Allergen;
 use crabbage_domain::meal_types::MealType;
 
 use crate::catalog::categories::Category;
@@ -74,6 +75,8 @@ pub struct Recipe {
     pub categories: Vec<Category>,
     /// The meal types, in [`MealType::ALL`] order.
     pub meal_types: Vec<MealType>,
+    /// The allergens of its ingredients, in [`Allergen::ALL`] order.
+    pub allergens: Vec<Allergen>,
     /// The file name of the recipe's photo in the images directory, if it has one.
     pub image: Option<String>,
     /// The average of the ratings to one decimal place, if anyone rated the recipe.

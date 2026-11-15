@@ -53,6 +53,7 @@ mod pages;
     reason = "test helpers stop the test on setup failure"
 )]
 mod planner;
+mod recipe_allergens;
 mod recipe_browse;
 #[expect(
     clippy::expect_used,
