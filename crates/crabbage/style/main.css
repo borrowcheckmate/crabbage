@@ -646,6 +646,18 @@ progress {
   gap: 0.35rem;
 }
 
+.plan-meal-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.plan-meal-types label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .plan-day button,
 .plan-settings button {
   min-height: 44px;

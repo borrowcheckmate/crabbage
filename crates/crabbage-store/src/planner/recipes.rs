@@ -1,11 +1,28 @@
 //! Recipe and category lookups used by the planner.
 
-use sqlx::sqlite::SqlitePool;
+use crabbage_domain::meal_types::MealType;
+use sqlx::QueryBuilder;
+use sqlx::sqlite::{Sqlite, SqlitePool};
 
 use crate::StoreError;
 
+fn push_meal_filter(query: &mut QueryBuilder<Sqlite>, recipe: &str, meal_types: &[MealType]) {
+    if meal_types.is_empty() {
+        return;
+    }
+    query.push(format!(
+        " AND ({recipe} NOT IN (SELECT recipe_id FROM recipe_meal_types) \
+         OR {recipe} IN (SELECT recipe_id FROM recipe_meal_types WHERE meal_type IN ("
+    ));
+    let mut separated = query.separated(", ");
+    for meal_type in meal_types {
+        separated.push_bind(meal_type.code());
+    }
+    separated.push_unseparated(")))");
+}
+
 /// Returns the `(category, recipe)` pairs of the recipes filed under `categories`, ordered by
-/// category and recipe id.
+/// category and recipe id. With `meal_types`, only recipes of one of them or of none qualify.
 ///
 /// # Errors
 ///
@@ -13,43 +30,54 @@ use crate::StoreError;
 pub async fn recipes_in_categories(
     pool: &SqlitePool,
     categories: &[i64],
+    meal_types: &[MealType],
 ) -> Result<Vec<(i64, i64)>, StoreError> {
     if categories.is_empty() {
         return Ok(Vec::new());
     }
-    let mut query = sqlx::QueryBuilder::new(
+    let mut query = QueryBuilder::new(
         "SELECT category_id, recipe_id FROM recipe_categories WHERE category_id IN (",
     );
     let mut separated = query.separated(", ");
     for category in categories {
         separated.push_bind(category);
     }
-    separated.push_unseparated(") ORDER BY category_id, recipe_id");
+    separated.push_unseparated(")");
+    push_meal_filter(&mut query, "recipe_id", meal_types);
+    query.push(" ORDER BY category_id, recipe_id");
     Ok(query.build_query_as().fetch_all(pool).await?)
 }
 
-/// Returns every recipe id, ordered by id.
+/// Returns every recipe id, ordered by id. With `meal_types`, only recipes of one of them or of
+/// none qualify.
 ///
 /// # Errors
 ///
 /// Returns an error if the query fails.
-pub async fn recipe_ids(pool: &SqlitePool) -> Result<Vec<i64>, StoreError> {
-    Ok(sqlx::query_scalar("SELECT id FROM recipes ORDER BY id")
-        .fetch_all(pool)
-        .await?)
+pub async fn recipe_ids(
+    pool: &SqlitePool,
+    meal_types: &[MealType],
+) -> Result<Vec<i64>, StoreError> {
+    let mut query = QueryBuilder::new("SELECT id FROM recipes WHERE 1");
+    push_meal_filter(&mut query, "id", meal_types);
+    query.push(" ORDER BY id");
+    Ok(query.build_query_scalar().fetch_all(pool).await?)
 }
 
-/// Returns every recipe id and title, ordered by title ignoring case, then id.
+/// Returns every recipe id and title, ordered by title ignoring case, then id. With `meal_types`,
+/// only recipes of one of them or of none qualify.
 ///
 /// # Errors
 ///
 /// Returns an error if the query fails.
-pub async fn recipe_titles(pool: &SqlitePool) -> Result<Vec<(i64, String)>, StoreError> {
-    Ok(
-        sqlx::query_as("SELECT id, title FROM recipes ORDER BY title COLLATE NOCASE, id")
-            .fetch_all(pool)
-            .await?,
-    )
+pub async fn recipe_titles(
+    pool: &SqlitePool,
+    meal_types: &[MealType],
+) -> Result<Vec<(i64, String)>, StoreError> {
+    let mut query = QueryBuilder::new("SELECT id, title FROM recipes WHERE 1");
+    push_meal_filter(&mut query, "id", meal_types);
+    query.push(" ORDER BY title COLLATE NOCASE, id");
+    Ok(query.build_query_as().fetch_all(pool).await?)
 }
 
 /// Returns whether a recipe exists.
@@ -78,8 +106,7 @@ pub async fn categories_exist(
     if selected.is_empty() {
         return Ok(true);
     }
-    let mut query =
-        sqlx::QueryBuilder::new("SELECT COUNT(DISTINCT id) FROM categories WHERE id IN (");
+    let mut query = QueryBuilder::new("SELECT COUNT(DISTINCT id) FROM categories WHERE id IN (");
     let mut separated = query.separated(", ");
     for category in &selected {
         separated.push_bind(category);

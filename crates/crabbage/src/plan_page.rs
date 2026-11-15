@@ -23,6 +23,7 @@ struct PlanData {
     weekdays: Vec<Option<i64>>,
     servings: i64,
     lookback: i64,
+    meal_types: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -71,10 +72,9 @@ async fn load_plan_week(week: &str) -> Result<PlanData, ServerFnError> {
             .fetch_all(&pool)
             .await
             .map_err(|error| ServerFnError::new(error.to_string()))?;
-    let names = recipe_rows
-        .iter()
-        .map(|(id, title, _)| (*id, title.clone()))
-        .collect::<Vec<_>>();
+    let names = planner::recipe_titles(&pool, &settings.meal_types)
+        .await
+        .map_err(|error| crate::access::store_failure(&error))?;
     let days = plan_days(start, &entries, settings.servings, &recipe_rows);
     let categories = categories::list(&pool)
         .await
@@ -90,6 +90,11 @@ async fn load_plan_week(week: &str) -> Result<PlanData, ServerFnError> {
         weekdays: settings.weekdays.to_vec(),
         servings: settings.servings,
         lookback: settings.lookback_weeks,
+        meal_types: settings
+            .meal_types
+            .iter()
+            .map(|meal| meal.code().to_owned())
+            .collect(),
     })
 }
 
@@ -238,6 +243,7 @@ fn plan_settings(data: PlanData) -> impl IntoView {
                 <For each=weekday_labels key=|item| *item let(item)>
                     <label>{t(weekday_key(item))}<select name=weekday_field(item)><option value="rest">{t("plan.rest")}</option>{settings.get_value().categories.iter().map(|category| view! { <option value=category.0.to_string() selected=settings.get_value().weekdays.get(item).copied().flatten() == Some(category.0)>{category.1.clone()}</option> }).collect_view()}</select></label>
                 </For>
+                <fieldset class="plan-meal-types"><legend>{t("plan.meal_types")}</legend>{crabbage_domain::meal_types::MealType::ALL.into_iter().map(|meal| view! { <label><input type="checkbox" name=format!("meal_{}", meal.code()) checked=settings.get_value().meal_types.iter().any(|code| code == meal.code())/>{t(crate::recipes::meal_types::meal_key(meal))}</label> }).collect_view()}</fieldset>
                 <label>{t("plan.lookback")}<input name="lookback_weeks" type="number" min="0" max="52" value=settings.get_value().lookback/></label>
                 <label>{t("recipe.servings")}<input name="servings" type="number" min="1" max="99" value=settings.get_value().servings/></label>
                 <button>{t("plan.save")}</button>
