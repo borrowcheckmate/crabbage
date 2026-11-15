@@ -126,9 +126,12 @@ fn recipe_view(
         {compact}
         <a class="recipe-back" href=back_href><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M20 12H9"/></svg>{t("recipe.back")}</a>
         <header class="recipe-detail-header">
-            <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{meal_types.iter().filter_map(|code| MealType::from_code(code)).map(|meal| view! { <span>{t(meal_key(meal))}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
-            <Title text=title.clone()/>
-            <h1>{title.clone()}</h1>
+            <div class="recipe-detail-title">
+                <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{meal_types.iter().filter_map(|code| MealType::from_code(code)).map(|meal| view! { <span>{t(meal_key(meal))}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
+                <Title text=title.clone()/>
+                <h1>{title.clone()}</h1>
+            </div>
+            {edit_actions(can_edit.then_some(edit_href), (can_delete && !confirming).then_some(delete_href))}
         </header>
         <div class="recipe-detail-image">{image_view}</div>
         <div class="recipe-detail-columns">
@@ -148,15 +151,23 @@ fn recipe_view(
         <section class="recipe-secondary-actions">
             {rating_section(id, average, rating_count, my_stars, favourite)}
         </section>
-        <div class="row recipe-edit-actions">
-            {can_edit.then(|| view! { <a class="button" href=edit_href>{t("recipe.button.edit")}</a> })}
-            {(can_delete && !confirming).then(|| view! { <a href=delete_href>{t("recipe.button.delete")}</a> })}
-        </div>
         {confirming.then(|| delete_confirmation(id, &title, &detail_href, delete))}
         {move || delete.value().with(|value| failure(value.as_ref()))}
         </article>
     }
     .into_any()
+}
+
+fn edit_actions(edit_href: Option<String>, delete_href: Option<String>) -> Option<AnyView> {
+    (edit_href.is_some() || delete_href.is_some()).then(|| {
+        view! {
+            <div class="recipe-edit-actions">
+                {edit_href.map(|href| view! { <a class="button secondary" href=href>{t("recipe.button.edit")}</a> })}
+                {delete_href.map(|href| view! { <a class="button quiet recipe-delete" href=href>{t("recipe.button.delete")}</a> })}
+            </div>
+        }
+        .into_any()
+    })
 }
 
 fn recipe_links(id: i64) -> (String, String, String) {
