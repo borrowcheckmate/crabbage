@@ -1,6 +1,8 @@
 //! Planner records returned by the store and accepted for writes.
 
+use crabbage_domain::allergens::Allergen;
 use crabbage_domain::meal_types::MealType;
+use crabbage_domain::warnings::Warning;
 use sqlx::FromRow;
 
 /// Household planner preferences. Weekdays use Monday as index zero; `None` means rest.
@@ -14,6 +16,26 @@ pub struct PlannerSettings {
     pub weekdays: [Option<i64>; 7],
     /// Meal types the planner picks from, where none means any. Untyped recipes always qualify.
     pub meal_types: Vec<MealType>,
+}
+
+/// What a household avoids. A recipe conflicts when an ingredient has one of the allergens or the
+/// recipe has one of the warnings.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Avoid {
+    /// The avoided allergens, in [`Allergen::ALL`] order.
+    pub allergens: Vec<Allergen>,
+    /// The avoided dietary warnings, in [`Warning::ALL`] order.
+    pub warnings: Vec<Warning>,
+}
+
+impl Avoid {
+    /// The codes of the avoided allergens, then of the avoided warnings.
+    pub fn codes(&self) -> impl Iterator<Item = &'static str> + '_ {
+        self.allergens
+            .iter()
+            .map(|allergen| allergen.code())
+            .chain(self.warnings.iter().map(|warning| warning.code()))
+    }
 }
 
 /// A household's recipe or rest entry for one ISO calendar date.

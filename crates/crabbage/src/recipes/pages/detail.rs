@@ -23,7 +23,7 @@ use crate::recipes::meal_types::meal_key;
 use crate::recipes::read::get_recipe;
 use crate::recipes::servings::{scale_lines, shown_servings};
 use crate::recipes::types::{LineRow, RecipeDetail, StepRow};
-use crate::recipes::warnings::warning_line;
+use crate::recipes::warnings::{avoided_line, warning_line};
 use crate::recipes::write::DeleteRecipe;
 use crate::route::route_id;
 use leptos_meta::Title;
@@ -108,6 +108,7 @@ fn recipe_view(
         meal_types,
         allergens,
         warnings,
+        avoided,
         lines,
         steps,
         image,
@@ -130,7 +131,7 @@ fn recipe_view(
         <article class="recipe-detail">
         {compact}
         <a class="recipe-back" href=back_href><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6M20 12H9"/></svg>{t("recipe.back")}</a>
-        {detail_header(&title, categories, &meal_types, &allergens, &warnings, favourite, edit_actions(can_edit.then_some(edit_href), (can_delete && !confirming).then_some(delete_href)))}
+        {detail_header(&title, categories, &meal_types, favourite, diet_lines(&allergens, &warnings, &avoided), edit_actions(can_edit.then_some(edit_href), (can_delete && !confirming).then_some(delete_href)))}
         <div class="recipe-detail-image">{image_view}</div>
         <div class="recipe-detail-columns">
             <section class="recipe-ingredients">
@@ -156,13 +157,16 @@ fn recipe_view(
     .into_any()
 }
 
+fn diet_lines(allergens: &[String], warnings: &[String], avoided: &[String]) -> AnyView {
+    view! { {allergen_line(allergens)}{warning_line(warnings)}{avoided_line(avoided)} }.into_any()
+}
+
 fn detail_header(
     title: &str,
     categories: Vec<CategoryRow>,
     meal_types: &[String],
-    allergens: &[String],
-    warnings: &[String],
     favourite: bool,
+    diet: AnyView,
     actions: Option<AnyView>,
 ) -> impl IntoView {
     view! {
@@ -171,8 +175,7 @@ fn detail_header(
                 <div class="recipe-detail-categories">{categories.into_iter().map(|category| view! { <span>{category.name}</span> }).collect_view()}{meal_types.iter().filter_map(|code| MealType::from_code(code)).map(|meal| view! { <span>{t(meal_key(meal))}</span> }).collect_view()}{favourite.then(|| view! { <span class="recipe-detail-favorite">{t("recipe.favourite.badge")}</span> })}</div>
                 <Title text=title.to_owned()/>
                 <h1>{title.to_owned()}</h1>
-                {allergen_line(allergens)}
-                {warning_line(warnings)}
+                {diet}
             </div>
             {actions}
         </header>

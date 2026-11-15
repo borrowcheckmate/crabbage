@@ -1,4 +1,10 @@
 {
+  "recipe.avoided": "Jullie vermijden:",
+  "recipes.avoided": "Vermeden",
+  "recipes.filter.safe": "Veilig voor ons",
+  "plan.avoid": "Vermijden",
+  "plan.avoided": "Bevat iets wat jullie vermijden",
+  "plan.avoided_notice": "Dit recept bevat iets wat jullie huishouden vermijdt.",
   "recipe.warnings": "Afgeraden tijdens zwangerschap:",
   "recipe.label.warnings": "Zwangerschap",
   "warning.raw_egg": "Rauw ei",

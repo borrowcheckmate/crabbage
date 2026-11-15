@@ -373,7 +373,7 @@ async fn every_member_sees_the_list_and_the_names_of_users_and_ingredients() {
         &harness,
         &other,
         "list_recipes",
-        &[("favourites_only", "false")],
+        &[("favourites_only", "false"), ("safe_only", "false")],
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{body}");

@@ -54,6 +54,7 @@ mod pages;
 )]
 mod planner;
 mod recipe_allergens;
+mod recipe_avoid;
 mod recipe_browse;
 #[expect(
     clippy::expect_used,

@@ -342,6 +342,16 @@ fn planner_meal_type_boxes_sit_in_a_wrapping_row_beside_their_names() {
 }
 
 #[test]
+fn planner_avoid_boxes_sit_in_a_wrapping_row_beside_their_names() {
+    let css = stylesheet();
+    let group = declarations_of(&css, ".plan-avoid").unwrap_or_default();
+    let label = declarations_of(&css, ".plan-avoid label").unwrap_or_default();
+    assert!(group.contains("flex-wrap: wrap"));
+    assert!(label.contains("display: flex"));
+    assert!(label.contains("align-items: center"));
+}
+
+#[test]
 fn allergen_boxes_fill_columns_that_fit_a_phone() {
     let css = stylesheet();
     let boxes = declarations_of(&css, ".admin-allergens fieldset").unwrap_or_default();

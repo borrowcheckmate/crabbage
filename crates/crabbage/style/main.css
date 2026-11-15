@@ -658,6 +658,24 @@ progress {
   gap: 0.5rem;
 }
 
+.plan-avoid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.plan-avoid label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plan-day-avoided,
+.recipe-card-avoided,
+.recipe-avoided {
+  color: var(--danger);
+}
+
 .plan-day button,
 .plan-settings button {
   min-height: 44px;

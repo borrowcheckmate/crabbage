@@ -17,6 +17,7 @@ mod households;
 mod login_attempts;
 mod open;
 mod planner;
+mod planner_avoid;
 mod planner_meal_types;
 mod recipes_allergens;
 mod recipes_categories;

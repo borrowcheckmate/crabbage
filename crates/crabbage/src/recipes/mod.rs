@@ -2,6 +2,8 @@
 //! functions behind them.
 
 mod allergens;
+#[cfg(feature = "ssr")]
+mod avoid;
 mod categories;
 #[cfg(feature = "ssr")]
 mod convert;
@@ -35,7 +37,7 @@ mod rights;
 mod servings;
 mod types;
 mod units;
-mod warnings;
+pub(crate) mod warnings;
 mod write;
 
 pub(crate) use cook::CookPage;

@@ -24,6 +24,8 @@ pub(crate) struct RecipeSummaryRow {
     pub(crate) rating_count: i64,
     /// Whether the signed-in user has the recipe as a favourite.
     pub(crate) favourite: bool,
+    /// Whether the recipe has something the user's household avoids.
+    pub(crate) avoided: bool,
 }
 
 /// A recipe as its page shows it, with what the signed-in user may do to it.
@@ -55,6 +57,8 @@ pub(crate) struct RecipeDetail {
     pub(crate) allergens: Vec<String>,
     /// The codes of the recipe's dietary warnings, in form order.
     pub(crate) warnings: Vec<String>,
+    /// The codes of its allergens and warnings that the user's household avoids.
+    pub(crate) avoided: Vec<String>,
     /// The file name of the recipe's photo, if it has one.
     pub(crate) image: Option<String>,
     /// Whether the signed-in user may change the recipe.

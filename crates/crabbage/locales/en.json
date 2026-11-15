@@ -1,4 +1,10 @@
 {
+  "recipe.avoided": "Your household avoids:",
+  "recipes.avoided": "Avoided",
+  "recipes.filter.safe": "Safe for us",
+  "plan.avoid": "Avoid",
+  "plan.avoided": "Has something you avoid",
+  "plan.avoided_notice": "This recipe has something your household avoids.",
   "recipe.warnings": "Not advised in pregnancy:",
   "recipe.label.warnings": "Pregnancy",
   "warning.raw_egg": "Raw egg",

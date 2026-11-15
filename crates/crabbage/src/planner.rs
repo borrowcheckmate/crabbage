@@ -5,10 +5,12 @@ use axum::response::Redirect;
 use axum::routing::post;
 use std::collections::HashMap;
 
+use crabbage_domain::allergens::Allergen;
 use crabbage_domain::dates::{format_iso_date, parse_iso_date};
 use crabbage_domain::meal_types::MealType;
 use crabbage_domain::planner::{Candidate, DayPlan, HistoryEntry, PlanningDay};
-use crabbage_store::planner::{self, PlanEntry, PlannerSettings};
+use crabbage_domain::warnings::Warning;
+use crabbage_store::planner::{self, Avoid, PlanEntry, PlannerSettings};
 use crabbage_store::shopping;
 use serde::Deserialize;
 
@@ -55,7 +57,7 @@ struct SettingsForm {
     saturday: String,
     sunday: String,
     #[serde(flatten)]
-    meal_types: HashMap<String, String>,
+    checked: HashMap<String, String>,
 }
 
 async fn household(state: &AppState, user: &SessionUser) -> Result<i64, StatusCode> {
@@ -63,6 +65,15 @@ async fn household(state: &AppState, user: &SessionUser) -> Result<i64, StatusCo
         .await
         .map_err(internal_error)?
         .ok_or(StatusCode::NOT_FOUND)
+}
+
+async fn avoided(state: &AppState, household: i64) -> Result<Vec<i64>, StatusCode> {
+    let avoid = planner::avoid(&state.pool, household)
+        .await
+        .map_err(internal_error)?;
+    planner::conflicting_recipes(&state.pool, &avoid)
+        .await
+        .map_err(internal_error)
 }
 
 fn week_start(value: &str) -> Result<i64, StatusCode> {
@@ -128,7 +139,8 @@ async fn fill_week(state: &AppState, user: &SessionUser, week: &str) -> Result<(
             parse_iso_date(&day).map(|day| HistoryEntry { recipe_id, day })
         })
         .collect::<Vec<_>>();
-    let candidates = candidates(state, &settings).await?;
+    let avoided = avoided(state, household).await?;
+    let candidates = candidates(state, &settings, &avoided).await?;
     let mut rng = fastrand::Rng::new();
     let picks = crabbage_domain::planner::plan(
         &days,
@@ -159,6 +171,7 @@ async fn fill_week(state: &AppState, user: &SessionUser, week: &str) -> Result<(
 async fn candidates(
     state: &AppState,
     settings: &PlannerSettings,
+    avoided: &[i64],
 ) -> Result<Vec<Candidate>, StatusCode> {
     Ok(planner::recipes_in_categories(
         &state.pool,
@@ -173,6 +186,7 @@ async fn candidates(
     .await
     .map_err(internal_error)?
     .into_iter()
+    .filter(|(_, recipe_id)| !avoided.contains(recipe_id))
     .map(|(category_id, recipe_id)| Candidate {
         category_id,
         recipe_id,
@@ -223,10 +237,11 @@ async fn reroll(
         .await
         .map_err(internal_error)?;
     let current = existing.first().and_then(|entry| entry.recipe_id);
+    let avoided = avoided(&state, household).await?;
     let mut choices: Vec<_> = reroll_candidates(&state, category, &settings.meal_types)
         .await?
         .into_iter()
-        .filter(|id| Some(*id) != current)
+        .filter(|id| Some(*id) != current && !avoided.contains(id))
         .collect();
     if choices.is_empty() {
         choices = existing
@@ -395,11 +410,14 @@ async fn settings(
             lookback_weeks,
             servings,
             weekdays,
-            meal_types: checked_meal_types(&form.meal_types),
+            meal_types: checked_meal_types(&form.checked),
         },
     )
     .await
     .map_err(internal_error)?;
+    planner::save_avoid(&state.pool, household, &checked_avoid(&form.checked))
+        .await
+        .map_err(internal_error)?;
     Ok(Redirect::to("/plan"))
 }
 
@@ -408,6 +426,20 @@ fn checked_meal_types(fields: &HashMap<String, String>) -> Vec<MealType> {
         .into_iter()
         .filter(|meal| fields.contains_key(&format!("meal_{}", meal.code())))
         .collect()
+}
+
+fn checked_avoid(fields: &HashMap<String, String>) -> Avoid {
+    let checked = |code: &str| fields.contains_key(&format!("avoid_{code}"));
+    Avoid {
+        allergens: Allergen::ALL
+            .into_iter()
+            .filter(|allergen| checked(allergen.code()))
+            .collect(),
+        warnings: Warning::ALL
+            .into_iter()
+            .filter(|warning| checked(warning.code()))
+            .collect(),
+    }
 }
 
 fn date(day: i64) -> Result<String, StatusCode> {
